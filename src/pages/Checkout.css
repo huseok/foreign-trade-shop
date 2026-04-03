@@ -1,0 +1,152 @@
+.checkout__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .checkout__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.checkout__forms {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.checkout__card {
+  padding: 1.35rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  text-align: left;
+}
+
+.checkout__card-title {
+  font-size: 1.05rem;
+  margin: 0 0 1rem;
+  color: var(--text-h);
+}
+
+.field-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.field-row:last-child {
+  margin-bottom: 0;
+}
+
+.field-row--2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.field-row--3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+@media (max-width: 640px) {
+  .field-row--2,
+  .field-row--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  margin-bottom: 1rem;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.field__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.input--textarea {
+  resize: vertical;
+  min-height: 5rem;
+  font-family: inherit;
+}
+
+.checkout__aside {
+  position: sticky;
+  top: 4.5rem;
+}
+
+.checkout__summary {
+  padding: 1.35rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.checkout__summary-title {
+  font-size: 1.05rem;
+  margin: 0 0 1rem;
+  color: var(--text-h);
+}
+
+.checkout__lines {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.checkout__line {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+  padding-bottom: 0.65rem;
+  margin-bottom: 0.65rem;
+  color: var(--text);
+}
+
+.checkout__line span:first-child {
+  text-align: left;
+}
+
+.checkout__summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9375rem;
+  margin-bottom: 0.5rem;
+}
+
+.checkout__summary-row--muted {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.checkout__summary-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 1rem;
+  margin: 0.75rem 0 1.25rem;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text-h);
+}
+
+.checkout__legal {
+  margin: 0.85rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--muted);
+}

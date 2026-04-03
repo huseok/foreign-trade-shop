@@ -1,0 +1,72 @@
+.auth__box {
+  display: flex;
+  justify-content: center;
+  padding-block: 1rem;
+}
+
+.auth__card {
+  width: 100%;
+  max-width: 420px;
+  padding: 2rem 1.75rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  text-align: left;
+}
+
+.auth__title {
+  font-size: 1.65rem;
+  margin: 0 0 0.5rem;
+  color: var(--text-h);
+  letter-spacing: -0.02em;
+}
+
+.auth__subtitle {
+  margin: 0 0 1.5rem;
+  font-size: 0.9375rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.auth__form .field {
+  margin-bottom: 1rem;
+}
+
+.field--checkbox {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
+.field--checkbox input {
+  margin-top: 0.2rem;
+  accent-color: var(--primary);
+}
+
+.auth__msg {
+  margin: 1rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--primary-muted);
+  color: var(--text-h);
+  font-size: 0.875rem;
+}
+
+.auth__footer {
+  margin: 1.25rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--text);
+  text-align: center;
+}
+
+.auth__footer a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth__footer a:hover {
+  text-decoration: underline;
+}
