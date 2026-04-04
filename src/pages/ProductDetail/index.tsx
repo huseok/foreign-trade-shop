@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useCart } from '../context/CartContext'
+import { useCart } from '../../context/CartContext'
 import {
   getCategoryById,
   getProductById,
-} from '../data/mockProducts'
-import './ProductDetail.css'
+} from '../../data/mockProducts'
+import './ProductDetail.scss'
 
 export function ProductDetail() {
   const { id } = useParams<{ id: string }>()

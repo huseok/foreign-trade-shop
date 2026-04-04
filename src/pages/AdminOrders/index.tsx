@@ -2,9 +2,9 @@
  * 管理员订单列表（演示）：只读 localStorage 中的订单，无登录校验。
  */
 import { Link } from 'react-router-dom'
-import { useOrders } from '../context/OrdersContext'
-import type { OrderStatus } from '../types/order'
-import './AdminOrders.css'
+import { useOrders } from '../../context/OrdersContext'
+import type { OrderStatus } from '../../types/order'
+import './AdminOrders.scss'
 
 function formatDate(iso: string) {
   try {

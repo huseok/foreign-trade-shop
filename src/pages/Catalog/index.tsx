@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ProductCard } from '../components/ProductCard'
-import { categories, products } from '../data/mockProducts'
-import './Catalog.css'
+import { ProductCard } from '../../components/ProductCard'
+import { categories, products } from '../../data/mockProducts'
+import './Catalog.scss'
 
 export function Catalog() {
   const [params] = useSearchParams()

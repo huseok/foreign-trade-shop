@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import type { Product } from '../data/mockProducts'
-import { getCategoryById } from '../data/mockProducts'
-import './ProductCard.css'
+import type { Product } from '../../data/mockProducts'
+import { getCategoryById } from '../../data/mockProducts'
+import './ProductCard.scss'
 
 type Props = {
   product: Product

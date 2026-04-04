@@ -1,0 +1,93 @@
+.site-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+
+  &__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
+    gap: 2.5rem;
+    padding-block: 2.75rem 2rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+  }
+
+  &__brand {
+    text-align: left;
+
+    strong {
+      display: block;
+      font-size: 1.1rem;
+      color: var(--text-h);
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  &__logo-mark {
+    display: inline-block;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-md);
+    background: linear-gradient(145deg, var(--primary) 0%, var(--primary-dark) 100%);
+    margin-bottom: 0.75rem;
+  }
+
+  &__tagline {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text);
+    max-width: 28ch;
+  }
+
+  &__cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  &__heading {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.75rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    a {
+      color: var(--text-h);
+      text-decoration: none;
+      font-size: 0.9375rem;
+
+      &:hover {
+        color: var(--primary);
+      }
+    }
+  }
+
+  &__bar {
+    border-top: 1px solid var(--border);
+    padding-block: 1rem;
+  }
+
+  &__bar-inner {
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+}

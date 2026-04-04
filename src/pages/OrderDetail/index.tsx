@@ -2,9 +2,9 @@
  * 订单详情：从 OrdersContext 按 URL 参数 id 取单；无则显示未找到。
  */
 import { Link, useParams } from 'react-router-dom'
-import { useOrders } from '../context/OrdersContext'
-import type { OrderStatus } from '../types/order'
-import './OrderDetail.css'
+import { useOrders } from '../../context/OrdersContext'
+import type { OrderStatus } from '../../types/order'
+import './OrderDetail.scss'
 
 function statusLabel(s: OrderStatus) {
   switch (s) {

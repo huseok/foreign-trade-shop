@@ -2,9 +2,9 @@
  * 购物车页：展示 CartContext 行项目，改数量/删除后小计即时更新。
  */
 import { Link } from 'react-router-dom'
-import { useCart } from '../context/CartContext'
-import { getProductById } from '../data/mockProducts'
-import './Cart.css'
+import { useCart } from '../../context/CartContext'
+import { getProductById } from '../../data/mockProducts'
+import './Cart.scss'
 
 export function Cart() {
   const { lines, removeItem, setQty, itemCount } = useCart()

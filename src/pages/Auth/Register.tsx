@@ -1,27 +1,31 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import './Auth.css'
+import './Auth.scss'
 
-export function Login() {
+export function Register() {
   const [msg, setMsg] = useState<string | null>(null)
 
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setMsg('Demo only — no server request was made.')
+    setMsg('Demo only — registration is not connected to a backend.')
   }
 
   return (
     <div className="auth page-pad">
       <div className="container auth__box">
         <div className="auth__card">
-          <h1 className="auth__title">Sign in</h1>
+          <h1 className="auth__title">Create account</h1>
           <p className="auth__subtitle">
-            Access quotes, orders, and saved addresses (UI placeholder).
+            Procurement teams — use your company email (UI placeholder).
           </p>
           <form className="auth__form" onSubmit={onSubmit}>
             <label className="field">
-              <span className="field__label">Email</span>
+              <span className="field__label">Company name</span>
+              <input className="input" name="company" required autoComplete="organization" />
+            </label>
+            <label className="field">
+              <span className="field__label">Work email</span>
               <input
                 className="input"
                 type="email"
@@ -37,16 +41,23 @@ export function Login() {
                 type="password"
                 name="password"
                 required
-                autoComplete="current-password"
+                autoComplete="new-password"
+                minLength={8}
               />
             </label>
+            <label className="field field--checkbox">
+              <input type="checkbox" name="terms" required />
+              <span>
+                I agree to the Terms and Privacy Policy (placeholder).
+              </span>
+            </label>
             <button type="submit" className="btn btn--primary btn--block">
-              Sign in
+              Register
             </button>
           </form>
           {msg && <p className="auth__msg">{msg}</p>}
           <p className="auth__footer">
-            No account? <Link to="/register">Create one</Link>
+            Already have an account? <Link to="/login">Sign in</Link>
           </p>
         </div>
       </div>

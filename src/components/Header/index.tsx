@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { useCart } from '../context/CartContext'
-import './Header.css'
+import { useCart } from '../../context/CartContext'
+import './Header.scss'
 
 export function Header() {
   const { itemCount } = useCart()

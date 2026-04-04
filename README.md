@@ -8,10 +8,10 @@
 |------|------|
 | 框架 | React 19 + TypeScript |
 | 构建 | Vite 8 |
-| 路由 | react-router-dom（`BrowserRouter`） |
-| 样式 | 全局 CSS 变量 + 按页面/组件拆分的 `.css`（未使用 Tailwind / MUI） |
+| 路由 | react-router-dom 7（`BrowserRouter` + `useRoutes`） |
+| 样式 | 全局 `index.css`（变量与工具类）+ 各组件/页面目录下的 **SCSS**（未使用 Tailwind / MUI） |
 
-本项目启用了 **React Compiler**（见 Vite 模板说明），可能影响 dev/build 耗时，属预期行为。
+本项目通过 `@vitejs/plugin-react` 与 `@rolldown/plugin-babel` 启用了 **React Compiler**（`babel-plugin-react-compiler`），可能影响 dev/build 耗时，属预期行为。
 
 ## 快速开始
 
@@ -26,6 +26,8 @@ npm run dev
 - 代码检查：`npm run lint`
 
 ## 路由一览
+
+路由表定义在 [`src/router/index.tsx`](./src/router/index.tsx)，由 [`src/App.tsx`](./src/App.tsx) 通过 `useRoutes` 挂载；未知路径重定向到首页。
 
 | 路径 | 说明 |
 |------|------|
@@ -65,20 +67,37 @@ npm run dev
 - `/admin` **无登录校验**，任何人可访问，仅适合本地/演示。
 - 接入 Kotlin 后端后应改为：鉴权 + 调用订单 API，并移除或禁用纯前端 `localStorage` 方案。
 
-## 目录结构（核心）
+## 目录结构
+
+约定：**页面与共享组件**各放一个目录，入口为 `index.tsx`，样式为与目录同名的 `*.scss`（如 `Catalog/Catalog.scss`）。布局层使用 `MainLayout.css`。
 
 ```
 src/
-  App.tsx              # 路由定义
-  main.tsx             # 入口：Router、OrdersProvider、CartProvider
-  index.css            # 全局主题与工具类
-  context/             # CartContext、OrdersContext
-  data/                # mock 商品与分类
-  types/               # 订单等类型定义
-  utils/               # 如订单号生成
-  components/          # Header、Footer、ProductCard 等
-  layouts/             # MainLayout
-  pages/               # 各页面
+  main.tsx                 # 入口：BrowserRouter、OrdersProvider、CartProvider、App
+  App.tsx                  # useRoutes：合并 router 与通配符回首页
+  index.css                # 全局主题与工具类
+  router/
+    index.tsx              # RouteObject[]：MainLayout 子路由
+  context/                 # CartContext、OrdersContext
+  data/                    # mock 商品与分类
+  types/                   # 订单等类型定义
+  utils/                   # 如订单号生成（orderId）
+  layouts/
+    MainLayout.tsx         # 顶栏/底栏布局
+    MainLayout.css
+  components/
+    Header/                # index.tsx + Header.scss
+    Footer/
+    ProductCard/
+  pages/
+    Home/
+    Catalog/
+    ProductDetail/
+    Cart/
+    Checkout/
+    OrderDetail/
+    AdminOrders/
+    Auth/                  # Login.tsx、Register.tsx、Auth.scss、index.ts（导出）
 ```
 
 ## 后续对接后端（备忘）

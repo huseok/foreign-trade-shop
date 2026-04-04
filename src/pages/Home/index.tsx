@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import { ProductCard } from '../components/ProductCard'
-import { categories, products } from '../data/mockProducts'
-import './Home.css'
+import { ProductCard } from '../../components/ProductCard'
+import { categories, products } from '../../data/mockProducts'
+import './Home.scss'
 
 const featured = products.slice(0, 4)
 
