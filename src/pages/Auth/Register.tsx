@@ -1,14 +1,39 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { authApi } from '../../api/auth'
+import { toErrorMessage } from '../../lib/http/error'
 import './Auth.scss'
 
 export function Register() {
   const [msg, setMsg] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const navigate = useNavigate()
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  /**
+   * 注册提交：
+   * 先在后端创建账号，成功后引导用户去登录。
+   */
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setMsg('Demo only — registration is not connected to a backend.')
+    const fd = new FormData(e.currentTarget)
+    const payload = {
+      name: String(fd.get('name') ?? '').trim(),
+      email: String(fd.get('email') ?? '').trim(),
+      password: String(fd.get('password') ?? ''),
+      phone: String(fd.get('phone') ?? '').trim() || undefined,
+      country: String(fd.get('country') ?? '').trim() || undefined,
+    }
+    try {
+      setSubmitting(true)
+      await authApi.register(payload)
+      setMsg('Register successful. Redirecting to sign in...')
+      setTimeout(() => navigate('/login'), 800)
+    } catch (err) {
+      setMsg(toErrorMessage(err, 'Registration failed'))
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -21,11 +46,11 @@ export function Register() {
           </p>
           <form className="auth__form" onSubmit={onSubmit}>
             <label className="field">
-              <span className="field__label">Company name</span>
-              <input className="input" name="company" required autoComplete="organization" />
+              <span className="field__label">Full name</span>
+              <input className="input" name="name" required autoComplete="name" />
             </label>
             <label className="field">
-              <span className="field__label">Work email</span>
+              <span className="field__label">Email</span>
               <input
                 className="input"
                 type="email"
@@ -35,6 +60,14 @@ export function Register() {
               />
             </label>
             <label className="field">
+              <span className="field__label">Phone (optional)</span>
+              <input className="input" name="phone" autoComplete="tel" />
+            </label>
+            <label className="field">
+              <span className="field__label">Country (optional)</span>
+              <input className="input" name="country" autoComplete="country-name" />
+            </label>
+            <label className="field">
               <span className="field__label">Password</span>
               <input
                 className="input"
@@ -42,7 +75,7 @@ export function Register() {
                 name="password"
                 required
                 autoComplete="new-password"
-                minLength={8}
+                minLength={6}
               />
             </label>
             <label className="field field--checkbox">
@@ -52,7 +85,7 @@ export function Register() {
               </span>
             </label>
             <button type="submit" className="btn btn--primary btn--block">
-              Register
+              {submitting ? 'Registering...' : 'Register'}
             </button>
           </form>
           {msg && <p className="auth__msg">{msg}</p>}

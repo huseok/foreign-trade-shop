@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { useCart } from '../../context/CartContext'
+import { useCart, useMe } from '../../hooks/apiHooks'
+import { authStore } from '../../lib/auth/authStore'
 import './Header.scss'
 
 export function Header() {
-  const { itemCount } = useCart()
+  const loggedIn = authStore.isLoggedIn()
+  const { data: cart } = useCart(loggedIn)
+  const { data: me } = useMe(loggedIn)
   const [open, setOpen] = useState(false)
+  const itemCount = cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0
 
   return (
     <header className="site-header">
@@ -70,8 +74,19 @@ export function Header() {
             }
             onClick={() => setOpen(false)}
           >
-            Account
+            {loggedIn ? me?.name ?? 'My account' : 'Account'}
           </NavLink>
+          {loggedIn && me?.role === 'ADMIN' && (
+            <NavLink
+              to="/admin/products"
+              className={({ isActive }) =>
+                isActive ? 'site-header__link is-active' : 'site-header__link'
+              }
+              onClick={() => setOpen(false)}
+            >
+              Admin Products
+            </NavLink>
+          )}
         </nav>
 
         <div className="site-header__search" role="search">

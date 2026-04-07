@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- context + hook pattern */
 /**
- * 购物车（演示）：仅内存状态，刷新即清空；后续可换为匿名 cartId + 后端 API。
+ * 购物车（旧演示上下文）：
+ * 主流程已迁移到后端接口，本文件仅保留以便需要时回退/对比。
  */
 import {
   createContext,

@@ -1,80 +1,53 @@
 /**
- * 结账页：收集联系人与地址，提交时组装 StoredOrder 写入 OrdersContext，并清空购物车。
+ * 结账页：
+ * 收集地址后调用后端创建订单，成功跳转到订单详情页。
  */
+import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useCart } from '../../context/CartContext'
-import { useOrders } from '../../context/OrdersContext'
-import { getProductById } from '../../data/mockProducts'
-import type { StoredOrder } from '../../types/order'
-import { createDemoOrderId } from '../../utils/orderId'
+import { useCart, useCreateOrder } from '../../hooks/apiHooks'
+import { toErrorMessage } from '../../lib/http/error'
 import './Checkout.scss'
 
 export function Checkout() {
-  const { lines, itemCount, clear } = useCart()
-  const { addOrder } = useOrders()
+  const { data: cart, isLoading } = useCart()
+  const createOrderMutation = useCreateOrder()
   const navigate = useNavigate()
+  const rows = cart?.items ?? []
+  const itemCount = rows.reduce((sum, item) => sum + item.quantity, 0)
+  const subtotal = Number(cart?.totalAmount ?? 0)
+  const currency = cart?.currency ?? 'USD'
+  const [submitMsg, setSubmitMsg] = useState<string | null>(null)
 
-  const rows = lines.map((line) => {
-    const p = getProductById(line.productId)
-    return p ? { line, product: p } : null
-  }).filter(Boolean) as {
-    line: { productId: string; qty: number }
-    product: NonNullable<ReturnType<typeof getProductById>>
-  }[]
-
-  const subtotal = rows.reduce(
-    (sum, { line, product }) => sum + product.price * line.qty,
-    0,
-  )
-  const currency = rows[0]?.product.currency ?? 'USD'
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  /**
+   * 提交结账：
+   * 把表单映射为后端 CreateOrderRequest，成功后跳转到 /orders/{orderNo}。
+   */
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
-    const id = createDemoOrderId()
-
-    // 快照行项目：含名称、SKU，订单详情不依赖后续 mock 商品是否仍存在
-    const orderLines = rows.map(({ line, product }) => {
-      const lineTotal = product.price * line.qty
-      return {
-        productId: product.id,
-        name: product.name,
-        sku: product.sku,
-        qty: line.qty,
-        unitPrice: product.price,
-        lineTotal,
-        currency: product.currency,
-      }
-    })
-
-    const order: StoredOrder = {
-      id,
-      createdAt: new Date().toISOString(),
-      status: 'pending',
-      customer: {
-        name: String(fd.get('name') ?? '').trim(),
-        email: String(fd.get('email') ?? '').trim(),
-        phone: String(fd.get('phone') ?? '').trim(),
-        company: String(fd.get('company') ?? '').trim(),
-      },
-      shipping: {
-        address1: String(fd.get('address1') ?? '').trim(),
-        address2: String(fd.get('address2') ?? '').trim(),
-        city: String(fd.get('city') ?? '').trim(),
-        region: String(fd.get('region') ?? '').trim(),
-        zip: String(fd.get('zip') ?? '').trim(),
-        country: String(fd.get('country') ?? '').trim(),
-      },
-      notes: String(fd.get('notes') ?? '').trim(),
-      lines: orderLines,
-      subtotal,
-      currency,
+    const payload = {
+      receiverName: String(fd.get('name') ?? '').trim(),
+      receiverPhone: String(fd.get('phone') ?? '').trim(),
+      country: String(fd.get('country') ?? '').trim(),
+      addressLine: String(fd.get('address1') ?? '').trim(),
+      postalCode: String(fd.get('zip') ?? '').trim() || undefined,
+      receiverCompany: String(fd.get('company') ?? '').trim() || undefined,
+      taxNo: String(fd.get('taxNo') ?? '').trim() || undefined,
+      incoterm: String(fd.get('incoterm') ?? '').trim() || undefined,
+      shippingMethod: String(fd.get('shippingMethod') ?? '').trim() || undefined,
     }
+    try {
+      setSubmitMsg(null)
+      const resp = await createOrderMutation.mutateAsync(payload)
+      navigate(`/orders/${encodeURIComponent(resp.orderNo)}`)
+    } catch (err) {
+      setSubmitMsg(toErrorMessage(err, 'Place order failed'))
+    }
+  }
 
-    addOrder(order)
-    clear()
-    navigate(`/orders/${id}`)
+  if (isLoading) {
+    return <div className="checkout page-pad"><div className="container narrow"><p>Loading cart...</p></div></div>
   }
 
   if (itemCount === 0) {
@@ -97,7 +70,7 @@ export function Checkout() {
         <header className="page-header">
           <h1 className="page-header__title">Checkout</h1>
           <p className="page-header__desc">
-            Demo form — submission navigates to a sample order page.
+            Submit address and create a real backend order.
           </p>
         </header>
 
@@ -135,6 +108,7 @@ export function Checkout() {
                     className="input"
                     type="tel"
                     name="phone"
+                    required
                     autoComplete="tel"
                     placeholder="+1 ···"
                   />
@@ -164,6 +138,20 @@ export function Checkout() {
               <label className="field">
                 <span className="field__label">Address line 2</span>
                 <input className="input" name="address2" autoComplete="address-line2" />
+              </label>
+              <div className="field-row field-row--2">
+                <label className="field">
+                  <span className="field__label">Tax No (optional)</span>
+                  <input className="input" name="taxNo" />
+                </label>
+                <label className="field">
+                  <span className="field__label">Incoterm (optional)</span>
+                  <input className="input" name="incoterm" placeholder="FOB" />
+                </label>
+              </div>
+              <label className="field">
+                <span className="field__label">Shipping method (optional)</span>
+                <input className="input" name="shippingMethod" placeholder="SEA / AIR" />
               </label>
               <div className="field-row field-row--3">
                 <label className="field">
@@ -210,14 +198,13 @@ export function Checkout() {
             <div className="checkout__summary">
               <h2 className="checkout__summary-title">Order summary</h2>
               <ul className="checkout__lines">
-                {rows.map(({ line, product }) => (
-                  <li key={product.id} className="checkout__line">
+                {rows.map((item) => (
+                  <li key={item.itemId} className="checkout__line">
                     <span>
-                      {product.name} × {line.qty}
+                      {item.title} × {item.quantity}
                     </span>
                     <span>
-                      {product.currency}{' '}
-                      {(product.price * line.qty).toFixed(2)}
+                      {item.currency} {Number(item.lineAmount).toFixed(2)}
                     </span>
                   </li>
                 ))}
@@ -239,8 +226,9 @@ export function Checkout() {
                 </span>
               </div>
               <button type="submit" className="btn btn--primary btn--block">
-                Place order (demo)
+                {createOrderMutation.isPending ? 'Placing order...' : 'Place order'}
               </button>
+              {submitMsg && <p className="checkout__legal">{submitMsg}</p>}
               <p className="checkout__legal">
                 By placing an order you agree to our Terms and Privacy Policy
                 (placeholder).

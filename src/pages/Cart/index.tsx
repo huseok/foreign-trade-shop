@@ -1,28 +1,27 @@
 /**
- * 购物车页：展示 CartContext 行项目，改数量/删除后小计即时更新。
+ * 购物车页：
+ * 基于后端真实购物车接口，支持改数量、删除和金额汇总。
  */
 import { Link } from 'react-router-dom'
-import { useCart } from '../../context/CartContext'
-import { getProductById } from '../../data/mockProducts'
+import { useCart, useRemoveCartItem, useUpdateCartItem } from '../../hooks/apiHooks'
 import './Cart.scss'
 
 export function Cart() {
-  const { lines, removeItem, setQty, itemCount } = useCart()
+  const { data: cart, isLoading } = useCart()
+  const updateMutation = useUpdateCartItem()
+  const removeMutation = useRemoveCartItem()
+  const rows = cart?.items ?? []
+  const itemCount = rows.reduce((sum, item) => sum + item.quantity, 0)
+  const subtotal = Number(cart?.totalAmount ?? 0)
+  const currency = cart?.currency ?? 'USD'
 
-  // 将 cart 行与 mock 商品合并，便于展示名称、单价
-  const rows = lines.map((line) => {
-    const p = getProductById(line.productId)
-    return p ? { line, product: p } : null
-  }).filter(Boolean) as {
-    line: { productId: string; qty: number }
-    product: NonNullable<ReturnType<typeof getProductById>>
-  }[]
+  const handleQtyChange = (itemId: number, qty: number) => {
+    void updateMutation.mutate({ itemId, payload: { quantity: Math.max(1, qty) } })
+  }
 
-  const subtotal = rows.reduce(
-    (sum, { line, product }) => sum + product.price * line.qty,
-    0,
-  )
-  const currency = rows[0]?.product.currency ?? 'USD'
+  const handleRemove = (itemId: number) => {
+    void removeMutation.mutate(itemId)
+  }
 
   return (
     <div className="cart page-pad">
@@ -34,7 +33,9 @@ export function Cart() {
           </p>
         </header>
 
-        {itemCount === 0 ? (
+        {isLoading ? (
+          <div className="cart__empty"><p>Loading cart...</p></div>
+        ) : itemCount === 0 ? (
           <div className="cart__empty">
             <p>Your cart is empty.</p>
             <Link to="/catalog" className="btn btn--primary">
@@ -57,54 +58,50 @@ export function Cart() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map(({ line, product }) => (
-                    <tr key={product.id}>
+                  {rows.map((item) => (
+                    <tr key={item.itemId}>
                       <td>
                         <div className="cart-table__product">
                           <div
                             className="cart-table__thumb"
-                            style={{ background: product.imageGradient }}
+                            style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #0d9488 100%)' }}
                             role="img"
                             aria-hidden
                           />
                           <div>
                             <Link
-                              to={`/products/${product.id}`}
+                              to={`/products/${item.productId}`}
                               className="cart-table__name"
                             >
-                              {product.name}
+                              {item.title}
                             </Link>
-                            <div className="cart-table__sku">{product.sku}</div>
+                            <div className="cart-table__sku">ID: {item.productId}</div>
                           </div>
                         </div>
                       </td>
                       <td data-label="Price">
-                        {product.currency} {product.price.toFixed(2)}
+                        {item.currency} {Number(item.unitPrice).toFixed(2)}
                       </td>
                       <td data-label="Qty">
                         <input
                           type="number"
                           min={1}
                           className="input input--qty"
-                          value={line.qty}
+                          value={item.quantity}
                           onChange={(e) =>
-                            setQty(
-                              product.id,
-                              Math.max(1, parseInt(e.target.value, 10) || 1),
-                            )
+                            handleQtyChange(item.itemId, parseInt(e.target.value, 10) || 1)
                           }
-                          aria-label={`Quantity for ${product.name}`}
+                          aria-label={`Quantity for ${item.title}`}
                         />
                       </td>
                       <td data-label="Subtotal">
-                        {product.currency}{' '}
-                        {(product.price * line.qty).toFixed(2)}
+                        {item.currency} {Number(item.lineAmount).toFixed(2)}
                       </td>
                       <td data-label="Remove">
                         <button
                           type="button"
                           className="cart-table__remove"
-                          onClick={() => removeItem(product.id)}
+                          onClick={() => handleRemove(item.itemId)}
                         >
                           Remove
                         </button>

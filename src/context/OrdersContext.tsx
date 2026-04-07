@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- context + hook pattern */
 /**
- * 订单（演示）：持久化到 localStorage（键名 STORAGE_KEY），供订单详情与 /admin 列表读取。
- * 生产环境应由后端创建订单并鉴权查询。
+ * 订单（旧演示上下文）：
+ * 主流程已迁移到后端 API；当前仅给 /admin 演示页提供本地数据兼容。
  */
 import {
   createContext,

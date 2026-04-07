@@ -1,6 +1,7 @@
 import type { RouteObject } from 'react-router-dom'
 import { MainLayout } from '../layouts/MainLayout'
 import { AdminOrders } from '../pages/AdminOrders'
+import { AdminProducts } from '../pages/AdminProducts'
 import { Login, Register } from '../pages/Auth'
 import { Cart } from '../pages/Cart'
 import { Catalog } from '../pages/Catalog'
@@ -8,6 +9,7 @@ import { Checkout } from '../pages/Checkout'
 import { Home } from '../pages/Home'
 import { OrderDetail } from '../pages/OrderDetail'
 import { ProductDetail } from '../pages/ProductDetail'
+import { RequireAuth } from './RequireAuth'
 
 export const routes: RouteObject[] = [
   {
@@ -28,11 +30,19 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'cart',
-        element: <Cart />,
+        element: (
+          <RequireAuth>
+            <Cart />
+          </RequireAuth>
+        ),
       },
       {
         path: 'checkout',
-        element: <Checkout />,
+        element: (
+          <RequireAuth>
+            <Checkout />
+          </RequireAuth>
+        ),
       },
       {
         path: 'login',
@@ -44,11 +54,23 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'orders/:id',
-        element: <OrderDetail />,
+        element: (
+          <RequireAuth>
+            <OrderDetail />
+          </RequireAuth>
+        ),
       },
       {
         path: 'admin',
         element: <AdminOrders />,
+      },
+      {
+        path: 'admin/products',
+        element: (
+          <RequireAuth>
+            <AdminProducts />
+          </RequireAuth>
+        ),
       },
     ],
   },

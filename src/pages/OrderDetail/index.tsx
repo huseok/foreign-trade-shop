@@ -1,52 +1,74 @@
 /**
- * 订单详情：从 OrdersContext 按 URL 参数 id 取单；无则显示未找到。
+ * 订单详情：
+ * 从后端按 orderNo 查询，支持确认收货与提交售后申请。
  */
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useOrders } from '../../context/OrdersContext'
-import type { OrderStatus } from '../../types/order'
+import { afterSalesApi } from '../../api/afterSales'
+import { ordersApi } from '../../api/orders'
+import { useOrderDetail } from '../../hooks/apiHooks'
+import { toErrorMessage } from '../../lib/http/error'
 import './OrderDetail.scss'
 
-function statusLabel(s: OrderStatus) {
+function statusLabel(s: string) {
   switch (s) {
-    case 'pending':
+    case 'PENDING_PAYMENT':
       return 'Pending payment'
-    case 'paid':
+    case 'PAID':
       return 'Paid'
-    case 'fulfilled':
-      return 'Fulfilled'
-    case 'cancelled':
-      return 'Cancelled'
+    case 'SHIPPED':
+      return 'Shipped'
+    case 'DELIVERED':
+      return 'Delivered'
+    case 'COMPLETED':
+      return 'Completed'
     default:
       return s
-  }
-}
-
-function formatDate(iso: string) {
-  try {
-    return new Intl.DateTimeFormat('en', {
-      dateStyle: 'full',
-      timeStyle: 'short',
-    }).format(new Date(iso))
-  } catch {
-    return iso
   }
 }
 
 export function OrderDetail() {
   const { id: rawId } = useParams<{ id: string }>()
   // 兼容 URL 编码的订单号
-  const id = rawId ? decodeURIComponent(rawId) : undefined
-  const { getOrderById } = useOrders()
-  const order = getOrderById(id)
+  const orderNo = rawId ? decodeURIComponent(rawId) : undefined
+  const { data: order, isLoading, refetch } = useOrderDetail(orderNo)
+  const [msg, setMsg] = useState<string | null>(null)
 
-  if (!id || !order) {
+  const onConfirmCompleted = async () => {
+    if (!order) return
+    try {
+      await ordersApi.confirmCompleted(order.orderNo)
+      setMsg('Order marked as completed.')
+      await refetch()
+    } catch (err) {
+      setMsg(toErrorMessage(err, 'Confirm failed'))
+    }
+  }
+
+  const onCreateAfterSale = async () => {
+    if (!order) return
+    try {
+      await afterSalesApi.create({
+        orderNo: order.orderNo,
+        content: 'Need after-sales support for this order.',
+      })
+      setMsg('After-sale ticket created.')
+    } catch (err) {
+      setMsg(toErrorMessage(err, 'Create after-sale failed'))
+    }
+  }
+
+  if (isLoading) {
+    return <div className="page-pad"><div className="container narrow"><p>Loading order...</p></div></div>
+  }
+
+  if (!orderNo || !order) {
     return (
       <div className="order page-pad">
         <div className="container narrow">
           <h1 className="page-header__title">Order not found</h1>
           <p className="page-header__desc">
-            This order ID is not in local storage. It may have been cleared or
-            never placed in this browser.
+            This order number does not exist in backend.
           </p>
           <div className="order__actions">
             <Link to="/catalog" className="btn btn--primary">
@@ -66,9 +88,9 @@ export function OrderDetail() {
       <div className="container narrow">
         <header className="page-header">
           <p className="order__eyebrow">Order</p>
-          <h1 className="page-header__title">{order.id}</h1>
+          <h1 className="page-header__title">{order.orderNo}</h1>
           <p className="page-header__desc">
-            Placed {formatDate(order.createdAt)}
+            Status synchronized from backend.
           </p>
         </header>
 
@@ -79,9 +101,10 @@ export function OrderDetail() {
             {statusLabel(order.status)}
           </span>
           <span className="order__meta">
-            {order.currency} {order.subtotal.toFixed(2)} total
+            {order.currency} {Number(order.totalAmount).toFixed(2)} total
           </span>
         </div>
+        {msg && <p className="order__text">{msg}</p>}
 
         <section className="order__card">
           <h2 className="order__card-title">Line items</h2>
@@ -95,14 +118,13 @@ export function OrderDetail() {
               </tr>
             </thead>
             <tbody>
-              {order.lines.map((line) => (
-                <tr key={`${line.productId}-${line.sku}`}>
-                  <td>{line.name}</td>
-                  <td>{line.sku}</td>
-                  <td>{line.qty}</td>
+              {order.items.map((line) => (
+                <tr key={`${line.productId}-${line.titleSnapshot}`}>
+                  <td>{line.titleSnapshot}</td>
+                  <td>{line.productId}</td>
+                  <td>{line.quantity}</td>
                   <td>
-                    {line.currency}{' '}
-                    {line.lineTotal.toFixed(2)}
+                    {order.currency} {Number(line.priceSnapshot).toFixed(2)}
                   </td>
                 </tr>
               ))}
@@ -115,26 +137,22 @@ export function OrderDetail() {
           <dl className="order__dl">
             <div>
               <dt>Name</dt>
-              <dd>{order.customer.name || '—'}</dd>
+              <dd>{order.receiverName || '—'}</dd>
             </div>
             <div>
-              <dt>Email</dt>
-              <dd>
-                <a href={`mailto:${order.customer.email}`}>
-                  {order.customer.email || '—'}
-                </a>
-              </dd>
+              <dt>Phone</dt>
+              <dd>{order.receiverPhone || '—'}</dd>
             </div>
-            {order.customer.phone && (
-              <div>
-                <dt>Phone</dt>
-                <dd>{order.customer.phone}</dd>
-              </div>
-            )}
-            {order.customer.company && (
+            {order.receiverCompany && (
               <div>
                 <dt>Company</dt>
-                <dd>{order.customer.company}</dd>
+                <dd>{order.receiverCompany}</dd>
+              </div>
+            )}
+            {order.taxNo && (
+              <div>
+                <dt>Tax No</dt>
+                <dd>{order.taxNo}</dd>
               </div>
             )}
           </dl>
@@ -143,29 +161,29 @@ export function OrderDetail() {
         <section className="order__card">
           <h2 className="order__card-title">Shipping</h2>
           <p className="order__text order__address">
-            {order.shipping.address1}
-            {order.shipping.address2 ? (
-              <>
-                <br />
-                {order.shipping.address2}
-              </>
-            ) : null}
+            {order.addressLine}
             <br />
-            {order.shipping.city}
-            {order.shipping.region ? `, ${order.shipping.region}` : ''}{' '}
-            {order.shipping.zip}
+            {order.postalCode ?? ''}
             <br />
-            {order.shipping.country}
+            {order.country}
           </p>
-          {order.notes && (
+          {order.trackingNo && (
             <div className="order__notes">
-              <strong>Notes</strong>
-              <p className="order__text">{order.notes}</p>
+              <strong>Tracking</strong>
+              <p className="order__text">
+                {order.logisticsCompany ?? 'Carrier'} / {order.trackingNo}
+              </p>
             </div>
           )}
         </section>
 
         <div className="order__actions">
+          <button type="button" className="btn btn--primary" onClick={onConfirmCompleted}>
+            Confirm completed
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onCreateAfterSale}>
+            Request after-sale
+          </button>
           <Link to="/catalog" className="btn btn--primary">
             Continue shopping
           </Link>

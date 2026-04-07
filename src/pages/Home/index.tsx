@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
 import { ProductCard } from '../../components/ProductCard'
-import { categories, products } from '../../data/mockProducts'
+import { useProducts } from '../../hooks/apiHooks'
 import './Home.scss'
 
-const featured = products.slice(0, 4)
-
 export function Home() {
+  const { data: products = [] } = useProducts()
+  const featured = products.slice(0, 4)
+
   return (
     <div className="home">
       <section className="home-hero">
@@ -36,13 +37,9 @@ export function Home() {
         <div className="container">
           <h2 className="section-title">Shop by category</h2>
           <div className="home-cats__grid">
-            {categories.map((c) => (
-              <Link
-                key={c.id}
-                to={`/catalog?category=${c.id}`}
-                className="home-cats__card"
-              >
-                <span className="home-cats__name">{c.name}</span>
+            {['CN', 'US', 'Global'].map((c) => (
+              <Link key={c} to="/catalog" className="home-cats__card">
+                <span className="home-cats__name">{c}</span>
                 <span className="home-cats__arrow" aria-hidden>
                   →
                 </span>
