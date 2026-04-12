@@ -18,6 +18,7 @@ export type RefreshTokenRequest = S['RefreshTokenRequest']
 export type MeResponse = S['MeResponse']
 
 export type ProductDto = S['ProductView']
+export type PagedProductsDto = S['PagedProducts']
 export type AdminProductUpsertRequest = S['ProductAdminUpsertRequest']
 
 export type CartItemDto = S['CartItemView']

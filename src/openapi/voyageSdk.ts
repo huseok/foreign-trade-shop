@@ -37,11 +37,40 @@ export const voyage = {
 
   /** 商品列表/详情；admin* 需 ADMIN */
   products: {
-    list(): Promise<S['ProductView'][]> {
-      return getData<S['ProductView'][]>('/api/v1/products')
+    listPaged(params: {
+      page?: number
+      size?: number
+      country?: string
+      q?: string
+    }): Promise<S['PagedProducts']> {
+      const sp = new URLSearchParams()
+      if (params.page != null) sp.set('page', String(params.page))
+      if (params.size != null) sp.set('size', String(params.size))
+      if (params.country != null && params.country !== '') sp.set('country', params.country)
+      if (params.q != null && params.q !== '') sp.set('q', params.q)
+      const qs = sp.toString()
+      return getData<S['PagedProducts']>(`/api/v1/products${qs ? `?${qs}` : ''}`)
     },
     getById(id: number): Promise<S['ProductView']> {
       return getData<S['ProductView']>(`/api/v1/products/${id}`)
+    },
+    adminListPaged(params: {
+      page?: number
+      size?: number
+      q?: string
+      active?: boolean
+    }): Promise<S['PagedProducts']> {
+      const sp = new URLSearchParams()
+      if (params.page != null) sp.set('page', String(params.page))
+      if (params.size != null) sp.set('size', String(params.size))
+      if (params.q != null && params.q !== '') sp.set('q', params.q)
+      if (params.active === true) sp.set('active', 'true')
+      if (params.active === false) sp.set('active', 'false')
+      const qs = sp.toString()
+      return getData<S['PagedProducts']>(`/api/v1/admin/products${qs ? `?${qs}` : ''}`)
+    },
+    adminGetById(id: number): Promise<S['ProductView']> {
+      return getData<S['ProductView']>(`/api/v1/admin/products/${id}`)
     },
     adminCreate(body: S['ProductAdminUpsertRequest']): Promise<S['IdPayload']> {
       return postData<S['IdPayload']>('/api/v1/admin/products', body)

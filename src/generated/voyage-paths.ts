@@ -123,7 +123,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["adminProductsList"];
         put?: never;
         post: operations["adminProductsCreate"];
         delete?: never;
@@ -139,7 +139,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["adminProductsGetById"];
         put: operations["adminProductsUpdate"];
         post?: never;
         delete?: never;
@@ -396,6 +396,13 @@ export interface components {
             price?: number | null;
             currency?: string | null;
         };
+        PagedProducts: {
+            items: components["schemas"]["ProductView"][];
+            /** Format: int64 */
+            total: number;
+            page: number;
+            size: number;
+        };
         ProductAdminUpsertRequest: {
             title: string;
             price: number;
@@ -625,7 +632,16 @@ export interface operations {
     };
     productsList: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 页码，从 0 开始 */
+                page?: number;
+                /** @description 每页条数，最大 100 */
+                size?: number;
+                /** @description 按原产国筛选（精确，不区分大小写） */
+                country?: string;
+                /** @description 标题 / SKU / ID 搜索 */
+                q?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -638,7 +654,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProductView"][];
+                    "application/json": components["schemas"]["PagedProducts"];
                 };
             };
         };
@@ -665,6 +681,33 @@ export interface operations {
             };
         };
     };
+    adminProductsList: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                /** @description 标题 / SKU / ID */
+                q?: string;
+                /** @description true=仅上架，false=仅下架；不传=全部 */
+                active?: "true" | "false";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedProducts"];
+                };
+            };
+        };
+    };
     adminProductsCreate: {
         parameters: {
             query?: never;
@@ -685,6 +728,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IdPayload"];
+                };
+            };
+        };
+    };
+    adminProductsGetById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductView"];
                 };
             };
         };

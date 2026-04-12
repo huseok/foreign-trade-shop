@@ -8,7 +8,8 @@ import type { LoginResponse } from '../../types/api'
 export type { ApiResponse } from './apiClientTypes'
 
 /** 后端 API 根地址；可通过 `VITE_API_BASE_URL` 覆盖 */
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+// export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'https://zqbkysferles.us-east-1.clawcloudrun.com/'
 
 /**
  * 全局 Axios 实例。

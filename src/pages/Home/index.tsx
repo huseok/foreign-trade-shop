@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom'
 import { ProductCard } from '../../components/ProductCard'
-import { useProducts } from '../../hooks/apiHooks'
+import { useStorefrontProducts } from '../../hooks/apiHooks'
 import './Home.scss'
 
 export function Home() {
-  const { data: products = [] } = useProducts()
-  const featured = products.slice(0, 4)
+  const { data } = useStorefrontProducts({ page: 0, size: 4 })
+  const featured = data?.items ?? []
 
   return (
     <div className="home">

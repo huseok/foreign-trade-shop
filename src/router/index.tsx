@@ -1,10 +1,11 @@
 import type { RouteObject } from 'react-router-dom'
-import { Navigate } from 'react-router-dom'
+import { Navigate, Outlet } from 'react-router-dom'
 import { AdminLayout } from '../admin/AdminLayout'
 import { AdminAfterSalesPage } from '../admin/pages/AdminAfterSalesPage'
 import { AdminLogin } from '../admin/pages/AdminLogin'
 import { AdminOrdersPage } from '../admin/pages/AdminOrdersPage'
-import { AdminProductsPage } from '../admin/pages/AdminProductsPage'
+import { AdminProductFormPage } from '../admin/pages/AdminProductFormPage'
+import { AdminProductListPage } from '../admin/pages/AdminProductListPage'
 import { RequireAdmin } from '../admin/RequireAdmin'
 import { MainLayout } from '../layouts/MainLayout'
 import { Cart } from '../pages/Cart'
@@ -22,6 +23,7 @@ import { RequireAuth } from './RequireAuth'
  * **结构说明**
  * - `/admin/*`：管理后台。`login` 无侧栏；其余子路由挂在 `AdminLayout`（侧栏 + 顶栏）下，
  *   业务页由 `RequireAdmin` 包裹，要求已登录且 `role === 'ADMIN'`。
+ * - `/admin/products`：商品列表（index）；`/admin/products/new` 新建；`/admin/products/:id/edit` 编辑。
  * - `/`：商城。根布局为 `MainLayout`；需登录的购物车/结账/订单等由 `RequireAuth` 包裹。
  *
  * 路由顺序在 `App.tsx` 中与通配符 `*` 合并；未知路径回商城首页。
@@ -47,9 +49,14 @@ export const routes: RouteObject[] = [
             path: 'products',
             element: (
               <RequireAdmin>
-                <AdminProductsPage />
+                <Outlet />
               </RequireAdmin>
             ),
+            children: [
+              { index: true, element: <AdminProductListPage /> },
+              { path: 'new', element: <AdminProductFormPage /> },
+              { path: ':productId/edit', element: <AdminProductFormPage /> },
+            ],
           },
           {
             path: 'after-sales',

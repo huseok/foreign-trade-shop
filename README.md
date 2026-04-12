@@ -30,7 +30,20 @@ npm run dev
 - 代码检查：`npm run lint`
 - **从 OpenAPI 重新生成类型**：`npm run codegen:openapi`
 
-后端基地址见环境变量 **`VITE_API_BASE_URL`**（默认 `http://localhost:8080`），详 **`INTEGRATION.md`**。
+### 后端 API 地址（`VITE_API_BASE_URL`）
+
+- **代码读取位置**：`src/lib/http/apiClient.ts` 中的 `API_BASE_URL`（`import.meta.env.VITE_API_BASE_URL`，未配置时默认 `http://localhost:8080`）。
+- **本地开发**：在 **`foreign-trade-shop` 根目录** 创建 **`.env.local`**（勿提交密钥；若团队用 gitignore 可忽略该文件）：
+
+  ```bash
+  VITE_API_BASE_URL=https://你的后端域名
+  ```
+
+  一般**不要**写末尾的 `/api/v1`（请求路径已在 `voyageSdk` 里带前缀）。修改后需 **重启** `npm run dev` 才会生效。
+
+- **生产 / CI**：在托管平台（Vercel、Netlify 等）配置同名环境变量 **`VITE_API_BASE_URL`**，再执行 `npm run build`。
+
+- **跨域**：后端需把前端 **Origin** 配进 **`APP_CORS_ALLOWED_ORIGINS`**（与 voyage 部署说明一致），详见 **[`INTEGRATION.md`](./INTEGRATION.md)** §4、§9。
 
 ## 路由一览
 

@@ -22,8 +22,9 @@ export type UpdateCartItemPayload = components['schemas']['UpdateCartItemRequest
 /** React Query 缓存键；修改结构时需全局搜索引用处 */
 export const queryKeys = {
   me: ['me'] as const,
-  products: ['products'] as const,
-  product: (id: number) => ['products', id] as const,
+  /** 作废所有商品相关查询（列表分页键均以 `products` 为前缀） */
+  productsRoot: ['products'] as const,
+  product: (id: number) => ['products', 'detail', id] as const,
   cart: ['cart'] as const,
   orders: ['orders'] as const,
   order: (orderNo: string) => ['orders', orderNo] as const,
@@ -51,10 +52,49 @@ export function useMe(enabled = true) {
   })
 }
 
-export function useProducts() {
+export type StorefrontProductsParams = {
+  page: number
+  size: number
+  country?: string
+  q?: string
+}
+
+/** 前台商品分页列表（仅上架） */
+export function useStorefrontProducts(params: StorefrontProductsParams, enabled = true) {
   return useQuery({
-    queryKey: queryKeys.products,
-    queryFn: () => voyage.products.list(),
+    queryKey: [
+      'products',
+      'store',
+      params.page,
+      params.size,
+      params.country ?? '',
+      params.q ?? '',
+    ] as const,
+    queryFn: () => voyage.products.listPaged(params),
+    enabled,
+  })
+}
+
+export type AdminProductsListParams = {
+  page: number
+  size: number
+  q?: string
+  /** 不传=全部；true=仅上架；false=仅下架 */
+  active?: boolean
+}
+
+/** 管理端商品分页列表（含下架） */
+export function useAdminProductsPage(params: AdminProductsListParams) {
+  return useQuery({
+    queryKey: [
+      'products',
+      'admin',
+      params.page,
+      params.size,
+      params.q ?? '',
+      params.active === true ? '1' : params.active === false ? '0' : '',
+    ] as const,
+    queryFn: () => voyage.products.adminListPaged(params),
   })
 }
 
@@ -66,13 +106,36 @@ export function useProductDetail(id?: number) {
   })
 }
 
+/** 管理端商品详情（含下架），用于编辑页 */
+export function useAdminProductDetail(id?: number) {
+  return useQuery({
+    queryKey: ['products', 'admin-detail', id ?? 0] as const,
+    queryFn: () => voyage.products.adminGetById(id!),
+    enabled: typeof id === 'number' && Number.isFinite(id),
+  })
+}
+
 /** 管理端新建商品；成功后刷新商品列表缓存 */
 export function useCreateAdminProduct() {
   const qc = useQueryClient()
   return useGuardedMutation({
     mutationFn: (payload: AdminProductUpsertRequest) => voyage.products.adminCreate(payload),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.products })
+      void qc.invalidateQueries({ queryKey: queryKeys.productsRoot })
+    },
+  })
+}
+
+/** 管理端更新商品；成功后刷新列表与对应详情缓存 */
+export function useUpdateAdminProduct() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: AdminProductUpsertRequest }) =>
+      voyage.products.adminUpdate(id, payload),
+    onSuccess: (_data, vars) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.productsRoot })
+      void qc.invalidateQueries({ queryKey: queryKeys.product(vars.id) })
+      void qc.invalidateQueries({ queryKey: ['products', 'admin-detail', vars.id] })
     },
   })
 }

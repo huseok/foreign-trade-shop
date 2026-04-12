@@ -90,6 +90,19 @@
           "currency": { "type": "string", "nullable": true }
         }
       },
+      "PagedProducts": {
+        "type": "object",
+        "required": ["items", "total", "page", "size"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProductView" }
+          },
+          "total": { "type": "integer", "format": "int64" },
+          "page": { "type": "integer" },
+          "size": { "type": "integer" }
+        }
+      },
       "ProductAdminUpsertRequest": {
         "type": "object",
         "required": ["title", "price", "currency", "moq", "isActive"],
@@ -355,12 +368,38 @@
       "get": {
         "tags": ["Storefront"],
         "operationId": "productsList",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码，从 0 开始",
+            "schema": { "type": "integer", "default": 0 }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "每页条数，最大 100",
+            "schema": { "type": "integer", "default": 20 }
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "description": "按原产国筛选（精确，不区分大小写）",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "标题 / SKU / ID 搜索",
+            "schema": { "type": "string" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
-                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ProductView" } }
+                "schema": { "$ref": "#/components/schemas/PagedProducts" }
               }
             }
           }
@@ -390,6 +429,45 @@
       }
     },
     "/api/v1/admin/products": {
+      "get": {
+        "tags": ["Admin"],
+        "operationId": "adminProductsList",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 0 }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10 }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "标题 / SKU / ID",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "active",
+            "in": "query",
+            "description": "true=仅上架，false=仅下架；不传=全部",
+            "schema": { "type": "string", "enum": ["true", "false"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PagedProducts" }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": ["Admin"],
         "operationId": "adminProductsCreate",
@@ -413,6 +491,27 @@
       }
     },
     "/api/v1/admin/products/{id}": {
+      "get": {
+        "tags": ["Admin"],
+        "operationId": "adminProductsGetById",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProductView" } }
+            }
+          }
+        }
+      },
       "put": {
         "tags": ["Admin"],
         "operationId": "adminProductsUpdate",
