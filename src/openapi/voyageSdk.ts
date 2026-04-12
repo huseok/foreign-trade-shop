@@ -24,6 +24,9 @@ export const voyage = {
     login(body: S['LoginRequest']): Promise<S['LoginResponse']> {
       return postData<S['LoginResponse']>('/api/v1/auth/login', body)
     },
+    refresh(body: S['RefreshTokenRequest']): Promise<S['LoginResponse']> {
+      return postData<S['LoginResponse']>('/api/v1/auth/refresh', body)
+    },
     changePassword(body: S['ChangePasswordRequest']): Promise<string> {
       return postData<string>('/api/v1/auth/change-password', body)
     },

@@ -99,7 +99,7 @@ VITE_API_BASE_URL=http://localhost:8080
 
 ## 7. 本地启动顺序
 
-1. 启动后端（在 `voyage` 根目录：远端库；**Docker** 为主路径，可选 **`gradlew bootRun`**，见 **`voyage/DEPLOY.md`**）。Docker 需 **`SPRING_DATASOURCE_PASSWORD`** 等（例如 **`docker compose --env-file .env.render.local up -d --build`**），否则容器起不来、Swagger 无法访问。
+1. 启动后端（在 `voyage` 根目录：远端库；**Docker** 为主路径，可选 **`gradlew bootRun`**，见 **`voyage/DEPLOY.md`**）。Docker 需 **`SPRING_DATASOURCE_PASSWORD`** 等（例如 **`docker compose --env-file .env.render.local up -d --build`**），否则容器起不来、Swagger 无法访问。登录接口返回 **accessToken + refreshToken**；前端会静默 refresh，**refresh 过期（默认约 14 天）后需重新登录**。
 
 ```bash
 cd ../voyage

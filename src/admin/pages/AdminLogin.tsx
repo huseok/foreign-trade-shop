@@ -9,6 +9,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { App, Button, Card, Form, Input, Typography } from 'antd'
 import { useLogin } from '../../hooks/apiHooks'
 import { authStore } from '../../lib/auth/authStore'
+import { scheduleAccessTokenRefresh } from '../../lib/http/apiClient'
 import { voyage } from '../../openapi/voyageSdk'
 import { toErrorMessage } from '../../lib/http/error'
 
@@ -28,7 +29,8 @@ export function AdminLogin() {
         email: values.email.trim(),
         password: values.password,
       })
-      authStore.setToken(loginResp.token)
+      authStore.setSession(loginResp.accessToken, loginResp.refreshToken, loginResp.expiresIn)
+      scheduleAccessTokenRefresh(loginResp.expiresIn)
       const me = await voyage.auth.me()
       if (me.role !== 'ADMIN') {
         authStore.clearToken()

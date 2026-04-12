@@ -14,6 +14,7 @@ type S = components['schemas']
 export type LoginRequest = S['LoginRequest']
 export type RegisterRequest = S['RegisterRequest']
 export type LoginResponse = S['LoginResponse']
+export type RefreshTokenRequest = S['RefreshTokenRequest']
 export type MeResponse = S['MeResponse']
 
 export type ProductDto = S['ProductView']

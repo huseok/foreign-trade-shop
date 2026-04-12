@@ -7,6 +7,7 @@ import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useLogin } from '../../hooks/apiHooks'
 import { authStore } from '../../lib/auth/authStore'
+import { scheduleAccessTokenRefresh } from '../../lib/http/apiClient'
 import { toErrorMessage } from '../../lib/http/error'
 import './Auth.scss'
 
@@ -27,7 +28,8 @@ export function Login() {
     const password = String(fd.get('password') ?? '')
     try {
       const resp = await loginMutation.mutateAsync({ email, password })
-      authStore.setToken(resp.token)
+      authStore.setSession(resp.accessToken, resp.refreshToken, resp.expiresIn)
+      scheduleAccessTokenRefresh(resp.expiresIn)
       setMsg('Sign in successful.')
       const redirectTo =
         (location.state as { from?: string } | undefined)?.from ?? '/'

@@ -1,4 +1,11 @@
-import { clearAccessToken, getAccessToken, setAccessToken } from './tokenStorage'
+import {
+  clearAllTokens,
+  getAccessToken,
+  getRefreshToken,
+  setAccessExpiresAtFromTtl,
+  setAccessToken,
+  setRefreshToken,
+} from './tokenStorage'
 
 /**
  * 轻量登录态存储：
@@ -6,12 +13,21 @@ import { clearAccessToken, getAccessToken, setAccessToken } from './tokenStorage
  */
 export const authStore = {
   getToken: getAccessToken,
-  setToken(token: string) {
-    setAccessToken(token)
+  getRefreshToken,
+
+  /** 登录或 refresh 成功后写入一对 token；`expiresIn` 为 access 剩余 TTL（秒） */
+  setSession(accessToken: string, refreshToken: string, expiresInSeconds?: number) {
+    setAccessToken(accessToken)
+    setRefreshToken(refreshToken)
+    if (typeof expiresInSeconds === 'number') {
+      setAccessExpiresAtFromTtl(expiresInSeconds)
+    }
   },
+
   clearToken() {
-    clearAccessToken()
+    clearAllTokens()
   },
+
   isLoggedIn(): boolean {
     return Boolean(getAccessToken())
   },

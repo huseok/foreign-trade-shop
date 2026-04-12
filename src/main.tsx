@@ -16,8 +16,11 @@ import { BrowserRouter } from 'react-router-dom'
 import { App as AntdApp, ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { queryClient } from './lib/query/queryClient'
+import { bootstrapAuthRefreshSchedule } from './lib/http/apiClient'
 import './index.css'
 import App from './App.tsx'
+
+bootstrapAuthRefreshSchedule()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
