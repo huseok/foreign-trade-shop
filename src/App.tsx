@@ -1,9 +1,9 @@
-/**
- * 前台商城 + 订单详情 + 管理员订单列表，共用 MainLayout（顶栏/底栏）。
- */
 import { useRoutes, Navigate } from 'react-router-dom'
 import { routes } from './router'
 
+/**
+ * 根组件：挂载 `routes` 并在末尾追加通配符路由，将未知路径重定向到商城首页。
+ */
 export default function App() {
   const element = useRoutes([
     ...routes,

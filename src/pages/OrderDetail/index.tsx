@@ -1,11 +1,11 @@
 /**
- * 订单详情：
- * 从后端按 orderNo 查询，支持确认收货与提交售后申请。
+ * 商城订单详情（路由参数 `:id` 实为后端 **orderNo**，可做 URL 编码）。
+ *
+ * 数据来自 `useOrderDetail` → `voyage.orders.getByOrderNo`；确认完成与售后创建走 `voyageSdk` 对应方法。
  */
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { afterSalesApi } from '../../api/afterSales'
-import { ordersApi } from '../../api/orders'
+import { voyage } from '../../openapi/voyageSdk'
 import { useOrderDetail } from '../../hooks/apiHooks'
 import { toErrorMessage } from '../../lib/http/error'
 import './OrderDetail.scss'
@@ -37,7 +37,7 @@ export function OrderDetail() {
   const onConfirmCompleted = async () => {
     if (!order) return
     try {
-      await ordersApi.confirmCompleted(order.orderNo)
+      await voyage.orders.confirmCompleted(order.orderNo)
       setMsg('Order marked as completed.')
       await refetch()
     } catch (err) {
@@ -48,7 +48,7 @@ export function OrderDetail() {
   const onCreateAfterSale = async () => {
     if (!order) return
     try {
-      await afterSalesApi.create({
+      await voyage.afterSales.create({
         orderNo: order.orderNo,
         content: 'Need after-sales support for this order.',
       })
@@ -74,8 +74,8 @@ export function OrderDetail() {
             <Link to="/catalog" className="btn btn--primary">
               Browse catalog
             </Link>
-            <Link to="/admin" className="btn btn--ghost">
-              Admin orders
+            <Link to="/admin/orders" className="btn btn--ghost">
+              管理后台订单
             </Link>
           </div>
         </div>
@@ -187,8 +187,8 @@ export function OrderDetail() {
           <Link to="/catalog" className="btn btn--primary">
             Continue shopping
           </Link>
-          <Link to="/admin" className="btn btn--ghost">
-            All orders (admin)
+          <Link to="/admin/orders" className="btn btn--ghost">
+            管理后台订单
           </Link>
           <Link to="/" className="btn btn--ghost">
             Back to home

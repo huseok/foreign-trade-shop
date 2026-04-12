@@ -1,7 +1,10 @@
+/**
+ * 用户注册页；提交走 `voyage.auth.register`，成功后引导至商城 `/login`。
+ */
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { authApi } from '../../api/auth'
+import { voyage } from '../../openapi/voyageSdk'
 import { toErrorMessage } from '../../lib/http/error'
 import './Auth.scss'
 
@@ -26,7 +29,7 @@ export function Register() {
     }
     try {
       setSubmitting(true)
-      await authApi.register(payload)
+      await voyage.auth.register(payload)
       setMsg('Register successful. Redirecting to sign in...')
       setTimeout(() => navigate('/login'), 800)
     } catch (err) {

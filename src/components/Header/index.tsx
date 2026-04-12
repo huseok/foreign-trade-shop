@@ -1,3 +1,7 @@
+/**
+ * 商城顶栏导航。
+ * 不包含管理后台入口；后台仅通过 `/admin/login` 或页脚「商家后台」进入，与主购物流程分离。
+ */
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useCart, useMe } from '../../hooks/apiHooks'
@@ -76,17 +80,6 @@ export function Header() {
           >
             {loggedIn ? me?.name ?? 'My account' : 'Account'}
           </NavLink>
-          {loggedIn && me?.role === 'ADMIN' && (
-            <NavLink
-              to="/admin/products"
-              className={({ isActive }) =>
-                isActive ? 'site-header__link is-active' : 'site-header__link'
-              }
-              onClick={() => setOpen(false)}
-            >
-              Admin Products
-            </NavLink>
-          )}
         </nav>
 
         <div className="site-header__search" role="search">

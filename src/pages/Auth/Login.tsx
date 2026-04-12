@@ -1,3 +1,7 @@
+/**
+ * 商城用户登录页（`/login`）。成功写入 token 后跳转 `location.state.from` 或首页。
+ * 管理员请使用 **`/admin/login`**，以便 401 与路由守卫与后台一致。
+ */
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'

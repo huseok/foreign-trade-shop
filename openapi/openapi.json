@@ -1,0 +1,733 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Voyage API",
+    "version": "1.0.0",
+    "description": "Globuy 后端 voyage。响应体为 { code, message, data }；前端 mutator 解包 data。本文件可与运行中服务 `GET /v3/api-docs` 对照同步。"
+  },
+  "servers": [{ "url": "/", "description": "相对路径，由 axios baseURL 拼接" }],
+  "tags": [
+    { "name": "Auth", "description": "认证" },
+    { "name": "Storefront", "description": "前台商城" },
+    { "name": "Admin", "description": "后台管理（ADMIN）" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["email", "password", "name"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 6 },
+          "name": { "type": "string" },
+          "phone": { "type": "string" },
+          "country": { "type": "string" }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "required": ["token"],
+        "properties": { "token": { "type": "string" } }
+      },
+      "MeResponse": {
+        "type": "object",
+        "required": ["id", "email", "name", "role"],
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "email": { "type": "string" },
+          "name": { "type": "string" },
+          "role": { "type": "string" }
+        }
+      },
+      "ChangePasswordRequest": {
+        "type": "object",
+        "required": ["oldPassword", "newPassword"],
+        "properties": {
+          "oldPassword": { "type": "string" },
+          "newPassword": { "type": "string", "minLength": 6 }
+        }
+      },
+      "ProductView": {
+        "type": "object",
+        "required": ["id", "title", "moq", "isActive"],
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "title": { "type": "string" },
+          "moq": { "type": "integer" },
+          "description": { "type": "string", "nullable": true },
+          "skuCode": { "type": "string", "nullable": true },
+          "hsCode": { "type": "string", "nullable": true },
+          "unit": { "type": "string", "nullable": true },
+          "incoterm": { "type": "string", "nullable": true },
+          "originCountry": { "type": "string", "nullable": true },
+          "leadTimeDays": { "type": "integer", "nullable": true },
+          "isActive": { "type": "boolean" },
+          "price": { "type": "number", "nullable": true },
+          "currency": { "type": "string", "nullable": true }
+        }
+      },
+      "ProductAdminUpsertRequest": {
+        "type": "object",
+        "required": ["title", "price", "currency", "moq", "isActive"],
+        "properties": {
+          "title": { "type": "string" },
+          "price": { "type": "number" },
+          "currency": { "type": "string" },
+          "moq": { "type": "integer", "minimum": 1 },
+          "description": { "type": "string" },
+          "skuCode": { "type": "string" },
+          "hsCode": { "type": "string" },
+          "unit": { "type": "string" },
+          "incoterm": { "type": "string" },
+          "originCountry": { "type": "string" },
+          "leadTimeDays": { "type": "integer" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "IdPayload": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "type": "integer", "format": "int64" } }
+      },
+      "AddCartItemRequest": {
+        "type": "object",
+        "required": ["productId", "quantity"],
+        "properties": {
+          "productId": { "type": "integer", "format": "int64" },
+          "quantity": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "UpdateCartItemRequest": {
+        "type": "object",
+        "required": ["quantity"],
+        "properties": { "quantity": { "type": "integer", "minimum": 1 } }
+      },
+      "CartItemView": {
+        "type": "object",
+        "required": [
+          "itemId",
+          "productId",
+          "title",
+          "quantity",
+          "unitPrice",
+          "currency",
+          "lineAmount"
+        ],
+        "properties": {
+          "itemId": { "type": "integer", "format": "int64" },
+          "productId": { "type": "integer", "format": "int64" },
+          "title": { "type": "string" },
+          "quantity": { "type": "integer" },
+          "unitPrice": { "type": "string" },
+          "currency": { "type": "string" },
+          "lineAmount": { "type": "string" }
+        }
+      },
+      "CartView": {
+        "type": "object",
+        "required": ["items", "totalAmount", "currency"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/CartItemView" } },
+          "totalAmount": { "type": "string" },
+          "currency": { "type": "string" }
+        }
+      },
+      "CreateOrderRequest": {
+        "type": "object",
+        "required": ["receiverName", "receiverPhone", "country", "addressLine"],
+        "properties": {
+          "receiverName": { "type": "string" },
+          "receiverPhone": { "type": "string" },
+          "country": { "type": "string" },
+          "addressLine": { "type": "string" },
+          "postalCode": { "type": "string" },
+          "receiverCompany": { "type": "string" },
+          "taxNo": { "type": "string" },
+          "incoterm": { "type": "string" },
+          "shippingMethod": { "type": "string" }
+        }
+      },
+      "OrderNoPayload": {
+        "type": "object",
+        "required": ["orderNo"],
+        "properties": { "orderNo": { "type": "string" } }
+      },
+      "OrderItemView": {
+        "type": "object",
+        "required": ["productId", "titleSnapshot", "priceSnapshot", "quantity"],
+        "properties": {
+          "productId": { "type": "integer", "format": "int64" },
+          "titleSnapshot": { "type": "string" },
+          "priceSnapshot": { "type": "string" },
+          "quantity": { "type": "integer" }
+        }
+      },
+      "OrderView": {
+        "type": "object",
+        "required": [
+          "orderNo",
+          "status",
+          "totalAmount",
+          "currency",
+          "receiverName",
+          "receiverPhone",
+          "country",
+          "addressLine",
+          "items"
+        ],
+        "properties": {
+          "orderNo": { "type": "string" },
+          "status": { "type": "string" },
+          "totalAmount": { "type": "string" },
+          "currency": { "type": "string" },
+          "receiverName": { "type": "string" },
+          "receiverPhone": { "type": "string" },
+          "receiverCompany": { "type": "string", "nullable": true },
+          "taxNo": { "type": "string", "nullable": true },
+          "country": { "type": "string" },
+          "addressLine": { "type": "string" },
+          "postalCode": { "type": "string", "nullable": true },
+          "incoterm": { "type": "string", "nullable": true },
+          "shippingMethod": { "type": "string", "nullable": true },
+          "logisticsCompany": { "type": "string", "nullable": true },
+          "trackingNo": { "type": "string", "nullable": true },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItemView" } }
+        }
+      },
+      "UpdateTrackingRequest": {
+        "type": "object",
+        "required": ["trackingNo"],
+        "properties": {
+          "trackingNo": { "type": "string" },
+          "logisticsCompany": { "type": "string" }
+        }
+      },
+      "UpdateOrderStatusRequest": {
+        "type": "object",
+        "required": ["status"],
+        "properties": { "status": { "type": "string" } }
+      },
+      "CreateAfterSaleRequest": {
+        "type": "object",
+        "required": ["orderNo", "content"],
+        "properties": {
+          "orderNo": { "type": "string" },
+          "content": { "type": "string" }
+        }
+      },
+      "AfterSaleView": {
+        "type": "object",
+        "required": ["id", "orderNo", "status", "content"],
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "orderNo": { "type": "string" },
+          "status": { "type": "string" },
+          "content": { "type": "string" }
+        }
+      },
+      "UpdateAfterSaleStatusRequest": {
+        "type": "object",
+        "required": ["status"],
+        "properties": { "status": { "type": "string" } }
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "operationId": "authRegister",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RegisterRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "registered",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "operationId": "authLogin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/LoginRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/LoginResponse" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "tags": ["Auth"],
+        "operationId": "authChangePassword",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ChangePasswordRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "operationId": "authMe",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/MeResponse" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products": {
+      "get": {
+        "tags": ["Storefront"],
+        "operationId": "productsList",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ProductView" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/{id}": {
+      "get": {
+        "tags": ["Storefront"],
+        "operationId": "productsGetById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProductView" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products": {
+      "post": {
+        "tags": ["Admin"],
+        "operationId": "adminProductsCreate",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductAdminUpsertRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/IdPayload" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products/{id}": {
+      "put": {
+        "tags": ["Admin"],
+        "operationId": "adminProductsUpdate",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductAdminUpsertRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/cart": {
+      "get": {
+        "tags": ["Storefront"],
+        "operationId": "cartGet",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/CartView" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cart/items": {
+      "post": {
+        "tags": ["Storefront"],
+        "operationId": "cartAddItem",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/AddCartItemRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/cart/items/{itemId}": {
+      "patch": {
+        "tags": ["Storefront"],
+        "operationId": "cartUpdateItem",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateCartItemRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Storefront"],
+        "operationId": "cartRemoveItem",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/orders": {
+      "get": {
+        "tags": ["Storefront"],
+        "operationId": "ordersListMine",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/OrderView" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Storefront"],
+        "operationId": "ordersCreate",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateOrderRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/OrderNoPayload" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{orderNo}": {
+      "get": {
+        "tags": ["Storefront"],
+        "operationId": "ordersGetByOrderNo",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/OrderView" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{orderNo}/confirm-completed": {
+      "patch": {
+        "tags": ["Storefront"],
+        "operationId": "ordersConfirmCompleted",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders": {
+      "get": {
+        "tags": ["Admin"],
+        "operationId": "adminOrdersList",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/OrderView" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders/{orderNo}/tracking-no": {
+      "patch": {
+        "tags": ["Admin"],
+        "operationId": "adminOrdersUpdateTracking",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateTrackingRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders/{orderNo}/status": {
+      "patch": {
+        "tags": ["Admin"],
+        "operationId": "adminOrdersUpdateStatus",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateOrderStatusRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/after-sales": {
+      "get": {
+        "tags": ["Storefront"],
+        "operationId": "afterSalesListMine",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AfterSaleView" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Storefront"],
+        "operationId": "afterSalesCreate",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateAfterSaleRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/after-sales": {
+      "get": {
+        "tags": ["Admin"],
+        "operationId": "adminAfterSalesList",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AfterSaleView" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/after-sales/{id}/status": {
+      "patch": {
+        "tags": ["Admin"],
+        "operationId": "adminAfterSalesUpdateStatus",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateAfterSaleStatusRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    }
+  }
+}

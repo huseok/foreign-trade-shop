@@ -1,3 +1,6 @@
+/**
+ * 商城页脚导航与版权条。
+ */
 import { Link } from 'react-router-dom'
 import './Footer.scss'
 
@@ -43,7 +46,8 @@ export function Footer() {
                 <a href="#returns">Returns</a>
               </li>
               <li>
-                <Link to="/admin">Admin · Orders</Link>
+                {/* 与商城顶栏一致：后台独立入口，避免与主购物流程混排 */}
+                <Link to="/admin/login">商家后台</Link>
               </li>
             </ul>
           </div>
