@@ -150,9 +150,10 @@ export function AdminOrdersPage() {
           setLogisticsCompany('')
         }}
         confirmLoading={trackingMut.isPending}
-        destroyOnClose
+        okButtonProps={{ disabled: trackingMut.isPending }}
+        destroyOnHidden
       >
-        <Space direction="vertical" style={{ width: '100%' }}>
+        <Space orientation="vertical" style={{ width: '100%' }}>
           <Input
             placeholder="运单号 trackingNo"
             value={trackingNo}
@@ -175,7 +176,8 @@ export function AdminOrdersPage() {
           setNextStatus('')
         }}
         confirmLoading={statusMut.isPending}
-        destroyOnClose
+        okButtonProps={{ disabled: statusMut.isPending }}
+        destroyOnHidden
       >
         <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
           合法流转示例：PENDING_PAYMENT→PAID→SHIPPED→DELIVERED→COMPLETED

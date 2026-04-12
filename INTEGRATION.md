@@ -17,6 +17,7 @@
 | Token 持久化 | `src/lib/auth/tokenStorage.ts` |
 | 内存中的登录态读写 | `src/lib/auth/authStore.ts` |
 | React Query 默认配置 | `src/lib/query/queryClient.ts` |
+| 变更请求的防连点合并（同 variables 并发 → 单 Promise） | `src/lib/mutation/useGuardedMutation.ts` |
 | OpenAPI 生成类型（勿手改） | `src/generated/voyage-paths.ts` |
 | 与契约一致的请求封装 | `src/openapi/voyageSdk.ts` |
 | 页面用 React Query hooks | `src/hooks/apiHooks.ts` |
@@ -137,3 +138,28 @@ npm run dev
 - **前端能开、列表空**：检查后端是否启动、数据库是否有种子数据。
 - **端口冲突**：后端改端口时同步 `VITE_API_BASE_URL`。
 - **CORS 报错**：后端通过 `APP_CORS_ALLOWED_ORIGINS` 配置，开发环境需包含前端实际端口（如 `5173`）。
+
+## 10. 防重复提交（前端）与后端是否要改
+
+### 10.1 前端：`useGuardedMutation`
+
+- **位置**：`src/lib/mutation/useGuardedMutation.ts`。
+- **用法**：`src/hooks/apiHooks.ts` 中所有 `useMutation` 已统一改为 `useGuardedMutation`；新增变更类 hook 时请同样使用它，避免各页面手写 `if (isPending) return` 漏改。
+- **行为**：对**相同请求参数**（`variables` 经稳定序列化，当前为 `JSON.stringify`）的**并发**调用会**复用同一条 Promise**，底层 `mutationFn` 只执行一次，减轻连点导致的双发。
+- **局限**：
+  - 只合并「参数完全一致且几乎同时触发」的重复；**参数不同**（例如购物车先改数量为 2 再改为 3）会各发一次，这是预期。
+  - **不能**替代输入防抖（如数量框连续输入）、也**不能**防止两个浏览器标签各提交一次。
+  - 与 TanStack Query v5 一致，`mutationFn` 签名为 `(variables, context)`，包装层会把 `context` 原样传给真实接口函数。
+- **UI**：页面仍建议保留提交按钮的 `disabled` / `loading`（体验与无障碍）；购物车等对「单行进行中」另有判断的代码见 `src/pages/Cart/index.tsx`。
+
+### 10.2 后端（voyage）：是否必须加处理？
+
+**不是必须**，前端合并已覆盖最常见的误触双发。但从**安全与正确性**看，后端仍建议按接口重要性逐步加强：
+
+| 场景 | 说明 |
+|------|------|
+| **一般读改写** | 登录、改购物车、改后台状态等多为「最后一次为准」或可接受重试；依赖 DB 约束即可的部分（如邮箱唯一）已有防护。 |
+| **下单 `POST /api/v1/orders`** | 当前实现会读购物车、建单后**清空购物车**。若两个请求**极短窗口内并发**且都读到非空购物车，理论上存在**双订单**风险（不依赖前端合并即可完全消除）。若要硬保证：**幂等键**（请求头 `Idempotency-Key` + 服务端短期去重或落库）、或对用户购物车/下单路径加**串行化**（例如用户级锁、或「下单中」状态）。 |
+| **滥用 / 刷接口** | 与「防连点」不同，需 **限流**（网关或 Spring）、验证码等，属运维与安全范畴。 |
+
+**结论**：MVP 可维持现状；若生产上最怕「同一用户双击出两单」，优先为 **创建订单** 增加幂等或并发控制，其余接口按需迭代即可。

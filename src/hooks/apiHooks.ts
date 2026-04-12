@@ -3,15 +3,17 @@
  *
  * - 查询键集中在 `queryKeys`，作废缓存时请使用同一前缀，避免 UI 与后端不一致。
  * - 变更成功后对 `cart` / `orders` / `products` / `admin*` 等键做 `invalidateQueries`，
- *   具体策略见各 `useMutation` 的 `onSuccess`。
+ *   具体策略见各 `useGuardedMutation` 的 `onSuccess`。
  */
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useGuardedMutation } from '../lib/mutation/useGuardedMutation'
 import type { components } from '../generated/voyage-paths'
 import { voyage } from '../openapi/voyageSdk'
 import type {
   AdminProductUpsertRequest,
   CreateOrderRequest,
   LoginRequest,
+  RegisterRequest,
 } from '../types/api'
 
 export type AddCartItemPayload = components['schemas']['AddCartItemRequest']
@@ -30,8 +32,14 @@ export const queryKeys = {
 }
 
 export function useLogin() {
-  return useMutation({
+  return useGuardedMutation({
     mutationFn: (payload: LoginRequest) => voyage.auth.login(payload),
+  })
+}
+
+export function useRegister() {
+  return useGuardedMutation({
+    mutationFn: (payload: RegisterRequest) => voyage.auth.register(payload),
   })
 }
 
@@ -61,7 +69,7 @@ export function useProductDetail(id?: number) {
 /** 管理端新建商品；成功后刷新商品列表缓存 */
 export function useCreateAdminProduct() {
   const qc = useQueryClient()
-  return useMutation({
+  return useGuardedMutation({
     mutationFn: (payload: AdminProductUpsertRequest) => voyage.products.adminCreate(payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.products })
@@ -79,7 +87,7 @@ export function useCart(enabled = true) {
 
 export function useAddCartItem() {
   const qc = useQueryClient()
-  return useMutation({
+  return useGuardedMutation({
     mutationFn: (payload: AddCartItemPayload) => voyage.cart.addItem(payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.cart })
@@ -89,7 +97,7 @@ export function useAddCartItem() {
 
 export function useUpdateCartItem() {
   const qc = useQueryClient()
-  return useMutation({
+  return useGuardedMutation({
     mutationFn: ({ itemId, payload }: { itemId: number; payload: UpdateCartItemPayload }) =>
       voyage.cart.updateItem(itemId, payload),
     onSuccess: () => {
@@ -100,7 +108,7 @@ export function useUpdateCartItem() {
 
 export function useRemoveCartItem() {
   const qc = useQueryClient()
-  return useMutation({
+  return useGuardedMutation({
     mutationFn: (itemId: number) => voyage.cart.removeItem(itemId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.cart })
@@ -111,7 +119,7 @@ export function useRemoveCartItem() {
 /** 下单成功后刷新购物车与「我的订单」列表 */
 export function useCreateOrder() {
   const qc = useQueryClient()
-  return useMutation({
+  return useGuardedMutation({
     mutationFn: (payload: CreateOrderRequest) => voyage.orders.create(payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.cart })
@@ -156,7 +164,7 @@ export function useAdminAfterSales() {
 /** 管理端：更新物流；成功后刷新管理订单与我的订单（若同一用户） */
 export function useAdminUpdateOrderTracking() {
   const qc = useQueryClient()
-  return useMutation({
+  return useGuardedMutation({
     mutationFn: ({
       orderNo,
       body,
@@ -174,7 +182,7 @@ export function useAdminUpdateOrderTracking() {
 /** 管理端：推进订单状态 */
 export function useAdminUpdateOrderStatus() {
   const qc = useQueryClient()
-  return useMutation({
+  return useGuardedMutation({
     mutationFn: ({
       orderNo,
       body,
@@ -192,7 +200,7 @@ export function useAdminUpdateOrderStatus() {
 /** 管理端：更新售后工单状态 */
 export function useAdminUpdateAfterSaleStatus() {
   const qc = useQueryClient()
-  return useMutation({
+  return useGuardedMutation({
     mutationFn: ({
       id,
       body,

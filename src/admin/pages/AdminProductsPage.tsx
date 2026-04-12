@@ -56,7 +56,7 @@ export function AdminProductsPage() {
   ]
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <Typography.Title level={4} style={{ margin: 0 }}>
         商品管理
       </Typography.Title>
@@ -133,7 +133,12 @@ export function AdminProductsPage() {
             <Checkbox>上架</Checkbox>
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit" loading={createMutation.isPending}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={createMutation.isPending}
+              disabled={createMutation.isPending}
+            >
               创建
             </Button>
           </Form.Item>

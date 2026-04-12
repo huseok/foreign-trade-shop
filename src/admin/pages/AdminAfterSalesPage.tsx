@@ -79,9 +79,10 @@ export function AdminAfterSalesPage() {
           setStatus('')
         }}
         confirmLoading={statusMut.isPending}
-        destroyOnClose
+        okButtonProps={{ disabled: statusMut.isPending }}
+        destroyOnHidden
       >
-        <Space direction="vertical" style={{ width: '100%' }}>
+        <Space orientation="vertical" style={{ width: '100%' }}>
           <Typography.Text type="secondary">工单 #{modal?.id}</Typography.Text>
           <Input placeholder="新状态" value={status} onChange={(e) => setStatus(e.target.value)} />
         </Space>

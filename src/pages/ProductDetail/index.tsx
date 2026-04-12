@@ -96,9 +96,10 @@ export function ProductDetail() {
                 <button
                   type="button"
                   className="btn btn--primary btn--lg"
-                  onClick={handleAdd}
+                  onClick={() => void handleAdd()}
+                  disabled={addItemMutation.isPending}
                 >
-                  Add to cart
+                  {addItemMutation.isPending ? 'Adding…' : 'Add to cart'}
                 </button>
                 {msg && (
                   <p className="product-detail__added" role="status">

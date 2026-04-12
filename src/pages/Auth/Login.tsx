@@ -68,7 +68,11 @@ export function Login() {
                 autoComplete="current-password"
               />
             </label>
-            <button type="submit" className="btn btn--primary btn--block">
+            <button
+              type="submit"
+              className="btn btn--primary btn--block"
+              disabled={loginMutation.isPending}
+            >
               {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
             </button>
           </form>

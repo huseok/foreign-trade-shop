@@ -225,7 +225,11 @@ export function Checkout() {
                   {currency} {subtotal.toFixed(2)}
                 </span>
               </div>
-              <button type="submit" className="btn btn--primary btn--block">
+              <button
+                type="submit"
+                className="btn btn--primary btn--block"
+                disabled={createOrderMutation.isPending}
+              >
                 {createOrderMutation.isPending ? 'Placing order...' : 'Place order'}
               </button>
               {submitMsg && <p className="checkout__legal">{submitMsg}</p>}

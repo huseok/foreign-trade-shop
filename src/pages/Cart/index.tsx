@@ -16,10 +16,24 @@ export function Cart() {
   const currency = cart?.currency ?? 'USD'
 
   const handleQtyChange = (itemId: number, qty: number) => {
+    if (
+      updateMutation.isPending &&
+      updateMutation.variables?.itemId === itemId
+    ) {
+      return
+    }
+    if (removeMutation.isPending && removeMutation.variables === itemId) return
     void updateMutation.mutate({ itemId, payload: { quantity: Math.max(1, qty) } })
   }
 
   const handleRemove = (itemId: number) => {
+    if (removeMutation.isPending && removeMutation.variables === itemId) return
+    if (
+      updateMutation.isPending &&
+      updateMutation.variables?.itemId === itemId
+    ) {
+      return
+    }
     void removeMutation.mutate(itemId)
   }
 
@@ -58,7 +72,15 @@ export function Cart() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((item) => (
+                  {rows.map((item) => {
+                    const rowUpdating =
+                      updateMutation.isPending &&
+                      updateMutation.variables?.itemId === item.itemId
+                    const rowRemoving =
+                      removeMutation.isPending &&
+                      removeMutation.variables === item.itemId
+                    const rowBusy = rowUpdating || rowRemoving
+                    return (
                     <tr key={item.itemId}>
                       <td>
                         <div className="cart-table__product">
@@ -88,6 +110,7 @@ export function Cart() {
                           min={1}
                           className="input input--qty"
                           value={item.quantity}
+                          disabled={rowBusy}
                           onChange={(e) =>
                             handleQtyChange(item.itemId, parseInt(e.target.value, 10) || 1)
                           }
@@ -101,13 +124,15 @@ export function Cart() {
                         <button
                           type="button"
                           className="cart-table__remove"
+                          disabled={rowBusy}
                           onClick={() => handleRemove(item.itemId)}
                         >
-                          Remove
+                          {rowRemoving ? '…' : 'Remove'}
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

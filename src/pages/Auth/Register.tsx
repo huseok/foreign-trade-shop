@@ -1,16 +1,16 @@
 /**
- * 用户注册页；提交走 `voyage.auth.register`，成功后引导至商城 `/login`。
+ * 用户注册页；提交走 `useRegister`（与登录一致经防重复合并），成功后引导至商城 `/login`。
  */
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { voyage } from '../../openapi/voyageSdk'
+import { useRegister } from '../../hooks/apiHooks'
 import { toErrorMessage } from '../../lib/http/error'
 import './Auth.scss'
 
 export function Register() {
   const [msg, setMsg] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+  const registerMutation = useRegister()
   const navigate = useNavigate()
 
   /**
@@ -28,14 +28,11 @@ export function Register() {
       country: String(fd.get('country') ?? '').trim() || undefined,
     }
     try {
-      setSubmitting(true)
-      await voyage.auth.register(payload)
+      await registerMutation.mutateAsync(payload)
       setMsg('Register successful. Redirecting to sign in...')
       setTimeout(() => navigate('/login'), 800)
     } catch (err) {
       setMsg(toErrorMessage(err, 'Registration failed'))
-    } finally {
-      setSubmitting(false)
     }
   }
 
@@ -87,8 +84,12 @@ export function Register() {
                 I agree to the Terms and Privacy Policy (placeholder).
               </span>
             </label>
-            <button type="submit" className="btn btn--primary btn--block">
-              {submitting ? 'Registering...' : 'Register'}
+            <button
+              type="submit"
+              className="btn btn--primary btn--block"
+              disabled={registerMutation.isPending}
+            >
+              {registerMutation.isPending ? 'Registering...' : 'Register'}
             </button>
           </form>
           {msg && <p className="auth__msg">{msg}</p>}

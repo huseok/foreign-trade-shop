@@ -76,7 +76,13 @@ export function AdminLogin() {
             <Input.Password autoComplete="current-password" />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit" block loading={loginMutation.isPending}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              block
+              loading={loginMutation.isPending}
+              disabled={loginMutation.isPending}
+            >
               登录
             </Button>
           </Form.Item>
