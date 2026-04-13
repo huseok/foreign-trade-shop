@@ -2,12 +2,11 @@
  * 管理端商品列表：服务端分页 + 关键词 + 上架状态；入口新建 / 行内编辑。
  */
 import { useEffect, useState } from 'react'
-import { App, Button, Card, Input, Modal, Popconfirm, Select, Space, Table, Typography, Upload } from 'antd'
-import type { ColumnsType } from 'antd/es/table'
+import { App, Button, Input, Modal, Popconfirm, Select, Space, Table, Typography, Upload } from 'antd'
+import { PageContainer, ProTable } from '@ant-design/pro-components'
+import type { ProColumns } from '@ant-design/pro-components'
 import { Link } from 'react-router-dom'
 import { useAdminBulkProductStatus, useAdminProductsPage, useMe } from '../../hooks/apiHooks'
-import { AdminFilterBar } from '../components/AdminFilterBar'
-import { AdminPageHeader } from '../components/AdminPageHeader'
 import type { ProductDto } from '../../types/api'
 import { voyage } from '../../openapi/voyageSdk'
 
@@ -57,17 +56,17 @@ export function AdminProductListPage() {
 
   if (me?.role !== 'ADMIN') {
     return (
-      <Card>
+      <div>
         <Typography.Title level={4}>无权限</Typography.Title>
         <Typography.Paragraph>请使用 ADMIN 账号从后台入口登录。</Typography.Paragraph>
-      </Card>
+      </div>
     )
   }
 
   const rows = data?.items ?? []
   const total = data?.total ?? 0
 
-  const columns: ColumnsType<ProductDto> = [
+  const columns: ProColumns<ProductDto>[] = [
     { title: 'ID', dataIndex: 'id', width: 72, fixed: 'left' },
     { title: '标题', dataIndex: 'title', ellipsis: true },
     { title: 'SKU', dataIndex: 'skuCode', width: 120, render: (v) => v ?? '—' },
@@ -75,6 +74,7 @@ export function AdminProductListPage() {
       title: '价格',
       key: 'price',
       width: 140,
+      search: false,
       render: (_, r) =>
         r.price == null ? '—' : `${r.currency ?? ''} ${Number(r.price).toFixed(2)}`,
     },
@@ -83,12 +83,13 @@ export function AdminProductListPage() {
       title: '状态',
       dataIndex: 'isActive',
       width: 88,
-      render: (v: boolean) => (v ? '上架' : '下架'),
+      render: (_, r) => (r.isActive ? '上架' : '下架'),
     },
     {
       title: '操作',
       key: 'actions',
       width: 180,
+      search: false,
       fixed: 'right',
       render: (_, r) => (
         <Space>
@@ -183,121 +184,116 @@ export function AdminProductListPage() {
   }
 
   return (
-    <div style={{ maxWidth: 1200 }}>
-      <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-        <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }} wrap>
-          <AdminPageHeader title="商品列表" description="支持按关键字和上下架状态筛选，点击可进入编辑页。" />
-          <Link to="/admin/products/new">
-            <Button type="primary">新建商品</Button>
-          </Link>
-        </Space>
-
-        <Card>
-          <Space orientation="vertical" size="middle" style={{ width: '100%', marginBottom: 16 }}>
-            <AdminFilterBar>
-              <Input.Search
-                allowClear
-                placeholder="搜索标题、SKU 或商品 ID（服务端）"
-                value={qInput}
-                onChange={(e) => setQInput(e.target.value)}
-                style={{ minWidth: 240, maxWidth: 360, flex: 1 }}
-              />
-              <Select<StatusFilter>
-                value={statusFilter}
-                onChange={setStatusFilter}
-                style={{ width: 140 }}
-                options={[
-                  { value: 'all', label: '全部状态' },
-                  { value: 'active', label: '仅上架' },
-                  { value: 'inactive', label: '仅下架' },
-                ]}
-              />
-              <Button
-                onClick={() => {
-                  setQInput('')
-                  setDebouncedQ('')
-                  setStatusFilter('all')
-                  setPage(0)
-                }}
-              >
-                重置条件
-              </Button>
-              <Button onClick={exportCsv}>导出CSV</Button>
-              <Button onClick={downloadTemplate}>下载导入模板</Button>
-              <Upload
-                accept=".csv"
-                showUploadList={false}
-                beforeUpload={(file) => {
-                  void importCsv(file)
-                  return false
-                }}
-              >
-                <Button>导入CSV</Button>
-              </Upload>
-              <Popconfirm
-                title={`确认批量上架 ${selectedIds.length} 条商品？`}
-                disabled={selectedIds.length === 0}
-                onConfirm={async () => {
-                  await bulkStatusMut.mutateAsync({ ids: selectedIds, isActive: true })
-                  message.success(`已批量上架 ${selectedIds.length} 条`)
-                  setSelectedIds([])
-                }}
-              >
-                <Button disabled={selectedIds.length === 0} loading={bulkStatusMut.isPending}>
-                  批量上架
-                </Button>
-              </Popconfirm>
-              <Popconfirm
-                title={`确认批量下架 ${selectedIds.length} 条商品？`}
-                disabled={selectedIds.length === 0}
-                onConfirm={async () => {
-                  await bulkStatusMut.mutateAsync({ ids: selectedIds, isActive: false })
-                  message.success(`已批量下架 ${selectedIds.length} 条`)
-                  setSelectedIds([])
-                }}
-              >
-                <Button danger disabled={selectedIds.length === 0} loading={bulkStatusMut.isPending}>
-                  批量下架
-                </Button>
-              </Popconfirm>
-            </AdminFilterBar>
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-              当前条件共 {total} 条（第 {page + 1} 页，每页 {pageSize} 条）
-            </Typography.Text>
-          </Space>
-          <Table<ProductDto>
-            rowKey="id"
-            loading={listLoading}
-            columns={columns}
-            dataSource={rows}
-            rowSelection={{
-              selectedRowKeys: selectedIds,
-              onChange: (keys) => setSelectedIds(keys.map((x) => Number(x))),
-            }}
-            scroll={{ x: 720 }}
-            pagination={{
-              current: page + 1,
-              pageSize,
-              total,
-              showSizeChanger: true,
-              showTotal: (t) => `共 ${t} 条`,
-              onChange: (p, ps) => {
-                setPage(p - 1)
-                setPageSize(ps)
-              },
-            }}
-            locale={{
-              emptyText: listLoading ? '加载中…' : '暂无数据',
-            }}
-          />
-        </Card>
+    <PageContainer
+      title="商品列表"
+      subTitle="支持筛选、批量上下架、CSV 导入导出与规格矩阵维护"
+      extra={[
+        <Link key="new" to="/admin/products/new">
+          <Button type="primary">新建商品</Button>
+        </Link>,
+      ]}
+    >
+      <Space wrap style={{ marginBottom: 12 }}>
+        <Input.Search
+          allowClear
+          placeholder="搜索标题、SKU 或商品 ID（服务端）"
+          value={qInput}
+          onChange={(e) => setQInput(e.target.value)}
+          style={{ width: 320 }}
+        />
+        <Select<StatusFilter>
+          value={statusFilter}
+          onChange={setStatusFilter}
+          style={{ width: 160 }}
+          options={[
+            { value: 'all', label: '全部状态' },
+            { value: 'active', label: '仅上架' },
+            { value: 'inactive', label: '仅下架' },
+          ]}
+        />
+        <Button
+          onClick={() => {
+            setQInput('')
+            setDebouncedQ('')
+            setStatusFilter('all')
+            setPage(0)
+          }}
+        >
+          重置条件
+        </Button>
+        <Button onClick={exportCsv}>导出CSV</Button>
+        <Button onClick={downloadTemplate}>下载导入模板</Button>
+        <Upload
+          accept=".csv"
+          showUploadList={false}
+          beforeUpload={(file) => {
+            void importCsv(file)
+            return false
+          }}
+        >
+          <Button>导入CSV</Button>
+        </Upload>
+        <Popconfirm
+          title={`确认批量上架 ${selectedIds.length} 条商品？`}
+          disabled={selectedIds.length === 0}
+          onConfirm={async () => {
+            await bulkStatusMut.mutateAsync({ ids: selectedIds, isActive: true })
+            message.success(`已批量上架 ${selectedIds.length} 条`)
+            setSelectedIds([])
+          }}
+        >
+          <Button disabled={selectedIds.length === 0} loading={bulkStatusMut.isPending}>
+            批量上架
+          </Button>
+        </Popconfirm>
+        <Popconfirm
+          title={`确认批量下架 ${selectedIds.length} 条商品？`}
+          disabled={selectedIds.length === 0}
+          onConfirm={async () => {
+            await bulkStatusMut.mutateAsync({ ids: selectedIds, isActive: false })
+            message.success(`已批量下架 ${selectedIds.length} 条`)
+            setSelectedIds([])
+          }}
+        >
+          <Button danger disabled={selectedIds.length === 0} loading={bulkStatusMut.isPending}>
+            批量下架
+          </Button>
+        </Popconfirm>
       </Space>
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        当前条件共 {total} 条（第 {page + 1} 页，每页 {pageSize} 条）
+      </Typography.Text>
+      <ProTable<ProductDto>
+        rowKey="id"
+        style={{ marginTop: 12 }}
+        loading={listLoading}
+        search={false}
+        options={false}
+        columns={columns}
+        dataSource={rows}
+        rowSelection={{
+          selectedRowKeys: selectedIds,
+          onChange: (keys) => setSelectedIds(keys.map((x) => Number(x))),
+        }}
+        scroll={{ x: 720 }}
+        pagination={{
+          current: page + 1,
+          pageSize,
+          total,
+          showSizeChanger: true,
+          showTotal: (t) => `共 ${t} 条`,
+          onChange: (p, ps) => {
+            setPage(p - 1)
+            setPageSize(ps)
+          },
+        }}
+      />
       <Modal
         title="CSV 导入报告"
         open={Boolean(importSummary)}
         onCancel={() => setImportSummary(null)}
         footer={null}
-        destroyOnHidden
+        destroyOnClose
       >
         <Typography.Paragraph>
           共 {importSummary?.total ?? 0} 行，成功 {importSummary?.ok ?? 0} 行，失败 {importErrors.length} 行。
@@ -312,6 +308,6 @@ export function AdminProductListPage() {
           ]}
         />
       </Modal>
-    </div>
+    </PageContainer>
   )
 }

@@ -2,7 +2,8 @@
  * 管理端商品新建（`/admin/products/new`）或编辑（`/admin/products/:productId/edit`）。
  */
 import { useEffect } from 'react'
-import { App, Breadcrumb, Button, Card, Form, Result, Space, Spin, Typography } from 'antd'
+import { App, Button, Card, Form, Result, Space, Spin, Typography } from 'antd'
+import { PageContainer } from '@ant-design/pro-components'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AdminProductUpsertFields } from '../components/AdminProductUpsertFields'
 import {
@@ -16,7 +17,29 @@ import {
 import type { AdminProductUpsertRequest, ProductDto } from '../../types/api'
 import { toErrorMessage } from '../../lib/http/error'
 
-function valuesToPayload(values: Record<string, unknown>): AdminProductUpsertRequest {
+type ProductFormValues = {
+  title: string
+  price: number
+  currency: string
+  moq: number
+  description?: string
+  skuCode?: string
+  hsCode?: string
+  unit?: string
+  incoterm?: string
+  originCountry?: string
+  leadTimeDays?: number
+  weightKg?: number
+  categoryId?: number
+  shippingTemplateId?: number
+  isActive: boolean
+}
+
+type ProductFormOps = {
+  setFieldsValue: (values: Partial<ProductFormValues>) => void
+}
+
+function valuesToPayload(values: ProductFormValues): AdminProductUpsertRequest {
   return {
     title: String(values.title ?? '').trim(),
     price: Number(values.price),
@@ -28,10 +51,7 @@ function valuesToPayload(values: Record<string, unknown>): AdminProductUpsertReq
     unit: values.unit ? String(values.unit).trim() : undefined,
     incoterm: values.incoterm ? String(values.incoterm).trim().toUpperCase() : undefined,
     originCountry: values.originCountry ? String(values.originCountry).trim() : undefined,
-    leadTimeDays:
-      values.leadTimeDays === undefined || values.leadTimeDays === null || values.leadTimeDays === ''
-        ? undefined
-        : Number(values.leadTimeDays),
+    leadTimeDays: values.leadTimeDays == null ? undefined : Number(values.leadTimeDays),
     // 以下字段后端已支持，当前前端类型源于旧 OpenAPI，故通过扩展对象传递。
     ...(values.weightKg != null ? { weightKg: Number(values.weightKg) } : {}),
     ...(values.categoryId != null ? { categoryId: Number(values.categoryId) } : {}),
@@ -64,7 +84,7 @@ export function AdminProductFormPage() {
   const { productId } = useParams<{ productId: string }>()
   const navigate = useNavigate()
   const { message } = App.useApp()
-  const [form] = Form.useForm()
+  const [form] = Form.useForm<ProductFormValues>()
 
   const idNum = productId ? Number(productId) : NaN
   const isEdit = productId != null && productId !== 'new' && Number.isFinite(idNum)
@@ -79,7 +99,7 @@ export function AdminProductFormPage() {
 
   useEffect(() => {
     if (product && isEdit) {
-      form.setFieldsValue(productToFormValues(product))
+      ;(form as unknown as ProductFormOps).setFieldsValue(productToFormValues(product))
     }
   }, [product, isEdit, form])
 
@@ -141,24 +161,23 @@ export function AdminProductFormPage() {
   const submitting = createMutation.isPending || updateMutation.isPending
 
   return (
-    <div style={{ maxWidth: 920, margin: '0 auto' }}>
-      <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-        <Breadcrumb
-          items={[
-            { title: <Link to="/admin/products">商品列表</Link> },
-            { title: isEdit ? `编辑 #${idNum}` : '新建商品' },
-          ]}
-        />
-
-        <Typography.Title level={4} style={{ margin: 0 }}>
-          {isEdit ? `编辑商品：${product?.title ?? ''}` : '新建商品'}
-        </Typography.Title>
-
+    <PageContainer
+      style={{ maxWidth: 920, margin: '0 auto' }}
+      title={isEdit ? `编辑商品：${product?.title ?? ''}` : '新建商品'}
+      subTitle={isEdit ? `商品 ID #${idNum}` : '填写基础信息与分类、运费模板等'}
+      breadcrumb={{
+        items: [
+          { title: <Link to="/admin/products">商品列表</Link> },
+          { title: isEdit ? `编辑 #${idNum}` : '新建商品' },
+        ],
+      }}
+    >
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <Card>
           <Form
             form={form}
             layout="vertical"
-            onFinish={async (values) => {
+            onFinish={async (values: ProductFormValues) => {
               const payload = valuesToPayload(values)
               try {
                 if (isEdit && product) {
@@ -190,6 +209,6 @@ export function AdminProductFormPage() {
           </Form>
         </Card>
       </Space>
-    </div>
+    </PageContainer>
   )
 }

@@ -33,6 +33,7 @@ export const queryKeys = {
   categories: ['categories'] as const,
   shippingTemplates: ['shipping', 'templates'] as const,
   dictTypes: ['dicts', 'types'] as const,
+  dictItems: (dictCode: string) => ['dicts', 'items', dictCode] as const,
   siteContents: ['site', 'contents'] as const,
   auditLogs: ['audit', 'logs'] as const,
   userAddresses: ['user', 'addresses'] as const,
@@ -293,8 +294,21 @@ export function useAdminUpdateOrderStatus() {
       body,
     }: {
       orderNo: string
-      body: components['schemas']['UpdateOrderStatusRequest']
+      body: { status: string; remark?: string }
     }) => voyage.orders.adminUpdateStatus(orderNo, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.adminOrders })
+      void qc.invalidateQueries({ queryKey: queryKeys.orders })
+    },
+  })
+}
+
+/** 管理端：按字典流转到下一状态 */
+export function useAdminFlowNextOrderStatus() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: ({ orderNo, remark }: { orderNo: string; remark?: string }) =>
+      voyage.orders.adminFlowNextStatus(orderNo, { remark }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.adminOrders })
       void qc.invalidateQueries({ queryKey: queryKeys.orders })
@@ -407,6 +421,14 @@ export function useDictTypes() {
   return useQuery({
     queryKey: queryKeys.dictTypes,
     queryFn: () => voyage.dicts.listTypes(),
+  })
+}
+
+export function useDictItems(dictCode: string, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.dictItems(dictCode),
+    queryFn: () => voyage.dicts.listItems(dictCode),
+    enabled,
   })
 }
 

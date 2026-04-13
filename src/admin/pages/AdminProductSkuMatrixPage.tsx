@@ -1,4 +1,6 @@
-import { App, Button, Card, Form, Input, InputNumber, Space, Switch, Table, Typography } from 'antd'
+import { App, Button, Card, Form, Input, InputNumber, Space, Switch, Typography } from 'antd'
+import { PageContainer, ProTable } from '@ant-design/pro-components'
+import type { ProColumns } from '@ant-design/pro-components'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAdminProductSkuMatrix, useAdminUpsertProductSkuMatrix } from '../../hooks/apiHooks'
@@ -206,9 +208,79 @@ export function AdminProductSkuMatrixPage() {
     }
   }
 
+  const skuColumns: ProColumns<MatrixRow>[] = [
+    {
+      title: '属性组合',
+      key: 'attrs',
+      search: false,
+      render: (_, r) => Object.entries(r.attrs).map(([k, v]) => `${k}:${v}`).join(' / '),
+    },
+    {
+      title: 'SKU',
+      key: 'skuCode',
+      search: false,
+      render: (_, r, idx) => (
+        <Input
+          status={duplicatedSkuCodes.includes(r.skuCode.trim().toUpperCase()) ? 'error' : undefined}
+          value={r.skuCode}
+          onChange={(e) =>
+            setRows((prev) =>
+              prev.map((x, i) => (i === idx ? { ...x, skuCode: e.target.value.toUpperCase() } : x))
+            )
+          }
+        />
+      ),
+    },
+    {
+      title: '价格',
+      key: 'salePrice',
+      search: false,
+      render: (_, r, idx) => (
+        <InputNumber
+          min={0.01}
+          value={r.salePrice}
+          onChange={(v) => setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, salePrice: Number(v ?? 0) } : x)))}
+        />
+      ),
+    },
+    {
+      title: '库存',
+      key: 'stockQty',
+      search: false,
+      render: (_, r, idx) => (
+        <InputNumber
+          min={0}
+          value={r.stockQty}
+          onChange={(v) => setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, stockQty: Number(v ?? 0) } : x)))}
+        />
+      ),
+    },
+    {
+      title: '重量(kg)',
+      key: 'weightKg',
+      search: false,
+      render: (_, r, idx) => (
+        <InputNumber
+          min={0}
+          value={r.weightKg}
+          onChange={(v) => setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, weightKg: v == null ? undefined : Number(v) } : x)))}
+        />
+      ),
+    },
+    {
+      title: '启用',
+      key: 'isActive',
+      search: false,
+      render: (_, r, idx) => (
+        <Switch checked={r.isActive} onChange={(v) => setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, isActive: v } : x)))} />
+      ),
+    },
+  ]
+
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      <Card title={`SKU 规格矩阵（商品 #${id}）`} loading={isLoading}>
+    <PageContainer title={`SKU 规格矩阵（商品 #${id}）`} subTitle="至少 3 个属性维度，生成笛卡尔积后维护价格/库存/重量">
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Card title="属性与生成" loading={isLoading}>
         <Typography.Paragraph type="secondary">建议至少 3 个属性，例如 Color / Size / Pack。</Typography.Paragraph>
         <Form layout="vertical">
           {attrs.map((a, i) => (
@@ -279,36 +351,16 @@ export function AdminProductSkuMatrixPage() {
         </Card>
       )}
       <Card title="SKU 组合列表">
-        <Table
+        <ProTable<MatrixRow>
           rowKey="key"
+          search={false}
+          options={false}
+          columns={skuColumns}
           dataSource={rows}
-          columns={[
-            { title: '属性组合', key: 'attrs', render: (_, r) => Object.entries(r.attrs).map(([k, v]) => `${k}:${v}`).join(' / ') },
-            {
-              title: 'SKU',
-              key: 'skuCode',
-              render: (_, r, idx) => (
-                <Input
-                  status={
-                    duplicatedSkuCodes.includes(r.skuCode.trim().toUpperCase()) ? 'error' : undefined
-                  }
-                  value={r.skuCode}
-                  onChange={(e) =>
-                    setRows((prev) =>
-                      prev.map((x, i) => (i === idx ? { ...x, skuCode: e.target.value.toUpperCase() } : x))
-                    )
-                  }
-                />
-              ),
-            },
-            { title: '价格', key: 'salePrice', render: (_, r, idx) => <InputNumber min={0.01} value={r.salePrice} onChange={(v) => setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, salePrice: Number(v ?? 0) } : x)))} /> },
-            { title: '库存', key: 'stockQty', render: (_, r, idx) => <InputNumber min={0} value={r.stockQty} onChange={(v) => setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, stockQty: Number(v ?? 0) } : x)))} /> },
-            { title: '重量(kg)', key: 'weightKg', render: (_, r, idx) => <InputNumber min={0} value={r.weightKg} onChange={(v) => setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, weightKg: v == null ? undefined : Number(v) } : x)))} /> },
-            { title: '启用', key: 'isActive', render: (_, r, idx) => <Switch checked={r.isActive} onChange={(v) => setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, isActive: v } : x)))} /> },
-          ]}
-          pagination={{ pageSize: 20 }}
+          pagination={{ pageSize: 20, showSizeChanger: true }}
         />
       </Card>
     </Space>
+    </PageContainer>
   )
 }

@@ -5,12 +5,16 @@
  */
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { App, Button, Input, Modal, Space, Table, Tag, Typography } from 'antd'
-import type { ColumnsType } from 'antd/es/table'
+import { App, Button, Input, Modal, Select, Space, Table, Tag, Typography } from 'antd'
+import { PageContainer, ProTable } from '@ant-design/pro-components'
+import type { ProColumns } from '@ant-design/pro-components'
+import type { ChangeEvent } from 'react'
 import {
+  useAdminFlowNextOrderStatus,
   useAdminOrders,
   useAdminUpdateOrderStatus,
   useAdminUpdateOrderTracking,
+  useDictItems,
 } from '../../hooks/apiHooks'
 import type { components } from '../../generated/voyage-paths'
 import { voyage } from '../../openapi/voyageSdk'
@@ -34,33 +38,37 @@ function statusColor(status: string) {
 export function AdminOrdersPage() {
   const { message } = App.useApp()
   const { data: orders = [], isLoading, refetch } = useAdminOrders()
+  const { data: orderStatusItems = [] } = useDictItems('ORDER_STATUS')
   const trackingMut = useAdminUpdateOrderTracking()
   const statusMut = useAdminUpdateOrderStatus()
+  const flowNextMut = useAdminFlowNextOrderStatus()
   const [trackingModal, setTrackingModal] = useState<OrderRow | null>(null)
   const [trackingNo, setTrackingNo] = useState('')
   const [logisticsCompany, setLogisticsCompany] = useState('')
   const [statusModal, setStatusModal] = useState<OrderRow | null>(null)
   const [nextStatus, setNextStatus] = useState('')
+  const [statusRemark, setStatusRemark] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [keyword, setKeyword] = useState('')
   const [historyModalOrderNo, setHistoryModalOrderNo] = useState<string | null>(null)
   const [histories, setHistories] = useState<Array<{ fromStatus?: string; toStatus: string; changedAt: string; remark?: string }>>([])
   const [historyLoading, setHistoryLoading] = useState(false)
 
-  const columns: ColumnsType<OrderRow> = [
+  const columns: ProColumns<OrderRow>[] = [
     {
       title: '订单号',
       dataIndex: 'orderNo',
-      render: (no: string) => <Typography.Text code>{no}</Typography.Text>,
+      render: (_, r) => <Typography.Text code>{r.orderNo}</Typography.Text>,
     },
     {
       title: '状态',
       dataIndex: 'status',
-      render: (s: string) => <Tag color={statusColor(s)}>{s}</Tag>,
+      render: (_, r) => <Tag color={statusColor(r.status)}>{r.status}</Tag>,
     },
     {
       title: '金额',
       key: 'amt',
+      search: false,
       render: (_, r) => `${r.currency} ${Number(r.totalAmount).toFixed(2)}`,
     },
     {
@@ -70,11 +78,13 @@ export function AdminOrdersPage() {
     {
       title: '运单',
       key: 'track',
+      search: false,
       render: (_, r) => r.trackingNo ?? '—',
     },
     {
       title: '操作',
       key: 'actions',
+      search: false,
       render: (_, r) => (
         <Space wrap>
           <Link to={`/orders/${encodeURIComponent(r.orderNo)}`} target="_blank" rel="noreferrer">
@@ -135,50 +145,68 @@ export function AdminOrdersPage() {
 
   const submitStatus = async () => {
     if (!statusModal || !nextStatus.trim()) {
-      message.warning('请填写目标状态')
+      message.warning('请选择目标状态')
       return
     }
     try {
       await statusMut.mutateAsync({
         orderNo: statusModal.orderNo,
-        body: { status: nextStatus.trim().toUpperCase() },
+        body: { status: nextStatus.trim().toUpperCase(), remark: statusRemark.trim() || undefined },
       })
       message.success('状态已更新')
       setStatusModal(null)
       setNextStatus('')
+      setStatusRemark('')
       void refetch()
     } catch {
       message.error('更新失败（请检查状态流转是否合法）')
     }
   }
 
+  const submitFlowNext = async () => {
+    if (!statusModal) return
+    try {
+      await flowNextMut.mutateAsync({
+        orderNo: statusModal.orderNo,
+        remark: statusRemark.trim() || undefined,
+      })
+      message.success('已自动流转到下一环节')
+      setStatusModal(null)
+      setNextStatus('')
+      setStatusRemark('')
+      void refetch()
+    } catch {
+      message.error('流转失败（请检查字典配置和当前状态）')
+    }
+  }
+
   return (
-    <>
-      <Typography.Title level={4} style={{ marginTop: 0 }}>
-        订单管理
-      </Typography.Title>
-      <Typography.Paragraph type="secondary">
-        数据来自后端 <Typography.Text code>/api/v1/admin/orders</Typography.Text>。
-      </Typography.Paragraph>
+    <PageContainer title="订单管理" subTitle="状态字典化 + 手动选择 + 自动流转">
       <Space style={{ marginBottom: 12 }} wrap>
         <Input
           allowClear
           placeholder="按订单号/收货人筛选"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          style={{ width: 260 }}
+          style={{ width: 280 }}
         />
-        <Input
+        <Select
           allowClear
-          placeholder="按状态筛选，如 SHIPPED"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value.trim().toUpperCase())}
-          style={{ width: 220 }}
+          placeholder="按状态筛选"
+          value={statusFilter || undefined}
+          style={{ width: 260 }}
+          onChange={(value) => setStatusFilter(value ?? '')}
+          options={orderStatusItems.map((item) => ({
+            value: item.itemCode,
+            label: `${item.itemLabel} (${item.itemCode})`,
+          }))}
         />
       </Space>
-      <Table<OrderRow>
+      <ProTable<OrderRow>
         rowKey="orderNo"
         loading={isLoading}
+        search={false}
+        options={false}
         columns={columns}
         dataSource={filteredOrders}
         pagination={{ pageSize: 10, showSizeChanger: true }}
@@ -195,9 +223,9 @@ export function AdminOrdersPage() {
         }}
         confirmLoading={trackingMut.isPending}
         okButtonProps={{ disabled: trackingMut.isPending }}
-        destroyOnHidden
+        destroyOnClose
       >
-        <Space orientation="vertical" style={{ width: '100%' }}>
+        <Space direction="vertical" style={{ width: '100%' }}>
           <Input
             placeholder="运单号 trackingNo"
             value={trackingNo}
@@ -216,7 +244,7 @@ export function AdminOrdersPage() {
         open={Boolean(historyModalOrderNo)}
         onCancel={() => setHistoryModalOrderNo(null)}
         footer={null}
-        destroyOnHidden
+        destroyOnClose
       >
         <Table
           rowKey={(_, idx) => String(idx)}
@@ -239,20 +267,43 @@ export function AdminOrdersPage() {
         onCancel={() => {
           setStatusModal(null)
           setNextStatus('')
+          setStatusRemark('')
         }}
-        confirmLoading={statusMut.isPending}
-        okButtonProps={{ disabled: statusMut.isPending }}
-        destroyOnHidden
+        confirmLoading={statusMut.isPending || flowNextMut.isPending}
+        okButtonProps={{ disabled: statusMut.isPending || flowNextMut.isPending }}
+        cancelButtonProps={{ disabled: statusMut.isPending || flowNextMut.isPending }}
+        footer={(_, { OkBtn, CancelBtn }) => (
+          <>
+            <Button onClick={() => void submitFlowNext()} loading={flowNextMut.isPending}>
+              流转下一环节
+            </Button>
+            <CancelBtn />
+            <OkBtn />
+          </>
+        )}
+        destroyOnClose
       >
         <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
-          合法流转示例：PENDING_PAYMENT→PAID→SHIPPED→DELIVERED→COMPLETED
+          状态来源于字典 ORDER_STATUS；可手动选择目标状态，或一键流转到下一环节。
         </Typography.Paragraph>
-        <Input
-          placeholder="目标状态，如 PAID"
+        <Select
+          placeholder="选择目标状态"
           value={nextStatus}
-          onChange={(e) => setNextStatus(e.target.value)}
+          onChange={setNextStatus}
+          style={{ width: '100%' }}
+          options={orderStatusItems.map((item) => ({
+            value: item.itemCode,
+            label: `${item.itemLabel} (${item.itemCode})`,
+          }))}
+        />
+        <Input.TextArea
+          style={{ marginTop: 12 }}
+          rows={3}
+          placeholder="流转备注（可选）"
+          value={statusRemark}
+          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setStatusRemark(e.target.value)}
         />
       </Modal>
-    </>
+    </PageContainer>
   )
 }

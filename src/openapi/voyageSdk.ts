@@ -150,8 +150,11 @@ export const voyage = {
     adminUpdateTracking(orderNo: string, body: S['UpdateTrackingRequest']): Promise<string> {
       return patchData<string>(`/api/v1/admin/orders/${orderNo}/tracking-no`, body)
     },
-    adminUpdateStatus(orderNo: string, body: S['UpdateOrderStatusRequest']): Promise<string> {
+    adminUpdateStatus(orderNo: string, body: { status: string; remark?: string }): Promise<string> {
       return patchData<string>(`/api/v1/admin/orders/${orderNo}/status`, body)
+    },
+    adminFlowNextStatus(orderNo: string, body?: { remark?: string }): Promise<string> {
+      return patchData<string>(`/api/v1/admin/orders/${orderNo}/status/flow-next`, body)
     },
   },
 
