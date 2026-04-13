@@ -5,6 +5,10 @@
  */
 import { Layout, Menu, Typography, theme } from 'antd'
 import {
+  AppstoreOutlined,
+  BookOutlined,
+  ClusterOutlined,
+  FileSearchOutlined,
   GlobalOutlined,
   LogoutOutlined,
   ShoppingCartOutlined,
@@ -27,6 +31,11 @@ export function AdminLayout() {
   const selected = (() => {
     if (location.pathname.startsWith('/admin/products')) return ['products']
     if (location.pathname.startsWith('/admin/after-sales')) return ['after-sales']
+    if (location.pathname.startsWith('/admin/categories')) return ['categories']
+    if (location.pathname.startsWith('/admin/shipping')) return ['shipping']
+    if (location.pathname.startsWith('/admin/dicts')) return ['dicts']
+    if (location.pathname.startsWith('/admin/site-contents')) return ['site']
+    if (location.pathname.startsWith('/admin/audit')) return ['audit']
     return ['orders']
   })()
 
@@ -47,7 +56,7 @@ export function AdminLayout() {
             letterSpacing: 0.02,
           }}
         >
-          Globuy Admin
+          CHZfobkey Admin
         </div>
         <Menu
           theme="dark"
@@ -68,6 +77,31 @@ export function AdminLayout() {
               key: 'after-sales',
               icon: <TeamOutlined />,
               label: <Link to="/admin/after-sales">售后</Link>,
+            },
+            {
+              key: 'categories',
+              icon: <ClusterOutlined />,
+              label: <Link to="/admin/categories">分类</Link>,
+            },
+            {
+              key: 'shipping',
+              icon: <AppstoreOutlined />,
+              label: <Link to="/admin/shipping">运费模板</Link>,
+            },
+            {
+              key: 'dicts',
+              icon: <BookOutlined />,
+              label: <Link to="/admin/dicts">字典管理</Link>,
+            },
+            {
+              key: 'site',
+              icon: <FileSearchOutlined />,
+              label: <Link to="/admin/site-contents">站点内容</Link>,
+            },
+            {
+              key: 'audit',
+              icon: <FileSearchOutlined />,
+              label: <Link to="/admin/audit">操作日志</Link>,
             },
           ]}
         />

@@ -13,6 +13,7 @@ import {
   useAdminUpdateOrderTracking,
 } from '../../hooks/apiHooks'
 import type { components } from '../../generated/voyage-paths'
+import { voyage } from '../../openapi/voyageSdk'
 
 type OrderRow = components['schemas']['OrderView']
 
@@ -40,6 +41,11 @@ export function AdminOrdersPage() {
   const [logisticsCompany, setLogisticsCompany] = useState('')
   const [statusModal, setStatusModal] = useState<OrderRow | null>(null)
   const [nextStatus, setNextStatus] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [keyword, setKeyword] = useState('')
+  const [historyModalOrderNo, setHistoryModalOrderNo] = useState<string | null>(null)
+  const [histories, setHistories] = useState<Array<{ fromStatus?: string; toStatus: string; changedAt: string; remark?: string }>>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
 
   const columns: ColumnsType<OrderRow> = [
     {
@@ -80,10 +86,32 @@ export function AdminOrdersPage() {
           <Button type="link" size="small" onClick={() => setStatusModal(r)}>
             状态
           </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={async () => {
+              setHistoryModalOrderNo(r.orderNo)
+              setHistoryLoading(true)
+              try {
+                const data = await voyage.audit.listOrderHistoriesByOrderNo(r.orderNo)
+                setHistories(data)
+              } finally {
+                setHistoryLoading(false)
+              }
+            }}
+          >
+            日志
+          </Button>
         </Space>
       ),
     },
   ]
+  const filteredOrders = orders.filter((o) => {
+    const statusOk = !statusFilter || o.status === statusFilter
+    const key = keyword.trim().toLowerCase()
+    const kwOk = !key || `${o.orderNo} ${o.receiverName}`.toLowerCase().includes(key)
+    return statusOk && kwOk
+  })
 
   const submitTracking = async () => {
     if (!trackingModal || !trackingNo.trim()) {
@@ -132,11 +160,27 @@ export function AdminOrdersPage() {
       <Typography.Paragraph type="secondary">
         数据来自后端 <Typography.Text code>/api/v1/admin/orders</Typography.Text>。
       </Typography.Paragraph>
+      <Space style={{ marginBottom: 12 }} wrap>
+        <Input
+          allowClear
+          placeholder="按订单号/收货人筛选"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          style={{ width: 260 }}
+        />
+        <Input
+          allowClear
+          placeholder="按状态筛选，如 SHIPPED"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value.trim().toUpperCase())}
+          style={{ width: 220 }}
+        />
+      </Space>
       <Table<OrderRow>
         rowKey="orderNo"
         loading={isLoading}
         columns={columns}
-        dataSource={orders}
+        dataSource={filteredOrders}
         pagination={{ pageSize: 10, showSizeChanger: true }}
       />
 
@@ -165,6 +209,27 @@ export function AdminOrdersPage() {
             onChange={(e) => setLogisticsCompany(e.target.value)}
           />
         </Space>
+      </Modal>
+
+      <Modal
+        title={`状态流转日志：${historyModalOrderNo ?? ''}`}
+        open={Boolean(historyModalOrderNo)}
+        onCancel={() => setHistoryModalOrderNo(null)}
+        footer={null}
+        destroyOnHidden
+      >
+        <Table
+          rowKey={(_, idx) => String(idx)}
+          loading={historyLoading}
+          pagination={false}
+          dataSource={histories}
+          columns={[
+            { title: '从状态', dataIndex: 'fromStatus', render: (v) => v ?? '-' },
+            { title: '到状态', dataIndex: 'toStatus' },
+            { title: '时间', dataIndex: 'changedAt' },
+            { title: '备注', dataIndex: 'remark', render: (v) => v ?? '-' },
+          ]}
+        />
       </Modal>
 
       <Modal

@@ -1,6 +1,6 @@
-# Globuy Supply（foreign-trade-shop）
+# CHZfobkey（foreign-trade-shop）
 
-外贸 B2B/B2C **买家端商城** + **独立管理后台**（同仓库、不同路由与布局）。商品、购物车、订单、售后等主流程对接 **voyage** 后端；API 契约以 **OpenAPI** 文件为源，经脚本生成 TypeScript 类型。
+外贸 B2B/B2C **买家端商城** + **后台管理端**（同一前端项目、不同路由与布局）。商品、购物车、订单、售后等主流程对接 **voyage** 后端；API 契约以 **OpenAPI** 文件为源，经脚本生成 TypeScript 类型。
 
 ## 技术栈
 

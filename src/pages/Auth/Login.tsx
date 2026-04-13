@@ -7,8 +7,10 @@ import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useLogin } from '../../hooks/apiHooks'
 import { authStore } from '../../lib/auth/authStore'
+import { syncLocalCartToServer } from '../../lib/cart/localCart'
 import { scheduleAccessTokenRefresh } from '../../lib/http/apiClient'
 import { toErrorMessage } from '../../lib/http/error'
+import { voyage } from '../../openapi/voyageSdk'
 import './Auth.scss'
 
 export function Login() {
@@ -30,7 +32,16 @@ export function Login() {
       const resp = await loginMutation.mutateAsync({ email, password })
       authStore.setSession(resp.accessToken, resp.refreshToken, resp.expiresIn)
       scheduleAccessTokenRefresh(resp.expiresIn)
-      setMsg('Sign in successful.')
+      // 登录后把未登录期间的本地购物车同步到后端，避免加购丢失。
+      const syncResult = await syncLocalCartToServer(voyage.cart.addItem)
+      if (syncResult.failedItems.length > 0) {
+        setMsg(
+          `Sign in successful. 已同步 ${syncResult.successCount} 条，` +
+            `${syncResult.failedItems.length} 条未同步成功（已保留在本地购物车）。`
+        )
+      } else {
+        setMsg('Sign in successful.')
+      }
       const redirectTo =
         (location.state as { from?: string } | undefined)?.from ?? '/'
       navigate(redirectTo, { replace: true })

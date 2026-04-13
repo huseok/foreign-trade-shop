@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAddCartItem, useProductDetail } from '../../hooks/apiHooks'
+import { authStore } from '../../lib/auth/authStore'
+import { addLocalCartItem } from '../../lib/cart/localCart'
 import { toErrorMessage } from '../../lib/http/error'
 import './ProductDetail.scss'
 
@@ -11,6 +13,16 @@ export function ProductDetail() {
   const addItemMutation = useAddCartItem()
   const [qty, setQty] = useState(1)
   const [msg, setMsg] = useState<string | null>(null)
+  const skus = ((product as unknown as { skus?: Array<{ skuCode: string; attrJson: string; salePrice: number; stockQty: number; isActive: boolean; weightKg?: number }> })?.skus) ?? []
+  const skuAttrMaps = skus.map((s) => ({ ...s, attrs: JSON.parse(s.attrJson) as Record<string, string> }))
+  const attrNames = Array.from(new Set(skuAttrMaps.flatMap((x) => Object.keys(x.attrs))))
+  const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>({})
+  const matchedSku = skuAttrMaps.find((x) => attrNames.every((n) => selectedAttrs[n] === x.attrs[n]))
+  const isSkuAvailable = matchedSku ? matchedSku.isActive && matchedSku.stockQty > 0 : true
+  const minQty = Math.max(1, product?.moq ?? 1)
+  useEffect(() => {
+    setQty((prev) => Math.max(prev, minQty))
+  }, [minQty])
 
   if (isLoading) {
     return <div className="page-pad"><div className="container narrow"><p>Loading...</p></div></div>
@@ -31,11 +43,15 @@ export function ProductDetail() {
       </div>
     )
   }
-
   const handleAdd = async () => {
     try {
-      await addItemMutation.mutateAsync({ productId: product.id, quantity: qty })
-      setMsg('Added — view cart.')
+      if (authStore.isLoggedIn()) {
+        await addItemMutation.mutateAsync({ productId: product.id, quantity: qty })
+        setMsg('Added — view cart.')
+      } else {
+        addLocalCartItem(product.id, qty)
+        setMsg('已加入本地购物车，登录后会自动同步。')
+      }
     } catch (err) {
       setMsg(toErrorMessage(err, 'Add to cart failed'))
     }
@@ -63,10 +79,49 @@ export function ProductDetail() {
             </p>
             <p className="product-detail__price">
               <span className="product-detail__amount">
-                {product.price === null ? 'Login to view price' : `${product.currency} ${Number(product.price).toFixed(2)}`}
+                {matchedSku
+                  ? `${product.currency ?? 'USD'} ${Number(matchedSku.salePrice).toFixed(2)}`
+                  : product.price === null
+                    ? 'Login to view price'
+                    : `${product.currency} ${Number(product.price).toFixed(2)}`}
               </span>
               <span className="product-detail__unit"> / unit</span>
             </p>
+            {attrNames.length > 0 && (
+              <div className="product-detail__specs">
+                <h2 className="product-detail__specs-title">规格选择</h2>
+                {attrNames.map((name) => {
+                  const values = Array.from(new Set(skuAttrMaps.map((x) => x.attrs[name]).filter(Boolean)))
+                  return (
+                    <div key={name} style={{ marginBottom: 8 }}>
+                      <strong>{name}：</strong>
+                      <select
+                        className="input"
+                        style={{ maxWidth: 220, marginLeft: 8 }}
+                        value={selectedAttrs[name] ?? ''}
+                        onChange={(e) =>
+                          setSelectedAttrs((prev) => ({ ...prev, [name]: e.target.value }))
+                        }
+                      >
+                        <option value="">请选择</option>
+                        {values.map((v) => (
+                          <option key={v} value={v}>
+                            {v}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )
+                })}
+                {matchedSku && (
+                  <p style={{ marginTop: 8, color: isSkuAvailable ? 'var(--text)' : '#dc2626' }}>
+                    {isSkuAvailable
+                      ? `可售库存：${matchedSku.stockQty}，重量：${matchedSku.weightKg ?? '-'}kg`
+                      : '该规格当前不可售'}
+                  </p>
+                )}
+              </div>
+            )}
             <p className="product-detail__desc">{product.description ?? 'No description'}</p>
 
             <div className="product-detail__specs">
@@ -86,18 +141,19 @@ export function ProductDetail() {
                 <input
                   id="qty"
                   type="number"
-                  min={1}
+                  min={minQty}
                   value={qty}
                   onChange={(e) =>
-                    setQty(Math.max(1, parseInt(e.target.value, 10) || 1))
+                    setQty(Math.max(minQty, parseInt(e.target.value, 10) || minQty))
                   }
                   className="input input--narrow"
                 />
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>最低起购：{minQty}</span>
                 <button
                   type="button"
                   className="btn btn--primary btn--lg"
                   onClick={() => void handleAdd()}
-                  disabled={addItemMutation.isPending}
+                  disabled={addItemMutation.isPending || !isSkuAvailable}
                 >
                   {addItemMutation.isPending ? 'Adding…' : 'Add to cart'}
                 </button>

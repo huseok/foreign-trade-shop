@@ -12,7 +12,7 @@ export function Footer() {
       <div className="site-footer__inner container">
         <div className="site-footer__brand">
           <span className="site-footer__logo-mark" aria-hidden />
-          <strong>Globuy Supply</strong>
+          <strong>CHZfobkey</strong>
           <p className="site-footer__tagline">
             Sourcing, quality checks, and export-friendly documentation for
             growing brands.
@@ -66,7 +66,7 @@ export function Footer() {
       </div>
       <div className="site-footer__bar">
         <div className="container site-footer__bar-inner">
-          <span>© {year} Globuy Supply. All rights reserved.</span>
+          <span>© {year} CHZfobkey. All rights reserved.</span>
         </div>
       </div>
     </footer>

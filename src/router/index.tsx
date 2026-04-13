@@ -2,18 +2,29 @@ import type { RouteObject } from 'react-router-dom'
 import { Navigate, Outlet } from 'react-router-dom'
 import { AdminLayout } from '../admin/AdminLayout'
 import { AdminAfterSalesPage } from '../admin/pages/AdminAfterSalesPage'
+import { AdminAuditPage } from '../admin/pages/AdminAuditPage'
+import { AdminCategoriesPage } from '../admin/pages/AdminCategoriesPage'
+import { AdminDictsPage } from '../admin/pages/AdminDictsPage'
 import { AdminLogin } from '../admin/pages/AdminLogin'
 import { AdminOrdersPage } from '../admin/pages/AdminOrdersPage'
 import { AdminProductFormPage } from '../admin/pages/AdminProductFormPage'
 import { AdminProductListPage } from '../admin/pages/AdminProductListPage'
+import { AdminProductSkuMatrixPage } from '../admin/pages/AdminProductSkuMatrixPage'
+import { AdminShippingPage } from '../admin/pages/AdminShippingPage'
+import { AdminSiteContentsPage } from '../admin/pages/AdminSiteContentsPage'
 import { RequireAdmin } from '../admin/RequireAdmin'
 import { MainLayout } from '../layouts/MainLayout'
+import { ContactPage } from '../pages/Contact'
 import { Cart } from '../pages/Cart'
 import { Catalog } from '../pages/Catalog'
 import { Checkout } from '../pages/Checkout'
 import { Home } from '../pages/Home'
 import { OrderDetail } from '../pages/OrderDetail'
 import { ProductDetail } from '../pages/ProductDetail'
+import { UserAddressesPage } from '../pages/UserCenter/Addresses'
+import { UserHistoryPage } from '../pages/UserCenter/History'
+import { UserOrdersPage } from '../pages/UserCenter/Orders'
+import { UserProfilePage } from '../pages/UserCenter/Profile'
 import { Login, Register } from '../pages/Auth'
 import { RequireAuth } from './RequireAuth'
 
@@ -56,6 +67,7 @@ export const routes: RouteObject[] = [
               { index: true, element: <AdminProductListPage /> },
               { path: 'new', element: <AdminProductFormPage /> },
               { path: ':productId/edit', element: <AdminProductFormPage /> },
+              { path: ':productId/sku-matrix', element: <AdminProductSkuMatrixPage /> },
             ],
           },
           {
@@ -63,6 +75,46 @@ export const routes: RouteObject[] = [
             element: (
               <RequireAdmin>
                 <AdminAfterSalesPage />
+              </RequireAdmin>
+            ),
+          },
+          {
+            path: 'categories',
+            element: (
+              <RequireAdmin>
+                <AdminCategoriesPage />
+              </RequireAdmin>
+            ),
+          },
+          {
+            path: 'shipping',
+            element: (
+              <RequireAdmin>
+                <AdminShippingPage />
+              </RequireAdmin>
+            ),
+          },
+          {
+            path: 'dicts',
+            element: (
+              <RequireAdmin>
+                <AdminDictsPage />
+              </RequireAdmin>
+            ),
+          },
+          {
+            path: 'site-contents',
+            element: (
+              <RequireAdmin>
+                <AdminSiteContentsPage />
+              </RequireAdmin>
+            ),
+          },
+          {
+            path: 'audit',
+            element: (
+              <RequireAdmin>
+                <AdminAuditPage />
               </RequireAdmin>
             ),
           },
@@ -76,14 +128,13 @@ export const routes: RouteObject[] = [
     children: [
       { index: true, element: <Home /> },
       { path: 'catalog', element: <Catalog /> },
+      { path: 'catalog/:categoryId', element: <Catalog /> },
       { path: 'products/:id', element: <ProductDetail /> },
+      { path: 'product/:id', element: <ProductDetail /> },
+      { path: 'contact', element: <ContactPage /> },
       {
         path: 'cart',
-        element: (
-          <RequireAuth>
-            <Cart />
-          </RequireAuth>
-        ),
+        element: <Cart />,
       },
       {
         path: 'checkout',
@@ -95,6 +146,38 @@ export const routes: RouteObject[] = [
       },
       { path: 'login', element: <Login /> },
       { path: 'register', element: <Register /> },
+      {
+        path: 'user/profile',
+        element: (
+          <RequireAuth>
+            <UserProfilePage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'user/orders',
+        element: (
+          <RequireAuth>
+            <UserOrdersPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'user/history',
+        element: (
+          <RequireAuth>
+            <UserHistoryPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'user/addresses',
+        element: (
+          <RequireAuth>
+            <UserAddressesPage />
+          </RequireAuth>
+        ),
+      },
       {
         path: 'orders/:id',
         element: (

@@ -30,6 +30,13 @@ export const queryKeys = {
   order: (orderNo: string) => ['orders', orderNo] as const,
   adminOrders: ['admin', 'orders'] as const,
   adminAfterSales: ['admin', 'after-sales'] as const,
+  categories: ['categories'] as const,
+  shippingTemplates: ['shipping', 'templates'] as const,
+  dictTypes: ['dicts', 'types'] as const,
+  siteContents: ['site', 'contents'] as const,
+  auditLogs: ['audit', 'logs'] as const,
+  userAddresses: ['user', 'addresses'] as const,
+  userBrowseHistories: ['user', 'browse-histories'] as const,
 }
 
 export function useLogin() {
@@ -137,6 +144,41 @@ export function useUpdateAdminProduct() {
       void qc.invalidateQueries({ queryKey: queryKeys.product(vars.id) })
       void qc.invalidateQueries({ queryKey: ['products', 'admin-detail', vars.id] })
     },
+  })
+}
+
+export function useAdminProductSkuMatrix(id?: number) {
+  return useQuery({
+    queryKey: ['products', 'sku-matrix', id ?? 0] as const,
+    queryFn: () => voyage.products.adminGetSkuMatrix(id!),
+    enabled: typeof id === 'number',
+  })
+}
+
+export function useAdminUpsertProductSkuMatrix() {
+  return useGuardedMutation({
+    mutationFn: (payload: {
+      id: number
+      body: {
+        options: Array<{ optionName: string; optionValue: string; sortNo: number }>
+        skus: Array<{
+          skuCode: string
+          attrJson: string
+          salePrice: number
+          stockQty: number
+          weightKg?: number
+          isActive: boolean
+        }>
+      }
+    }) => voyage.products.adminUpsertSkuMatrix(payload.id, payload.body),
+  })
+}
+
+export function useAdminBulkProductStatus() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { ids: number[]; isActive: boolean }) => voyage.products.adminBulkStatus(payload),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.productsRoot }),
   })
 }
 
@@ -274,5 +316,178 @@ export function useAdminUpdateAfterSaleStatus() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.adminAfterSales })
     },
+  })
+}
+
+export function useCategories() {
+  return useQuery({
+    queryKey: queryKeys.categories,
+    queryFn: () => voyage.categories.list(),
+  })
+}
+
+export function useAdminCreateCategory() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { parentId?: number; name: string; code: string; sortNo?: number; isActive?: boolean }) =>
+      voyage.categories.adminCreate(payload),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.categories }),
+  })
+}
+
+export function useAdminUpdateCategory() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { id: number; parentId?: number; name: string; code: string; sortNo?: number; isActive?: boolean }) =>
+      voyage.categories.adminUpdate(payload.id, payload),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.categories }),
+  })
+}
+
+export function useAdminDeleteCategory() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (id: number) => voyage.categories.adminDelete(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.categories }),
+  })
+}
+
+export function useShippingTemplates() {
+  return useQuery({
+    queryKey: queryKeys.shippingTemplates,
+    queryFn: () => voyage.shipping.listTemplates(),
+  })
+}
+
+export function useShippingTemplateRules(templateId?: number) {
+  return useQuery({
+    queryKey: ['shipping', 'rules', templateId ?? 0] as const,
+    queryFn: () => voyage.shipping.listRules(templateId!),
+    enabled: typeof templateId === 'number',
+  })
+}
+
+export function useAdminCreateShippingTemplate() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { templateName: string; billingMode: string }) => voyage.shipping.adminCreateTemplate(payload),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.shippingTemplates }),
+  })
+}
+
+export function useAdminCreateShippingRule() {
+  return useGuardedMutation({
+    mutationFn: (payload: {
+      templateId: number
+      firstWeightKg: number
+      firstFee: number
+      additionalWeightKg: number
+      additionalFee: number
+      regionCode?: string
+      sortNo?: number
+    }) =>
+      voyage.shipping.adminCreateRule(payload.templateId, {
+        firstWeightKg: payload.firstWeightKg,
+        firstFee: payload.firstFee,
+        additionalWeightKg: payload.additionalWeightKg,
+        additionalFee: payload.additionalFee,
+        regionCode: payload.regionCode,
+        sortNo: payload.sortNo,
+      }),
+  })
+}
+
+export function useAdminDeleteShippingRule() {
+  return useGuardedMutation({
+    mutationFn: (ruleId: number) => voyage.shipping.adminDeleteRule(ruleId),
+  })
+}
+
+export function useDictTypes() {
+  return useQuery({
+    queryKey: queryKeys.dictTypes,
+    queryFn: () => voyage.dicts.listTypes(),
+  })
+}
+
+export function useAdminCreateDictType() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { dictCode: string; dictName: string }) => voyage.dicts.adminCreateType(payload),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.dictTypes }),
+  })
+}
+
+export function useAdminCreateDictItem() {
+  return useGuardedMutation({
+    mutationFn: (payload: { dictCode: string; itemCode: string; itemLabel: string; sortNo?: number }) =>
+      voyage.dicts.adminCreateItem(payload.dictCode, {
+        itemCode: payload.itemCode,
+        itemLabel: payload.itemLabel,
+        sortNo: payload.sortNo,
+      }),
+  })
+}
+
+export function useAdminSiteContents() {
+  return useQuery({
+    queryKey: queryKeys.siteContents,
+    queryFn: () => voyage.site.listAdminContents(),
+  })
+}
+
+export function useAdminUpsertSiteContent() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: {
+      contentKey: string
+      contentType: string
+      title?: string
+      subtitle?: string
+      body?: string
+      imageUrl?: string
+      actionUrl?: string
+      sortNo?: number
+      isActive?: boolean
+    }) => voyage.site.adminUpsertContent(payload),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.siteContents }),
+  })
+}
+
+export function useAdminAuditLogs() {
+  return useQuery({
+    queryKey: queryKeys.auditLogs,
+    queryFn: () => voyage.audit.listLogs(),
+  })
+}
+
+export function useUserAddresses(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.userAddresses,
+    queryFn: () => voyage.userCenter.listAddresses(),
+    enabled,
+  })
+}
+
+export function useCreateUserAddress() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: {
+      receiverName: string
+      receiverPhone: string
+      country: string
+      addressLine: string
+      postalCode?: string
+      isDefault?: boolean
+    }) => voyage.userCenter.createAddress(payload),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.userAddresses }),
+  })
+}
+
+export function useUserBrowseHistories(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.userBrowseHistories,
+    queryFn: () => voyage.userCenter.listBrowseHistories(),
+    enabled,
   })
 }

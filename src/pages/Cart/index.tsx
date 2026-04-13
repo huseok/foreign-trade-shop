@@ -4,18 +4,46 @@
  */
 import { Link } from 'react-router-dom'
 import { useCart, useRemoveCartItem, useUpdateCartItem } from '../../hooks/apiHooks'
+import { authStore } from '../../lib/auth/authStore'
+import {
+  getLocalCartItems,
+  onLocalCartUpdated,
+  removeLocalCartItem,
+  updateLocalCartItem,
+} from '../../lib/cart/localCart'
+import { useEffect, useState } from 'react'
 import './Cart.scss'
 
 export function Cart() {
-  const { data: cart, isLoading } = useCart()
+  const loggedIn = authStore.isLoggedIn()
+  const { data: cart, isLoading } = useCart(loggedIn)
+  const [localItems, setLocalItems] = useState(() => getLocalCartItems())
+  useEffect(() => onLocalCartUpdated(() => setLocalItems(getLocalCartItems())), [])
   const updateMutation = useUpdateCartItem()
   const removeMutation = useRemoveCartItem()
-  const rows = cart?.items ?? []
+  const rows = loggedIn
+    ? cart?.items ?? []
+    : localItems.map((x) => ({
+        itemId: x.productId,
+        productId: x.productId,
+        title: `Product #${x.productId}`,
+        quantity: x.quantity,
+        unitPrice: '0',
+        currency: 'USD',
+        lineAmount: '0',
+        moq: 1,
+      }))
   const itemCount = rows.reduce((sum, item) => sum + item.quantity, 0)
   const subtotal = Number(cart?.totalAmount ?? 0)
   const currency = cart?.currency ?? 'USD'
 
   const handleQtyChange = (itemId: number, qty: number) => {
+    const row = rows.find((x) => x.itemId === itemId)
+    const minQty = Math.max(1, Number((row as { moq?: number } | undefined)?.moq ?? 1))
+    if (!loggedIn) {
+      updateLocalCartItem(itemId, Math.max(minQty, qty))
+      return
+    }
     if (
       updateMutation.isPending &&
       updateMutation.variables?.itemId === itemId
@@ -23,10 +51,14 @@ export function Cart() {
       return
     }
     if (removeMutation.isPending && removeMutation.variables === itemId) return
-    void updateMutation.mutate({ itemId, payload: { quantity: Math.max(1, qty) } })
+    void updateMutation.mutate({ itemId, payload: { quantity: Math.max(minQty, qty) } })
   }
 
   const handleRemove = (itemId: number) => {
+    if (!loggedIn) {
+      removeLocalCartItem(itemId)
+      return
+    }
     if (removeMutation.isPending && removeMutation.variables === itemId) return
     if (
       updateMutation.isPending &&
@@ -43,7 +75,9 @@ export function Cart() {
         <header className="page-header">
           <h1 className="page-header__title">Cart</h1>
           <p className="page-header__desc">
-            Review line items before proceeding to checkout.
+            {loggedIn
+              ? 'Review line items before proceeding to checkout.'
+              : '当前为未登录本地购物车，登录后将自动同步到后台。'}
           </p>
         </header>
 
@@ -107,7 +141,7 @@ export function Cart() {
                       <td data-label="Qty">
                         <input
                           type="number"
-                          min={1}
+                          min={Math.max(1, Number((item as { moq?: number }).moq ?? 1))}
                           className="input input--qty"
                           value={item.quantity}
                           disabled={rowBusy}
@@ -116,6 +150,9 @@ export function Cart() {
                           }
                           aria-label={`Quantity for ${item.title}`}
                         />
+                        <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                          MOQ: {Math.max(1, Number((item as { moq?: number }).moq ?? 1))}
+                        </div>
                       </td>
                       <td data-label="Subtotal">
                         {item.currency} {Number(item.lineAmount).toFixed(2)}
@@ -156,8 +193,13 @@ export function Cart() {
                 </span>
               </div>
               <Link to="/checkout" className="btn btn--primary btn--block">
-                Proceed to checkout
+                {loggedIn ? 'Proceed to checkout' : '登录后结算'}
               </Link>
+              {!loggedIn && (
+                <Link to="/login" className="btn btn--ghost btn--block" style={{ marginTop: 8 }}>
+                  去登录并同步购物车
+                </Link>
+              )}
               <Link to="/catalog" className="cart__continue">
                 Continue shopping
               </Link>

@@ -78,6 +78,40 @@ export const voyage = {
     adminUpdate(id: number, body: S['ProductAdminUpsertRequest']): Promise<string> {
       return putData<string>(`/api/v1/admin/products/${id}`, body)
     },
+    adminGetSkuMatrix(id: number): Promise<{
+      productId: number
+      options: Array<{ optionName: string; optionValue: string; sortNo: number }>
+      skus: Array<{
+        id: number
+        skuCode: string
+        attrJson: string
+        salePrice: number
+        stockQty: number
+        weightKg?: number
+        isActive: boolean
+      }>
+    }> {
+      return getData(`/api/v1/admin/products/${id}/sku-matrix`)
+    },
+    adminUpsertSkuMatrix(
+      id: number,
+      body: {
+        options: Array<{ optionName: string; optionValue: string; sortNo: number }>
+        skus: Array<{
+          skuCode: string
+          attrJson: string
+          salePrice: number
+          stockQty: number
+          weightKg?: number
+          isActive: boolean
+        }>
+      }
+    ): Promise<string> {
+      return putData(`/api/v1/admin/products/${id}/sku-matrix`, body)
+    },
+    adminBulkStatus(body: { ids: number[]; isActive: boolean }): Promise<{ updated: number }> {
+      return patchData('/api/v1/admin/products/bulk-status', body)
+    },
   },
 
   /** 购物车；全部接口需登录 */
@@ -134,6 +168,168 @@ export const voyage = {
     },
     adminUpdateStatus(id: number, body: S['UpdateAfterSaleStatusRequest']): Promise<string> {
       return patchData<string>(`/api/v1/admin/after-sales/${id}/status`, body)
+    },
+  },
+  categories: {
+    list(): Promise<
+      Array<{ id: number; parentId: number | null; name: string; code: string; sortNo: number; isActive: boolean }>
+    > {
+      return getData('/api/v1/categories')
+    },
+    adminCreate(body: {
+      parentId?: number
+      name: string
+      code: string
+      sortNo?: number
+      isActive?: boolean
+    }): Promise<{ id: number }> {
+      return postData('/api/v1/admin/categories', body)
+    },
+    adminUpdate(
+      id: number,
+      body: { parentId?: number; name: string; code: string; sortNo?: number; isActive?: boolean }
+    ): Promise<string> {
+      return putData(`/api/v1/admin/categories/${id}`, body)
+    },
+    adminDelete(id: number): Promise<string> {
+      return deleteData(`/api/v1/admin/categories/${id}`)
+    },
+  },
+  shipping: {
+    listTemplates(): Promise<Array<{ id: number; templateName: string; billingMode: string; isActive: boolean }>> {
+      return getData('/api/v1/shipping/templates')
+    },
+    listRules(templateId: number): Promise<
+      Array<{
+        id: number
+        templateId: number
+        regionCode: string
+        firstWeightKg: number
+        firstFee: number
+        additionalWeightKg: number
+        additionalFee: number
+        sortNo: number
+      }>
+    > {
+      return getData(`/api/v1/shipping/templates/${templateId}/rules`)
+    },
+    adminCreateTemplate(body: { templateName: string; billingMode: string }): Promise<{ id: number }> {
+      return postData('/api/v1/admin/shipping/templates', body)
+    },
+    adminCreateRule(
+      templateId: number,
+      body: {
+        firstWeightKg: number
+        firstFee: number
+        additionalWeightKg: number
+        additionalFee: number
+        regionCode?: string
+        sortNo?: number
+      }
+    ): Promise<{ id: number }> {
+      return postData(`/api/v1/admin/shipping/templates/${templateId}/rules`, body)
+    },
+    adminDeleteRule(ruleId: number): Promise<string> {
+      return deleteData(`/api/v1/admin/shipping/rules/${ruleId}`)
+    },
+  },
+  dicts: {
+    listTypes(): Promise<Array<{ dictCode: string; dictName: string }>> {
+      return getData('/api/v1/dicts/types')
+    },
+    listItems(dictCode: string): Promise<Array<{ itemCode: string; itemLabel: string; sortNo: number }>> {
+      return getData(`/api/v1/dicts/${dictCode}/items`)
+    },
+    adminCreateType(body: { dictCode: string; dictName: string }): Promise<{ id: number }> {
+      return postData('/api/v1/admin/dicts/types', body)
+    },
+    adminCreateItem(dictCode: string, body: { itemCode: string; itemLabel: string; sortNo?: number }): Promise<{ id: number }> {
+      return postData(`/api/v1/admin/dicts/${dictCode}/items`, body)
+    },
+  },
+  site: {
+    listAdminContents(): Promise<
+      Array<{
+        id: number
+        contentKey: string
+        contentType: string
+        title?: string
+        subtitle?: string
+        body?: string
+        imageUrl?: string
+        actionUrl?: string
+        sortNo: number
+        isActive: boolean
+      }>
+    > {
+      return getData('/api/v1/admin/site/contents')
+    },
+    adminUpsertContent(body: {
+      contentKey: string
+      contentType: string
+      title?: string
+      subtitle?: string
+      body?: string
+      imageUrl?: string
+      actionUrl?: string
+      sortNo?: number
+      isActive?: boolean
+    }): Promise<{ id: number }> {
+      return postData('/api/v1/admin/site/contents', body)
+    },
+  },
+  audit: {
+    listLogs(): Promise<
+      Array<{
+        id: number
+        actorUserId?: number
+        actorRole?: string
+        actionCode: string
+        entityType: string
+        entityId: string
+        detailJson?: string
+        createdAt: string
+      }>
+    > {
+      return getData('/api/v1/admin/audit/logs')
+    },
+    listOrderHistories(orderId: number): Promise<
+      Array<{ id: number; orderId: number; fromStatus?: string; toStatus: string; changedBy?: number; changedAt: string; remark?: string }>
+    > {
+      return getData(`/api/v1/admin/audit/orders/${orderId}/histories`)
+    },
+    listOrderHistoriesByOrderNo(orderNo: string): Promise<
+      Array<{ id: number; orderId: number; fromStatus?: string; toStatus: string; changedBy?: number; changedAt: string; remark?: string }>
+    > {
+      return getData(`/api/v1/admin/audit/orders/by-order-no/${encodeURIComponent(orderNo)}/histories`)
+    },
+  },
+  userCenter: {
+    listAddresses(): Promise<
+      Array<{
+        id: number
+        receiverName: string
+        receiverPhone: string
+        country: string
+        addressLine: string
+        postalCode?: string
+        isDefault: boolean
+      }>
+    > {
+      return getData('/api/v1/user/addresses')
+    },
+    createAddress(body: {
+      receiverName: string
+      receiverPhone: string
+      country: string
+      addressLine: string
+      postalCode?: string
+      isDefault?: boolean
+    }): Promise<{ id: number }> {
+      return postData('/api/v1/user/addresses', body)
+    },
+    listBrowseHistories(): Promise<Array<{ id: number; productId: number; viewedAt: string }>> {
+      return getData('/api/v1/user/browse-histories')
     },
   },
 }

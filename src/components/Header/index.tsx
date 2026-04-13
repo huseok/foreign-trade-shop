@@ -2,10 +2,11 @@
  * 商城顶栏导航。
  * 不包含管理后台入口；后台仅通过 `/admin/login` 或页脚「商家后台」进入，与主购物流程分离。
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useCart, useMe } from '../../hooks/apiHooks'
 import { authStore } from '../../lib/auth/authStore'
+import { getLocalCartCount, onLocalCartUpdated } from '../../lib/cart/localCart'
 import './Header.scss'
 
 export function Header() {
@@ -13,14 +14,18 @@ export function Header() {
   const { data: cart } = useCart(loggedIn)
   const { data: me } = useMe(loggedIn)
   const [open, setOpen] = useState(false)
-  const itemCount = cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0
+  const [localCount, setLocalCount] = useState(() => getLocalCartCount())
+  useEffect(() => onLocalCartUpdated(() => setLocalCount(getLocalCartCount())), [])
+  const itemCount = loggedIn
+    ? cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0
+    : localCount
 
   return (
     <header className="site-header">
       <div className="site-header__inner container">
         <Link to="/" className="site-header__logo" onClick={() => setOpen(false)}>
           <span className="site-header__mark" aria-hidden />
-          Globuy Supply
+          CHZfobkey
         </Link>
 
         <button

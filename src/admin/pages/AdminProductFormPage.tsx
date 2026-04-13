@@ -6,9 +6,11 @@ import { App, Breadcrumb, Button, Card, Form, Result, Space, Spin, Typography } 
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AdminProductUpsertFields } from '../components/AdminProductUpsertFields'
 import {
+  useCategories,
   useAdminProductDetail,
   useCreateAdminProduct,
   useMe,
+  useShippingTemplates,
   useUpdateAdminProduct,
 } from '../../hooks/apiHooks'
 import type { AdminProductUpsertRequest, ProductDto } from '../../types/api'
@@ -30,8 +32,12 @@ function valuesToPayload(values: Record<string, unknown>): AdminProductUpsertReq
       values.leadTimeDays === undefined || values.leadTimeDays === null || values.leadTimeDays === ''
         ? undefined
         : Number(values.leadTimeDays),
+    // 以下字段后端已支持，当前前端类型源于旧 OpenAPI，故通过扩展对象传递。
+    ...(values.weightKg != null ? { weightKg: Number(values.weightKg) } : {}),
+    ...(values.categoryId != null ? { categoryId: Number(values.categoryId) } : {}),
+    ...(values.shippingTemplateId != null ? { shippingTemplateId: Number(values.shippingTemplateId) } : {}),
     isActive: Boolean(values.isActive),
-  }
+  } as AdminProductUpsertRequest
 }
 
 function productToFormValues(p: ProductDto) {
@@ -47,6 +53,9 @@ function productToFormValues(p: ProductDto) {
     incoterm: p.incoterm ?? undefined,
     originCountry: p.originCountry ?? undefined,
     leadTimeDays: p.leadTimeDays ?? undefined,
+    weightKg: (p as { weightKg?: number }).weightKg ?? undefined,
+    categoryId: (p as { categoryId?: number }).categoryId ?? undefined,
+    shippingTemplateId: (p as { shippingTemplateId?: number }).shippingTemplateId ?? undefined,
     isActive: p.isActive,
   }
 }
@@ -65,6 +74,8 @@ export function AdminProductFormPage() {
   const { data: product, isLoading: productLoading, isError } = useAdminProductDetail(productQueryId)
   const createMutation = useCreateAdminProduct()
   const updateMutation = useUpdateAdminProduct()
+  const { data: categories = [] } = useCategories()
+  const { data: shippingTemplates = [] } = useShippingTemplates()
 
   useEffect(() => {
     if (product && isEdit) {
@@ -165,7 +176,7 @@ export function AdminProductFormPage() {
             }}
             initialValues={{ currency: 'USD', moq: 1, isActive: true }}
           >
-            <AdminProductUpsertFields />
+            <AdminProductUpsertFields categories={categories} shippingTemplates={shippingTemplates} />
             <Form.Item style={{ marginBottom: 0 }}>
               <Space wrap>
                 <Button type="primary" htmlType="submit" loading={submitting} disabled={submitting}>

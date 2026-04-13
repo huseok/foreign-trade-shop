@@ -1,9 +1,17 @@
 /**
  * 管理端商品新建/编辑共用的表单项（须放在 `<Form>` 内使用）。
  */
-import { Checkbox, Form, Input, InputNumber, Space } from 'antd'
+import { Checkbox, Form, Input, InputNumber, Select, Space, Typography } from 'antd'
 
-export function AdminProductUpsertFields() {
+type Option = { id: number; name: string }
+type Template = { id: number; templateName: string }
+
+type Props = {
+  categories?: Option[]
+  shippingTemplates?: Template[]
+}
+
+export function AdminProductUpsertFields({ categories = [], shippingTemplates = [] }: Props) {
   return (
     <>
       <Form.Item name="title" label="标题" rules={[{ required: true, message: '请填写标题' }]}>
@@ -41,7 +49,31 @@ export function AdminProductUpsertFields() {
         <Form.Item name="leadTimeDays" label="交期(天)">
           <InputNumber min={0} style={{ width: 120 }} />
         </Form.Item>
+        <Form.Item name="weightKg" label="重量(kg)">
+          <InputNumber min={0} step={0.1} style={{ width: 140 }} />
+        </Form.Item>
       </Space>
+      <Space wrap style={{ width: '100%' }}>
+        <Form.Item name="categoryId" label="分类">
+          <Select
+            allowClear
+            placeholder="选择分类"
+            style={{ width: 220 }}
+            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          />
+        </Form.Item>
+        <Form.Item name="shippingTemplateId" label="运费模板">
+          <Select
+            allowClear
+            placeholder="选择模板"
+            style={{ width: 260 }}
+            options={shippingTemplates.map((t) => ({ value: t.id, label: `${t.id} - ${t.templateName}` }))}
+          />
+        </Form.Item>
+      </Space>
+      <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+        属性矩阵（SKU 规格组合）下一阶段将接入独立 SKU 管理页；当前先保证商品主档字段完整。
+      </Typography.Text>
       <Form.Item name="description" label="描述">
         <Input.TextArea rows={4} placeholder="可选" />
       </Form.Item>
