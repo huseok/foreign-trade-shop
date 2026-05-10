@@ -9,6 +9,7 @@ import {
   useShippingTemplateRules,
   useShippingTemplates,
 } from '../../hooks/apiHooks'
+import { useI18n } from '../../i18n/I18nProvider'
 
 type TemplateRow = { id: number; templateName: string; billingMode: string; isActive: boolean }
 type RuleRow = {
@@ -26,6 +27,7 @@ type RuleRow = {
  * 运费模板管理：模板创建 + 规则创建（按重量计费）。
  */
 export function AdminShippingPage() {
+  const { t } = useI18n()
   const { message } = App.useApp()
   const { data = [], isLoading } = useShippingTemplates()
   const createTpl = useAdminCreateShippingTemplate()
@@ -35,39 +37,45 @@ export function AdminShippingPage() {
   const { data: rules = [], refetch: refetchRules } = useShippingTemplateRules(selectedTemplateId)
 
   const templateColumns: ProColumns<TemplateRow>[] = [
-    { title: 'ID', dataIndex: 'id', width: 80, search: false },
-    { title: '模板名', dataIndex: 'templateName', search: false },
-    { title: '计费模式', dataIndex: 'billingMode', search: false },
-    { title: '状态', dataIndex: 'isActive', width: 90, search: false, render: (_, r) => (r.isActive ? '启用' : '停用') },
+    { title: t('admin.shipping.colId'), dataIndex: 'id', width: 80, search: false },
+    { title: t('admin.shipping.colTplName'), dataIndex: 'templateName', search: false },
+    { title: t('admin.shipping.colBilling'), dataIndex: 'billingMode', search: false },
+    {
+      title: t('admin.shipping.colStatus'),
+      dataIndex: 'isActive',
+      width: 90,
+      search: false,
+      render: (_, r) => (r.isActive ? t('admin.shipping.active') : t('admin.shipping.inactive')),
+    },
   ]
 
   const ruleColumns: ProColumns<RuleRow>[] = [
-    { title: '规则ID', dataIndex: 'id', width: 90, search: false },
-    { title: '区域', dataIndex: 'regionCode', search: false },
-    { title: '首重kg', dataIndex: 'firstWeightKg', search: false },
-    { title: '首费', dataIndex: 'firstFee', search: false },
-    { title: '续重kg', dataIndex: 'additionalWeightKg', search: false },
-    { title: '续费', dataIndex: 'additionalFee', search: false },
+    { title: t('admin.shipping.colRuleId'), dataIndex: 'id', width: 90, search: false },
+    { title: t('admin.shipping.colRegion'), dataIndex: 'regionCode', search: false },
+    { title: t('admin.shipping.colFirstKg'), dataIndex: 'firstWeightKg', search: false },
+    { title: t('admin.shipping.colFirstFee'), dataIndex: 'firstFee', search: false },
+    { title: t('admin.shipping.colAddKg'), dataIndex: 'additionalWeightKg', search: false },
+    { title: t('admin.shipping.colAddFee'), dataIndex: 'additionalFee', search: false },
     {
-      title: '操作',
+      title: t('admin.shipping.colActions'),
       key: 'actions',
       width: 100,
       search: false,
       render: (_, row) => (
         <Popconfirm
-          title="确认删除该规则？"
+          title={t('admin.shipping.deleteRuleConfirm')}
           onConfirm={async () => {
             try {
               await deleteRule.mutateAsync(row.id)
-              message.success('规则已删除')
+              message.success(t('admin.shipping.ruleDeleted'))
               void refetchRules()
             } catch {
-              message.error('删除失败')
+              message.error(t('admin.shipping.ruleDeleteFail'))
             }
           }}
         >
           <Button type="link" danger>
-            删除
+            {t('admin.tags.deleteBtn')}
           </Button>
         </Popconfirm>
       ),
@@ -75,32 +83,32 @@ export function AdminShippingPage() {
   ]
 
   return (
-    <PageContainer title="运费模板" subTitle="按模板配置运费策略，商品通过模板ID绑定计费规则。">
+    <PageContainer title={t('admin.shipping.title')} subTitle={t('admin.shipping.subtitle')}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Card title="新增运费模板">
+        <Card title={t('admin.shipping.cardNewTpl')}>
           <Form
             layout="inline"
             onFinish={async (v: { templateName: string; billingMode: string }) => {
               try {
                 await createTpl.mutateAsync(v)
-                message.success('模板已创建')
+                message.success(t('admin.shipping.tplCreated'))
               } catch {
-                message.error('模板创建失败')
+                message.error(t('admin.shipping.tplCreateFail'))
               }
             }}
           >
-            <Form.Item name="templateName" rules={[{ required: true, message: '请输入模板名称' }]}>
-              <Input placeholder="模板名称" />
+            <Form.Item name="templateName" rules={[{ required: true, message: t('admin.shipping.tplNameRequired') }]}>
+              <Input placeholder={t('admin.shipping.tplNamePh')} />
             </Form.Item>
             <Form.Item name="billingMode" initialValue="BY_WEIGHT">
               <Select style={{ width: 160 }} options={[{ value: 'BY_WEIGHT' }, { value: 'FLAT' }]} />
             </Form.Item>
             <Button type="primary" htmlType="submit" loading={createTpl.isPending}>
-              创建模板
+              {t('admin.shipping.createTpl')}
             </Button>
           </Form>
         </Card>
-        <Card title="新增模板规则">
+        <Card title={t('admin.shipping.cardNewRule')}>
           <Form
             layout="inline"
             onFinish={async (v: {
@@ -113,41 +121,41 @@ export function AdminShippingPage() {
             }) => {
               try {
                 await createRule.mutateAsync(v)
-                message.success('规则已创建')
+                message.success(t('admin.shipping.ruleCreated'))
               } catch {
-                message.error('规则创建失败')
+                message.error(t('admin.shipping.ruleCreateFail'))
               }
             }}
           >
             <Form.Item name="templateId" rules={[{ required: true }]}>
               <Select
                 style={{ width: 220 }}
-                placeholder="选择模板"
+                placeholder={t('admin.shipping.selectTpl')}
                 options={data.map((x) => ({ value: x.id, label: `${x.id} - ${x.templateName}` }))}
                 onChange={(value) => setSelectedTemplateId(value)}
               />
             </Form.Item>
             <Form.Item name="firstWeightKg" rules={[{ required: true }]}>
-              <InputNumber placeholder="首重kg" min={0} />
+              <InputNumber placeholder={t('admin.shipping.firstKgPh')} min={0} />
             </Form.Item>
             <Form.Item name="firstFee" rules={[{ required: true }]}>
-              <InputNumber placeholder="首费" min={0} />
+              <InputNumber placeholder={t('admin.shipping.firstFeePh')} min={0} />
             </Form.Item>
             <Form.Item name="additionalWeightKg" rules={[{ required: true }]}>
-              <InputNumber placeholder="续重kg" min={0.001} step={0.1} />
+              <InputNumber placeholder={t('admin.shipping.addKgPh')} min={0.001} step={0.1} />
             </Form.Item>
             <Form.Item name="additionalFee" rules={[{ required: true }]}>
-              <InputNumber placeholder="续费" min={0} />
+              <InputNumber placeholder={t('admin.shipping.addFeePh')} min={0} />
             </Form.Item>
             <Form.Item name="regionCode" initialValue="GLOBAL">
-              <Input placeholder="区域" />
+              <Input placeholder={t('admin.shipping.regionPh')} />
             </Form.Item>
             <Button type="primary" htmlType="submit" loading={createRule.isPending}>
-              创建规则
+              {t('admin.shipping.createRule')}
             </Button>
           </Form>
         </Card>
-        <Card title="模板列表">
+        <Card title={t('admin.shipping.cardTplList')}>
           <ProTable<TemplateRow>
             rowKey="id"
             loading={isLoading}
@@ -158,7 +166,7 @@ export function AdminShippingPage() {
             pagination={false}
           />
         </Card>
-        <Card title="模板规则列表（选择模板后展示）">
+        <Card title={t('admin.shipping.cardRuleList')}>
           <ProTable<RuleRow>
             rowKey="id"
             search={false}

@@ -20,15 +20,25 @@
       }
     },
     "schemas": {
+      "CaptchaResponse": {
+        "type": "object",
+        "required": ["captchaId", "imageBase64"],
+        "properties": {
+          "captchaId": { "type": "string", "description": "注册时随 captchaCode 一并提交" },
+          "imageBase64": { "type": "string", "description": "data:image/png;base64,... 可直接作为 img src" }
+        }
+      },
       "RegisterRequest": {
         "type": "object",
-        "required": ["email", "password", "name"],
+        "required": ["email", "password", "name", "captchaId", "captchaCode"],
         "properties": {
           "email": { "type": "string", "format": "email" },
           "password": { "type": "string", "minLength": 6 },
           "name": { "type": "string" },
           "phone": { "type": "string" },
-          "country": { "type": "string" }
+          "country": { "type": "string" },
+          "captchaId": { "type": "string" },
+          "captchaCode": { "type": "string", "description": "图片验证码，不区分大小写" }
         }
       },
       "LoginRequest": {
@@ -63,6 +73,83 @@
           "role": { "type": "string" }
         }
       },
+      "MediaUploadView": {
+        "type": "object",
+        "required": ["thumbUrl", "fullUrl"],
+        "properties": {
+          "thumbUrl": { "type": "string", "description": "站点相对路径，如 /media/yyyy/MM/uuid_thumb.jpg" },
+          "fullUrl": { "type": "string", "description": "完整图相对路径" }
+        }
+      },
+      "ProductImageView": {
+        "type": "object",
+        "required": ["thumbUrl", "fullUrl"],
+        "properties": {
+          "thumbUrl": { "type": "string" },
+          "fullUrl": { "type": "string" }
+        }
+      },
+      "ProductImageRef": {
+        "type": "object",
+        "required": ["thumbUrl", "fullUrl"],
+        "properties": {
+          "thumbUrl": { "type": "string" },
+          "fullUrl": { "type": "string" }
+        }
+      },
+      "TagView": {
+        "type": "object",
+        "required": ["id", "code", "name", "sortNo", "isActive"],
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "sortNo": { "type": "integer" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "StorefrontSettings": {
+        "type": "object",
+        "required": ["homePromoZoneTagCode"],
+        "properties": {
+          "homePromoZoneTagCode": {
+            "type": "string",
+            "description": "首页活动商品轮播绑定的标签编码（与标签管理 code 一致）"
+          }
+        }
+      },
+      "TagUpsertRequest": {
+        "type": "object",
+        "required": ["code", "name"],
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "sortNo": { "type": "integer" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "ProductOptionView": {
+        "type": "object",
+        "required": ["optionName", "optionValue", "sortNo"],
+        "properties": {
+          "optionName": { "type": "string" },
+          "optionValue": { "type": "string" },
+          "sortNo": { "type": "integer" }
+        }
+      },
+      "ProductSkuView": {
+        "type": "object",
+        "required": ["id", "skuCode", "attrJson", "salePrice", "stockQty", "isActive"],
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "skuCode": { "type": "string" },
+          "attrJson": { "type": "string" },
+          "salePrice": { "type": "number" },
+          "stockQty": { "type": "integer" },
+          "weightKg": { "type": "number", "nullable": true },
+          "isActive": { "type": "boolean" }
+        }
+      },
       "ChangePasswordRequest": {
         "type": "object",
         "required": ["oldPassword", "newPassword"],
@@ -85,8 +172,34 @@
           "incoterm": { "type": "string", "nullable": true },
           "originCountry": { "type": "string", "nullable": true },
           "leadTimeDays": { "type": "integer", "nullable": true },
+          "weightKg": { "type": "number", "nullable": true },
+          "categoryId": { "type": "integer", "format": "int64", "nullable": true },
+          "shippingTemplateId": { "type": "integer", "format": "int64", "nullable": true },
           "isActive": { "type": "boolean" },
+          "options": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProductOptionView" }
+          },
+          "skus": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProductSkuView" }
+          },
+          "images": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProductImageView" },
+            "description": "前台列表优先展示首张 thumbUrl"
+          },
+          "tags": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TagView" },
+            "description": "商品标签（多对多）"
+          },
           "price": { "type": "number", "nullable": true },
+          "listPrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "划线原价；非空且大于 price 时表示促销价"
+          },
           "currency": { "type": "string", "nullable": true }
         }
       },
@@ -109,6 +222,11 @@
         "properties": {
           "title": { "type": "string" },
           "price": { "type": "number" },
+          "listPrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "划线原价，须不低于 price；null 表示不设"
+          },
           "currency": { "type": "string" },
           "moq": { "type": "integer", "minimum": 1 },
           "description": { "type": "string" },
@@ -118,7 +236,20 @@
           "incoterm": { "type": "string" },
           "originCountry": { "type": "string" },
           "leadTimeDays": { "type": "integer" },
-          "isActive": { "type": "boolean" }
+          "weightKg": { "type": "number" },
+          "categoryId": { "type": "integer", "format": "int64" },
+          "shippingTemplateId": { "type": "integer", "format": "int64" },
+          "isActive": { "type": "boolean" },
+          "images": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProductImageRef" },
+            "description": "null 不改图；[] 清空；非空覆盖排序"
+          },
+          "tagIds": {
+            "type": "array",
+            "items": { "type": "integer", "format": "int64" },
+            "description": "null 不改标签；[] 清空关联；非空覆盖"
+          }
         }
       },
       "IdPayload": {
@@ -270,6 +401,23 @@
     }
   },
   "paths": {
+    "/api/v1/auth/captcha": {
+      "get": {
+        "tags": ["Auth"],
+        "operationId": "authCaptcha",
+        "summary": "注册用图形验证码",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CaptchaResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/register": {
       "post": {
         "tags": ["Auth"],
@@ -392,6 +540,24 @@
             "in": "query",
             "description": "标题 / SKU / ID 搜索",
             "schema": { "type": "string" }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "description": "按分类 ID 精确筛选（与类目导航联动）",
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "tagId",
+            "in": "query",
+            "description": "按标签 ID 筛选（商品须关联该标签）",
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "promo",
+            "in": "query",
+            "description": "true 时仅返回活动商品（已设划线价且高于售价）",
+            "schema": { "type": "boolean" }
           }
         ],
         "responses": {
@@ -400,6 +566,43 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/PagedProducts" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storefront/settings": {
+      "get": {
+        "tags": ["Storefront"],
+        "operationId": "storefrontSettingsGet",
+        "summary": "前台只读配置（与 CMS 分离）",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StorefrontSettings" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tags": {
+      "get": {
+        "tags": ["Storefront"],
+        "operationId": "tagsListActive",
+        "summary": "前台启用标签列表（目录筛选）",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TagView" }
+                }
               }
             }
           }
@@ -532,6 +735,119 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/media/upload": {
+      "post": {
+        "tags": ["Admin"],
+        "operationId": "adminMediaUpload",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MediaUploadView" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tags": {
+      "get": {
+        "tags": ["Admin"],
+        "operationId": "adminTagsList",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TagView" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin"],
+        "operationId": "adminTagsCreate",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/TagUpsertRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/IdPayload" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tags/{id}": {
+      "put": {
+        "tags": ["Admin"],
+        "operationId": "adminTagsUpdate",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/TagUpsertRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Admin"],
+        "operationId": "adminTagsDelete",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",

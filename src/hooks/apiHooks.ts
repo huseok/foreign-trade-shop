@@ -31,10 +31,12 @@ export const queryKeys = {
   adminOrders: ['admin', 'orders'] as const,
   adminAfterSales: ['admin', 'after-sales'] as const,
   categories: ['categories'] as const,
+  adminTags: ['admin', 'tags'] as const,
   shippingTemplates: ['shipping', 'templates'] as const,
   dictTypes: ['dicts', 'types'] as const,
   dictItems: (dictCode: string) => ['dicts', 'items', dictCode] as const,
   siteContents: ['site', 'contents'] as const,
+  sitePromos: ['site', 'promos'] as const,
   auditLogs: ['audit', 'logs'] as const,
   userAddresses: ['user', 'addresses'] as const,
   userBrowseHistories: ['user', 'browse-histories'] as const,
@@ -65,6 +67,27 @@ export type StorefrontProductsParams = {
   size: number
   country?: string
   q?: string
+  categoryId?: number
+  tagId?: number
+  /** true：仅活动商品（划线价高于售价） */
+  promo?: boolean
+}
+
+/** 前台启用标签（目录筛选，匿名可访问） */
+export function useStorefrontTags() {
+  return useQuery({
+    queryKey: ['tags', 'storefront'] as const,
+    queryFn: () => voyage.tags.listActive(),
+  })
+}
+
+/** 前台只读配置（首页活动区等；与站点 CMS 无关） */
+export function useStorefrontSettings() {
+  return useQuery({
+    queryKey: ['storefront', 'settings'] as const,
+    queryFn: () => voyage.storefront.settings(),
+    staleTime: 60_000,
+  })
 }
 
 /** 前台商品分页列表（仅上架） */
@@ -77,6 +100,9 @@ export function useStorefrontProducts(params: StorefrontProductsParams, enabled 
       params.size,
       params.country ?? '',
       params.q ?? '',
+      params.categoryId ?? '',
+      params.tagId ?? '',
+      params.promo === true ? '1' : '',
     ] as const,
     queryFn: () => voyage.products.listPaged(params),
     enabled,
@@ -366,6 +392,51 @@ export function useAdminDeleteCategory() {
   })
 }
 
+export function useAdminTags(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.adminTags,
+    queryFn: () => voyage.tags.adminList(),
+    enabled: options?.enabled ?? true,
+  })
+}
+
+export function useAdminCreateTag() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (body: components['schemas']['TagUpsertRequest']) => voyage.tags.adminCreate(body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.adminTags })
+      void qc.invalidateQueries({ queryKey: ['tags', 'storefront'] })
+      void qc.invalidateQueries({ queryKey: queryKeys.productsRoot })
+    },
+  })
+}
+
+export function useAdminUpdateTag() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { id: number; body: components['schemas']['TagUpsertRequest'] }) =>
+      voyage.tags.adminUpdate(payload.id, payload.body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.adminTags })
+      void qc.invalidateQueries({ queryKey: ['tags', 'storefront'] })
+      void qc.invalidateQueries({ queryKey: queryKeys.productsRoot })
+    },
+  })
+}
+
+export function useAdminDeleteTag() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (id: number) => voyage.tags.adminDelete(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.adminTags })
+      void qc.invalidateQueries({ queryKey: ['tags', 'storefront'] })
+      void qc.invalidateQueries({ queryKey: queryKeys.productsRoot })
+    },
+  })
+}
+
 export function useShippingTemplates() {
   return useQuery({
     queryKey: queryKeys.shippingTemplates,
@@ -458,6 +529,14 @@ export function useAdminSiteContents() {
   })
 }
 
+/** 首页活动轮播（PROMO），匿名可访问 */
+export function useSitePromos() {
+  return useQuery({
+    queryKey: queryKeys.sitePromos,
+    queryFn: () => voyage.site.listPromos(),
+  })
+}
+
 export function useAdminUpsertSiteContent() {
   const qc = useQueryClient()
   return useGuardedMutation({
@@ -472,7 +551,10 @@ export function useAdminUpsertSiteContent() {
       sortNo?: number
       isActive?: boolean
     }) => voyage.site.adminUpsertContent(payload),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.siteContents }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.siteContents })
+      void qc.invalidateQueries({ queryKey: queryKeys.sitePromos })
+    },
   })
 }
 

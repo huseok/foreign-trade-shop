@@ -12,9 +12,11 @@ import {
   updateLocalCartItem,
 } from '../../lib/cart/localCart'
 import { useEffect, useState } from 'react'
+import { useI18n } from '../../i18n/I18nProvider'
 import './Cart.scss'
 
 export function Cart() {
+  const { t } = useI18n()
   const loggedIn = authStore.isLoggedIn()
   const { data: cart, isLoading } = useCart(loggedIn)
   const [localItems, setLocalItems] = useState(() => getLocalCartItems())
@@ -26,7 +28,7 @@ export function Cart() {
     : localItems.map((x) => ({
         itemId: x.productId,
         productId: x.productId,
-        title: `Product #${x.productId}`,
+        title: `${t('common.product')} #${x.productId}`,
         quantity: x.quantity,
         unitPrice: '0',
         currency: 'USD',
@@ -73,21 +75,19 @@ export function Cart() {
     <div className="cart page-pad">
       <div className="container">
         <header className="page-header">
-          <h1 className="page-header__title">Cart</h1>
+          <h1 className="page-header__title">{t('cart.title')}</h1>
           <p className="page-header__desc">
-            {loggedIn
-              ? 'Review line items before proceeding to checkout.'
-              : '当前为未登录本地购物车，登录后将自动同步到后台。'}
+            {loggedIn ? t('cart.descLoggedIn') : t('cart.descGuest')}
           </p>
         </header>
 
         {isLoading ? (
-          <div className="cart__empty"><p>Loading cart...</p></div>
+          <div className="cart__empty"><p>{t('common.loading')}</p></div>
         ) : itemCount === 0 ? (
           <div className="cart__empty">
-            <p>Your cart is empty.</p>
+            <p>{t('cart.empty')}</p>
             <Link to="/catalog" className="btn btn--primary">
-              Browse catalog
+              {t('common.browseCatalog')}
             </Link>
           </div>
         ) : (
@@ -96,12 +96,12 @@ export function Cart() {
               <table className="cart-table">
                 <thead>
                   <tr>
-                    <th scope="col">Product</th>
-                    <th scope="col">Price</th>
-                    <th scope="col">Qty</th>
-                    <th scope="col">Subtotal</th>
+                    <th scope="col">{t('cart.colProduct')}</th>
+                    <th scope="col">{t('cart.colPrice')}</th>
+                    <th scope="col">{t('cart.colQty')}</th>
+                    <th scope="col">{t('cart.colSubtotal')}</th>
                     <th scope="col">
-                      <span className="visually-hidden">Remove</span>
+                      <span className="visually-hidden">{t('common.remove')}</span>
                     </th>
                   </tr>
                 </thead>
@@ -135,10 +135,10 @@ export function Cart() {
                           </div>
                         </div>
                       </td>
-                      <td data-label="Price">
+                      <td data-label={t('cart.colPrice')}>
                         {item.currency} {Number(item.unitPrice).toFixed(2)}
                       </td>
-                      <td data-label="Qty">
+                      <td data-label={t('cart.colQty')}>
                         <input
                           type="number"
                           min={Math.max(1, Number((item as { moq?: number }).moq ?? 1))}
@@ -148,23 +148,23 @@ export function Cart() {
                           onChange={(e) =>
                             handleQtyChange(item.itemId, parseInt(e.target.value, 10) || 1)
                           }
-                          aria-label={`Quantity for ${item.title}`}
+                          aria-label={t('cart.removeAria').replace('{{title}}', item.title)}
                         />
                         <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                          MOQ: {Math.max(1, Number((item as { moq?: number }).moq ?? 1))}
+                          {t('product.moq')}: {Math.max(1, Number((item as { moq?: number }).moq ?? 1))}
                         </div>
                       </td>
-                      <td data-label="Subtotal">
+                      <td data-label={t('cart.colSubtotal')}>
                         {item.currency} {Number(item.lineAmount).toFixed(2)}
                       </td>
-                      <td data-label="Remove">
+                      <td data-label={t('common.remove')}>
                         <button
                           type="button"
                           className="cart-table__remove"
                           disabled={rowBusy}
                           onClick={() => handleRemove(item.itemId)}
                         >
-                          {rowRemoving ? '…' : 'Remove'}
+                          {rowRemoving ? '…' : t('common.remove')}
                         </button>
                       </td>
                     </tr>
@@ -175,33 +175,33 @@ export function Cart() {
             </div>
 
             <aside className="cart__summary">
-              <h2 className="cart__summary-title">Order summary</h2>
+              <h2 className="cart__summary-title">{t('cart.summaryTitle')}</h2>
               <div className="cart__summary-row">
-                <span>Subtotal</span>
+                <span>{t('common.subtotal')}</span>
                 <span>
                   {currency} {subtotal.toFixed(2)}
                 </span>
               </div>
               <div className="cart__summary-row cart__summary-row--muted">
-                <span>Shipping</span>
-                <span>Calculated at checkout</span>
+                <span>{t('common.shipping')}</span>
+                <span>{t('common.calculatedAtCheckout')}</span>
               </div>
               <div className="cart__summary-total">
-                <span>Estimated</span>
+                <span>{t('common.estimated')}</span>
                 <span>
                   {currency} {subtotal.toFixed(2)}
                 </span>
               </div>
               <Link to="/checkout" className="btn btn--primary btn--block">
-                {loggedIn ? 'Proceed to checkout' : '登录后结算'}
+                {loggedIn ? t('cart.checkout') : t('cart.checkoutLogin')}
               </Link>
               {!loggedIn && (
                 <Link to="/login" className="btn btn--ghost btn--block" style={{ marginTop: 8 }}>
-                  去登录并同步购物车
+                  {t('common.loginSync')}
                 </Link>
               )}
               <Link to="/catalog" className="cart__continue">
-                Continue shopping
+                {t('common.continueShopping')}
               </Link>
             </aside>
           </div>

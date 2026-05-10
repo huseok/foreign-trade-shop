@@ -2,6 +2,7 @@ import { App, Button, Card, Form, Input, Space, Typography } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { useAdminCreateDictItem, useAdminCreateDictType, useDictTypes } from '../../hooks/apiHooks'
+import { useI18n } from '../../i18n/I18nProvider'
 
 type DictTypeRow = { dictCode: string; dictName: string }
 
@@ -9,69 +10,73 @@ type DictTypeRow = { dictCode: string; dictName: string }
  * 字典管理页：字典类型与字典项的新增入口。
  */
 export function AdminDictsPage() {
+  const { t } = useI18n()
   const { message } = App.useApp()
   const { data = [], isLoading } = useDictTypes()
   const createType = useAdminCreateDictType()
   const createItem = useAdminCreateDictItem()
 
   const columns: ProColumns<DictTypeRow>[] = [
-    { title: '字典编码', dataIndex: 'dictCode', search: false },
-    { title: '字典名称', dataIndex: 'dictName', search: false },
+    { title: t('admin.dicts.colCode'), dataIndex: 'dictCode', search: false },
+    { title: t('admin.dicts.colName'), dataIndex: 'dictName', search: false },
   ]
 
   return (
-    <PageContainer title="字典管理" subTitle="维护业务状态字典，减少前后端硬编码枚举分散。">
+    <PageContainer title={t('admin.dicts.title')} subTitle={t('admin.dicts.subtitle')}>
       <Space direction="vertical" style={{ width: '100%' }} size="large">
-        <Card title="新增字典类型">
+        <Card title={t('admin.dicts.cardNewType')}>
           <Form
             layout="inline"
             onFinish={async (v: { dictCode: string; dictName: string }) => {
               try {
                 await createType.mutateAsync(v)
-                message.success('字典类型已创建')
+                message.success(t('admin.dicts.typeCreated'))
               } catch {
-                message.error('创建失败，请检查编码是否重复')
+                message.error(t('admin.dicts.typeCreateFail'))
               }
             }}
           >
-            <Form.Item name="dictCode" rules={[{ required: true }, { pattern: /^[A-Z0-9_]+$/, message: '仅支持大写编码' }]}>
-              <Input placeholder="如 ORDER_STATUS" />
+            <Form.Item
+              name="dictCode"
+              rules={[{ required: true }, { pattern: /^[A-Z0-9_]+$/, message: t('admin.dicts.codePattern') }]}
+            >
+              <Input placeholder={t('admin.dicts.codePh')} />
             </Form.Item>
             <Form.Item name="dictName" rules={[{ required: true }]}>
-              <Input placeholder="显示名称" />
+              <Input placeholder={t('admin.dicts.namePh')} />
             </Form.Item>
             <Button type="primary" htmlType="submit" loading={createType.isPending}>
-              创建
+              {t('admin.dicts.create')}
             </Button>
           </Form>
         </Card>
-        <Card title="新增字典项">
+        <Card title={t('admin.dicts.cardNewItem')}>
           <Form
             layout="inline"
             onFinish={async (v: { dictCode: string; itemCode: string; itemLabel: string; sortNo?: number }) => {
               try {
                 await createItem.mutateAsync(v)
-                message.success('字典项已创建')
+                message.success(t('admin.dicts.itemCreated'))
               } catch {
-                message.error('字典项创建失败')
+                message.error(t('admin.dicts.itemCreateFail'))
               }
             }}
           >
             <Form.Item name="dictCode" rules={[{ required: true }]}>
-              <Input placeholder="字典编码" />
+              <Input placeholder={t('admin.dicts.dictCodePh')} />
             </Form.Item>
             <Form.Item name="itemCode" rules={[{ required: true }]}>
-              <Input placeholder="项编码" />
+              <Input placeholder={t('admin.dicts.itemCodePh')} />
             </Form.Item>
             <Form.Item name="itemLabel" rules={[{ required: true }]}>
-              <Input placeholder="项名称" />
+              <Input placeholder={t('admin.dicts.itemLabelPh')} />
             </Form.Item>
             <Button type="primary" htmlType="submit" loading={createItem.isPending}>
-              创建
+              {t('admin.dicts.create')}
             </Button>
           </Form>
         </Card>
-        <Card title="字典类型列表">
+        <Card title={t('admin.dicts.cardList')}>
           <ProTable<DictTypeRow>
             rowKey="dictCode"
             loading={isLoading}
@@ -81,7 +86,7 @@ export function AdminDictsPage() {
             dataSource={data}
             pagination={false}
             footer={() => (
-              <Typography.Text type="secondary">字典项查询接口：/api/v1/dicts/{'{dictCode}'}/items</Typography.Text>
+              <Typography.Text type="secondary">{t('admin.dicts.footerApiHint')}</Typography.Text>
             )}
           />
         </Card>

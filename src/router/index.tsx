@@ -12,6 +12,7 @@ import { AdminProductListPage } from '../admin/pages/AdminProductListPage'
 import { AdminProductSkuMatrixPage } from '../admin/pages/AdminProductSkuMatrixPage'
 import { AdminShippingPage } from '../admin/pages/AdminShippingPage'
 import { AdminSiteContentsPage } from '../admin/pages/AdminSiteContentsPage'
+import { AdminTagsPage } from '../admin/pages/AdminTagsPage'
 import { RequireAdmin } from '../admin/RequireAdmin'
 import { MainLayout } from '../layouts/MainLayout'
 import { ContactPage } from '../pages/Contact'
@@ -83,6 +84,14 @@ export const routes: RouteObject[] = [
             element: (
               <RequireAdmin>
                 <AdminCategoriesPage />
+              </RequireAdmin>
+            ),
+          },
+          {
+            path: 'tags',
+            element: (
+              <RequireAdmin>
+                <AdminTagsPage />
               </RequireAdmin>
             ),
           },

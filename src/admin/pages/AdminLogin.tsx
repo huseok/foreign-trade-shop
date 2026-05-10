@@ -12,10 +12,12 @@ import { authStore } from '../../lib/auth/authStore'
 import { scheduleAccessTokenRefresh } from '../../lib/http/apiClient'
 import { voyage } from '../../openapi/voyageSdk'
 import { toErrorMessage } from '../../lib/http/error'
+import { useI18n } from '../../i18n/I18nProvider'
 
 type FormValues = { email: string; password: string }
 
 export function AdminLogin() {
+  const { t } = useI18n()
   const [msg, setMsg] = useState<string | null>(null)
   const loginMutation = useLogin()
   const navigate = useNavigate()
@@ -34,7 +36,7 @@ export function AdminLogin() {
       const me = await voyage.auth.me()
       if (me.role !== 'ADMIN') {
         authStore.clearToken()
-        const text = '该账号无管理员权限。'
+        const text = t('admin.login.noAdminRole')
         setMsg(text)
         message.warning(text)
         return
@@ -43,7 +45,7 @@ export function AdminLogin() {
         (location.state as { from?: string } | undefined)?.from ?? '/admin/orders'
       navigate(redirectTo, { replace: true })
     } catch (err) {
-      const text = toErrorMessage(err, '登录失败')
+      const text = toErrorMessage(err, t('admin.login.fail'))
       setMsg(text)
       message.error(text)
     }
@@ -60,19 +62,23 @@ export function AdminLogin() {
         padding: 24,
       }}
     >
-      <Card style={{ width: 400, maxWidth: '100%' }} title="管理后台登录">
+      <Card style={{ width: 400, maxWidth: '100%' }} title={t('admin.login.title')}>
         <Typography.Paragraph type="secondary" style={{ marginTop: 0 }}>
-          与前台账号体系相同，仅 ADMIN 角色可进入后台。
+          {t('admin.login.subtitle')}
         </Typography.Paragraph>
         <Form<FormValues> layout="vertical" requiredMark="optional" onFinish={onFinish}>
           <Form.Item
-            label="邮箱"
+            label={t('admin.login.email')}
             name="email"
-            rules={[{ required: true, type: 'email', message: '请输入有效邮箱' }]}
+            rules={[{ required: true, type: 'email', message: t('admin.login.emailInvalid') }]}
           >
             <Input autoComplete="email" />
           </Form.Item>
-          <Form.Item label="密码" name="password" rules={[{ required: true, message: '请输入密码' }]}>
+          <Form.Item
+            label={t('admin.login.password')}
+            name="password"
+            rules={[{ required: true, message: t('admin.login.passwordRequired') }]}
+          >
             <Input.Password autoComplete="current-password" />
           </Form.Item>
           <Form.Item>
@@ -83,7 +89,7 @@ export function AdminLogin() {
               loading={loginMutation.isPending}
               disabled={loginMutation.isPending}
             >
-              登录
+              {t('admin.login.submit')}
             </Button>
           </Form.Item>
         </Form>
@@ -93,7 +99,7 @@ export function AdminLogin() {
           </Typography.Paragraph>
         )}
         <Typography.Paragraph style={{ marginTop: 16, marginBottom: 0 }}>
-          <Link to="/">返回商城首页</Link>
+          <Link to="/">{t('admin.login.backStore')}</Link>
         </Typography.Paragraph>
       </Card>
     </div>

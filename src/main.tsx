@@ -2,7 +2,7 @@
  * 应用入口。
  *
  * 自外向内依次提供：
- * - `ConfigProvider`：Ant Design 中文语言包与主题 token（与商城 CSS 主色协调）
+ * - `I18nProvider` + `AntdLocaleBridge`：文件型文案与 Ant Design locale（见 theme/adminAntdTheme.ts）
  * - `App`（AntdApp）：为子树提供 `message` / `modal` 等静态方法上下文
  * - `QueryClientProvider`：React Query
  * - `BrowserRouter`：路由
@@ -13,10 +13,11 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
-import { App as AntdApp, ConfigProvider } from 'antd'
-import zhCN from 'antd/locale/zh_CN'
+import { App as AntdApp } from 'antd'
 import { queryClient } from './lib/query/queryClient'
 import { bootstrapAuthRefreshSchedule } from './lib/http/apiClient'
+import { I18nProvider } from './i18n/I18nProvider'
+import { AntdLocaleBridge } from './theme/antdLocaleBridge'
 import './index.css'
 import App from './App.tsx'
 
@@ -24,22 +25,16 @@ bootstrapAuthRefreshSchedule()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ConfigProvider
-      locale={zhCN}
-      theme={{
-        token: {
-          colorPrimary: '#0d9488',
-          borderRadius: 8,
-        },
-      }}
-    >
-      <AntdApp>
-        <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </QueryClientProvider>
-      </AntdApp>
-    </ConfigProvider>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <I18nProvider>
+          <AntdLocaleBridge>
+            <AntdApp>
+              <App />
+            </AntdApp>
+          </AntdLocaleBridge>
+        </I18nProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
   </StrictMode>,
 )

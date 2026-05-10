@@ -1,0 +1,102 @@
+/**
+ * Open Design · storefront-versions.html · data-sf-theme="marketplace"
+ * 客户站壳层变量与货架背景；业务组件继续消费全局 index.css 的 --primary 等（MainLayout 内已桥接）。
+ */
+.sf-market-root[data-sf-theme='marketplace'] {
+  --sf-bg: oklch(99% 0.002 240);
+  --sf-surface: oklch(100% 0 0);
+  --sf-fg: oklch(18% 0.012 250);
+  --sf-muted: oklch(54% 0.012 250);
+  --sf-border: oklch(92% 0.005 250);
+  --sf-accent: oklch(58% 0.18 255);
+  --sf-radius: 6px;
+  --sf-promo-bg: color-mix(in oklch, var(--sf-accent) 9%, var(--sf-bg));
+  --sf-shadow: 0 1px 2px color-mix(in oklch, var(--sf-fg) 6%, transparent);
+
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  /* 与 index.css 对齐，卡片/按钮仍用既有工具类 */
+  --bg: var(--sf-bg);
+  --surface: var(--sf-surface);
+  --text-h: var(--sf-fg);
+  --text: var(--sf-fg);
+  --muted: var(--sf-muted);
+  --border: var(--sf-border);
+  --primary: var(--sf-accent);
+  --accent: var(--sf-accent);
+  --radius-sm: var(--sf-radius);
+  --radius-md: 8px;
+  --shadow: var(--sf-shadow);
+  --primary-muted: color-mix(in oklch, var(--sf-accent) 14%, var(--sf-surface));
+  --primary-fg: oklch(99% 0.01 255);
+  --primary-dark: color-mix(in oklch, var(--sf-accent) 78%, var(--sf-fg));
+}
+
+.sf-market-root[data-sf-theme='marketplace'] .main-layout__main {
+  background: var(--sf-bg);
+}
+
+.sf-mp-promo {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 8px 16px;
+  color: var(--sf-fg);
+  background: var(--sf-promo-bg);
+  border-bottom: 1px solid var(--sf-border);
+}
+
+.sf-mp-category-strip {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+  padding: 8px 16px;
+  overflow-x: auto;
+  font-size: 14px;
+  border-bottom: 1px solid var(--sf-border);
+  background: var(--sf-surface);
+  white-space: nowrap;
+}
+
+.sf-mp-category-strip a {
+  color: var(--sf-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.sf-mp-category-strip a:hover {
+  text-decoration: underline;
+}
+
+/* 用户中心子导航 */
+.sf-user-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 24px;
+  padding: 0;
+  border-bottom: 1px solid var(--sf-border);
+}
+
+.sf-user-nav__link {
+  display: inline-block;
+  padding: 12px 16px;
+  margin-bottom: -1px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.sf-user-nav__link:hover {
+  color: var(--sf-fg);
+}
+
+.sf-user-nav__link.is-active {
+  color: var(--sf-accent);
+  border-bottom-color: var(--sf-accent);
+  background: color-mix(in oklch, var(--sf-accent) 6%, transparent);
+}

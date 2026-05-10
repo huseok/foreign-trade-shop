@@ -2,9 +2,12 @@
  * 商城页脚导航与版权条。
  */
 import { Link } from 'react-router-dom'
+import { useI18n } from '../../i18n/I18nProvider'
+import { i18nTpl } from '../../lib/i18nTpl'
 import './Footer.scss'
 
 export function Footer() {
+  const { t } = useI18n()
   const year = new Date().getFullYear()
 
   return (
@@ -12,53 +15,49 @@ export function Footer() {
       <div className="site-footer__inner container">
         <div className="site-footer__brand">
           <span className="site-footer__logo-mark" aria-hidden />
-          <strong>CHZfobkey</strong>
-          <p className="site-footer__tagline">
-            Sourcing, quality checks, and export-friendly documentation for
-            growing brands.
-          </p>
+          <strong>{t('brand')}</strong>
+          <p className="site-footer__tagline">{t('footer.tagline')}</p>
         </div>
         <div className="site-footer__cols">
           <div>
-            <h3 className="site-footer__heading">Shop</h3>
+            <h3 className="site-footer__heading">{t('footer.shop')}</h3>
             <ul className="site-footer__list">
               <li>
-                <Link to="/catalog">Catalog</Link>
+                <Link to="/catalog">{t('nav.catalog')}</Link>
               </li>
               <li>
-                <Link to="/cart">Cart</Link>
+                <Link to="/cart">{t('nav.cart')}</Link>
               </li>
               <li>
-                <Link to="/checkout">Checkout</Link>
+                <Link to="/checkout">{t('checkout.title')}</Link>
               </li>
             </ul>
           </div>
           <div>
-            <h3 className="site-footer__heading">Company</h3>
+            <h3 className="site-footer__heading">{t('footer.company')}</h3>
             <ul className="site-footer__list">
               <li>
-                <a href="#about">About</a>
+                <a href="#about">{t('footer.about')}</a>
               </li>
               <li>
-                <a href="#shipping">Shipping</a>
+                <a href="#shipping">{t('footer.shipping')}</a>
               </li>
               <li>
-                <a href="#returns">Returns</a>
+                <a href="#returns">{t('footer.returns')}</a>
               </li>
               <li>
-                {/* 与商城顶栏一致：后台独立入口，避免与主购物流程混排 */}
-                <Link to="/admin/login">商家后台</Link>
+                <Link to="/admin/login">{t('footer.admin')}</Link>
               </li>
             </ul>
           </div>
           <div>
-            <h3 className="site-footer__heading">Legal</h3>
+            <h3 className="site-footer__heading">{t('footer.legal')}</h3>
             <ul className="site-footer__list">
               <li>
-                <a href="#privacy">Privacy Policy</a>
+                <a href="#privacy">{t('footer.privacy')}</a>
               </li>
               <li>
-                <a href="#terms">Terms</a>
+                <a href="#terms">{t('footer.terms')}</a>
               </li>
             </ul>
           </div>
@@ -66,7 +65,7 @@ export function Footer() {
       </div>
       <div className="site-footer__bar">
         <div className="container site-footer__bar-inner">
-          <span>© {year} CHZfobkey. All rights reserved.</span>
+          <span>{i18nTpl(t('footer.rights'), { year: String(year) })}</span>
         </div>
       </div>
     </footer>

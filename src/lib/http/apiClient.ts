@@ -7,9 +7,19 @@ import type { LoginResponse } from '../../types/api'
 
 export type { ApiResponse } from './apiClientTypes'
 
-/** 后端 API 根地址；可通过 `VITE_API_BASE_URL` 覆盖 */
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
-// export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'https://zqbkysferles.us-east-1.clawcloudrun.com/'
+/**
+ * 后端 API 根地址。
+ * - 开发默认：`http://localhost:8080`
+ * - 生产可设为完整 URL；若前端与 API 同域（Nginx 反代 `/api`），在 `.env.production` 设 `VITE_API_BASE_URL=` 空字符串即可走相对路径。
+ */
+function resolveApiBaseUrl(): string {
+  const raw = import.meta.env.VITE_API_BASE_URL as string | undefined
+  if (raw === '') return ''
+  if (raw != null && raw.trim() !== '') return raw.replace(/\/$/, '')
+  return 'http://localhost:8080'
+}
+
+export const API_BASE_URL = resolveApiBaseUrl()
 
 /**
  * 全局 Axios 实例。

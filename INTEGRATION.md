@@ -39,12 +39,21 @@
 
 ```bash
 VITE_API_BASE_URL=http://localhost:8080
+# 可选：图片静态资源与 API 不同域时，单独指定媒体基地址（否则用 API origin 拼接相对路径）
+# VITE_MEDIA_BASE_URL=https://cdn.example.com
 ```
 
 说明：
 
 - 不配时默认走 `http://localhost:8080`。
 - 后端改端口时须同步此处。
+- 媒体文件：后端将上传文件映射为 `/media/...`；前端通过 `src/lib/media/resolveMediaUrl.ts` 解析（可读 `VITE_MEDIA_BASE_URL`）。
+
+### 4.1 国际化文案
+
+- 默认语言：**中文（zh-CN）**；可选 **en-US**。
+- 文案文件：`src/i18n/locales/zh-CN.json`、`en-US.json`；运行时上下文见 `src/i18n/I18nProvider.tsx`（`t()` / `useDictLabel()`）。
+- 订单等待支付等状态：优先匹配 `dict.ORDER_STATUS.{CODE}`，缺省回退运营字典接口返回的 `itemLabel`。
 
 ## 5. 已对接接口清单
 
@@ -57,10 +66,18 @@ VITE_API_BASE_URL=http://localhost:8080
 
 ### 5.2 商品
 
-- `GET /api/v1/products`（公开；未登录时价格字段可能为 null）
+- `GET /api/v1/products`（公开；未登录时价格字段可能为 null；支持查询参数 `page`、`size`、`country`、`q`、**`categoryId`**（按后台分类 ID 筛选，与 Header 类目条、`/catalog/:categoryId` 联动））
 - `GET /api/v1/products/{id}`
 - `POST /api/v1/admin/products`（**ADMIN**）
 - `PUT /api/v1/admin/products/{id}`（**ADMIN**）
+- 商品主档请求体可含 **`tagIds`**（`null` 不改关联，`[]` 清空，非空则覆盖）；响应 **`ProductView.tags`** 为标签列表（仅 **`is_active=true`** 的标签会在前台展示）。
+
+### 5.2.1 商品标签（ADMIN）
+
+- `GET /api/v1/admin/tags`：标签主数据列表（含排序、启用状态）
+- `POST /api/v1/admin/tags`：新建标签（`code` 存库大写）
+- `PUT /api/v1/admin/tags/{id}`：更新
+- `DELETE /api/v1/admin/tags/{id}`：删除（会先删除 **`t_product_tags`** 中引用再删标签行）
 
 ### 5.3 购物车（需登录）
 
@@ -71,7 +88,7 @@ VITE_API_BASE_URL=http://localhost:8080
 
 ### 5.4 订单
 
-- `POST /api/v1/orders`（需登录，从购物车下单）
+- `POST /api/v1/orders`（需登录，从购物车下单；订单号格式 **`GB-{yyMMdd}-{HHmmss}-{6位随机}`**，含下单日期与时分秒，冲突时自动重试生成）
 - `GET /api/v1/orders`（需登录，当前用户订单列表）
 - `GET /api/v1/orders/{orderNo}`（需登录，当前用户订单详情）
 - `PATCH /api/v1/orders/{orderNo}/confirm-completed`（需登录，确认完成）

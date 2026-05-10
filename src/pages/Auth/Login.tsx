@@ -6,23 +6,22 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useLogin } from '../../hooks/apiHooks'
+import { useI18n } from '../../i18n/I18nProvider'
 import { authStore } from '../../lib/auth/authStore'
 import { syncLocalCartToServer } from '../../lib/cart/localCart'
+import { i18nTpl } from '../../lib/i18nTpl'
 import { scheduleAccessTokenRefresh } from '../../lib/http/apiClient'
 import { toErrorMessage } from '../../lib/http/error'
 import { voyage } from '../../openapi/voyageSdk'
 import './Auth.scss'
 
 export function Login() {
+  const { t } = useI18n()
   const [msg, setMsg] = useState<string | null>(null)
   const loginMutation = useLogin()
   const navigate = useNavigate()
   const location = useLocation()
 
-  /**
-   * 登录提交：
-   * 调用后端接口拿 token，保存后跳转到原访问页或首页。
-   */
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
@@ -32,21 +31,22 @@ export function Login() {
       const resp = await loginMutation.mutateAsync({ email, password })
       authStore.setSession(resp.accessToken, resp.refreshToken, resp.expiresIn)
       scheduleAccessTokenRefresh(resp.expiresIn)
-      // 登录后把未登录期间的本地购物车同步到后端，避免加购丢失。
       const syncResult = await syncLocalCartToServer(voyage.cart.addItem)
       if (syncResult.failedItems.length > 0) {
         setMsg(
-          `Sign in successful. 已同步 ${syncResult.successCount} 条，` +
-            `${syncResult.failedItems.length} 条未同步成功（已保留在本地购物车）。`
+          i18nTpl(t('auth.syncPartial'), {
+            ok: String(syncResult.successCount),
+            fail: String(syncResult.failedItems.length),
+          }),
         )
       } else {
-        setMsg('Sign in successful.')
+        setMsg(t('auth.syncOk'))
       }
       const redirectTo =
         (location.state as { from?: string } | undefined)?.from ?? '/'
       navigate(redirectTo, { replace: true })
     } catch (err) {
-      setMsg(toErrorMessage(err, 'Sign in failed'))
+      setMsg(toErrorMessage(err, t('auth.failLogin')))
     }
   }
 
@@ -54,13 +54,11 @@ export function Login() {
     <div className="auth page-pad">
       <div className="container auth__box">
         <div className="auth__card">
-          <h1 className="auth__title">Sign in</h1>
-          <p className="auth__subtitle">
-            Access quotes, orders, and saved addresses (UI placeholder).
-          </p>
+          <h1 className="auth__title">{t('auth.loginTitle')}</h1>
+          <p className="auth__subtitle">{t('auth.loginSubtitle')}</p>
           <form className="auth__form" onSubmit={onSubmit}>
             <label className="field">
-              <span className="field__label">Email</span>
+              <span className="field__label">{t('auth.email')}</span>
               <input
                 className="input"
                 type="email"
@@ -70,7 +68,7 @@ export function Login() {
               />
             </label>
             <label className="field">
-              <span className="field__label">Password</span>
+              <span className="field__label">{t('auth.password')}</span>
               <input
                 className="input"
                 type="password"
@@ -84,12 +82,12 @@ export function Login() {
               className="btn btn--primary btn--block"
               disabled={loginMutation.isPending}
             >
-              {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
+              {loginMutation.isPending ? t('auth.signingIn') : t('auth.signIn')}
             </button>
           </form>
           {msg && <p className="auth__msg">{msg}</p>}
           <p className="auth__footer">
-            No account? <Link to="/register">Create one</Link>
+            {t('auth.noAccount')} <Link to="/register">{t('auth.createOne')}</Link>
           </p>
         </div>
       </div>

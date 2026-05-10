@@ -6,42 +6,37 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { voyage } from '../../openapi/voyageSdk'
-import { useOrderDetail } from '../../hooks/apiHooks'
+import { useDictItems, useMe, useOrderDetail } from '../../hooks/apiHooks'
+import { useDictLabel, useI18n } from '../../i18n/I18nProvider'
 import { toErrorMessage } from '../../lib/http/error'
 import './OrderDetail.scss'
 
-function statusLabel(s: string) {
-  switch (s) {
-    case 'PENDING_PAYMENT':
-      return 'Pending payment'
-    case 'PAID':
-      return 'Paid'
-    case 'SHIPPED':
-      return 'Shipped'
-    case 'DELIVERED':
-      return 'Delivered'
-    case 'COMPLETED':
-      return 'Completed'
-    default:
-      return s
-  }
-}
-
 export function OrderDetail() {
+  const { t } = useI18n()
   const { id: rawId } = useParams<{ id: string }>()
-  // 兼容 URL 编码的订单号
   const orderNo = rawId ? decodeURIComponent(rawId) : undefined
   const { data: order, isLoading, refetch } = useOrderDetail(orderNo)
+  const { data: me } = useMe(true)
+  const { data: orderStatusItems = [] } = useDictItems('ORDER_STATUS')
   const [msg, setMsg] = useState<string | null>(null)
+
+  const labelForStatus = (code: string) =>
+    orderStatusItems.find((i) => i.itemCode === code)?.itemLabel ?? code
+
+  const statusText = useDictLabel(
+    'ORDER_STATUS',
+    order?.status ?? '',
+    order ? labelForStatus(order.status) : '',
+  )
 
   const onConfirmCompleted = async () => {
     if (!order) return
     try {
       await voyage.orders.confirmCompleted(order.orderNo)
-      setMsg('Order marked as completed.')
+      setMsg(t('order.msgConfirmed'))
       await refetch()
     } catch (err) {
-      setMsg(toErrorMessage(err, 'Confirm failed'))
+      setMsg(toErrorMessage(err, t('order.failConfirm')))
     }
   }
 
@@ -52,31 +47,40 @@ export function OrderDetail() {
         orderNo: order.orderNo,
         content: 'Need after-sales support for this order.',
       })
-      setMsg('After-sale ticket created.')
+      setMsg(t('order.msgAfterSale'))
     } catch (err) {
-      setMsg(toErrorMessage(err, 'Create after-sale failed'))
+      setMsg(toErrorMessage(err, t('order.failAfterSale')))
     }
   }
 
   if (isLoading) {
-    return <div className="page-pad"><div className="container narrow"><p>Loading order...</p></div></div>
+    return (
+      <div className="page-pad">
+        <div className="container narrow">
+          <p>{t('order.loading')}</p>
+        </div>
+      </div>
+    )
   }
 
   if (!orderNo || !order) {
     return (
       <div className="order page-pad">
         <div className="container narrow">
-          <h1 className="page-header__title">Order not found</h1>
-          <p className="page-header__desc">
-            This order number does not exist in backend.
-          </p>
+          <h1 className="page-header__title">{t('order.notFoundTitle')}</h1>
+          <p className="page-header__desc">{t('order.notFoundDesc')}</p>
           <div className="order__actions">
             <Link to="/catalog" className="btn btn--primary">
-              Browse catalog
+              {t('common.browseCatalog')}
             </Link>
-            <Link to="/admin/orders" className="btn btn--ghost">
-              管理后台订单
+            <Link to="/user/orders" className="btn btn--ghost">
+              {t('order.myOrders')}
             </Link>
+            {me?.role === 'ADMIN' && (
+              <Link to="/admin/orders" className="btn btn--ghost">
+                {t('footer.admin')}
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -87,34 +91,31 @@ export function OrderDetail() {
     <div className="order page-pad">
       <div className="container narrow">
         <header className="page-header">
-          <p className="order__eyebrow">Order</p>
+          <p className="order__eyebrow">{t('order.eyebrow')}</p>
           <h1 className="page-header__title">{order.orderNo}</h1>
-          <p className="page-header__desc">
-            Status synchronized from backend.
-          </p>
+          <p className="page-header__desc">{t('order.statusSynced')}</p>
         </header>
 
         <div className="order__status">
-          <span
-            className={`order__badge order__badge--${order.status}`}
-          >
-            {statusLabel(order.status)}
-          </span>
+          <span className={`order__badge order__badge--${order.status}`}>{statusText}</span>
           <span className="order__meta">
-            {order.currency} {Number(order.totalAmount).toFixed(2)} total
+            {order.currency} {Number(order.totalAmount).toFixed(2)} {t('common.total')}
           </span>
         </div>
         {msg && <p className="order__text">{msg}</p>}
+        <p className="order__text" style={{ opacity: 0.75, fontSize: 13 }}>
+          {t('order.guestNoAdmin')}
+        </p>
 
         <section className="order__card">
-          <h2 className="order__card-title">Line items</h2>
+          <h2 className="order__card-title">{t('order.itemsTitle')}</h2>
           <table className="order-table">
             <thead>
               <tr>
-                <th scope="col">Item</th>
-                <th scope="col">SKU</th>
-                <th scope="col">Qty</th>
-                <th scope="col">Price</th>
+                <th scope="col">{t('order.colItem')}</th>
+                <th scope="col">{t('order.colSku')}</th>
+                <th scope="col">{t('order.colQty')}</th>
+                <th scope="col">{t('order.colPrice')}</th>
               </tr>
             </thead>
             <tbody>
@@ -133,25 +134,25 @@ export function OrderDetail() {
         </section>
 
         <section className="order__card">
-          <h2 className="order__card-title">Contact</h2>
+          <h2 className="order__card-title">{t('order.contactTitle')}</h2>
           <dl className="order__dl">
             <div>
-              <dt>Name</dt>
+              <dt>{t('order.name')}</dt>
               <dd>{order.receiverName || '—'}</dd>
             </div>
             <div>
-              <dt>Phone</dt>
+              <dt>{t('order.phone')}</dt>
               <dd>{order.receiverPhone || '—'}</dd>
             </div>
             {order.receiverCompany && (
               <div>
-                <dt>Company</dt>
+                <dt>{t('order.company')}</dt>
                 <dd>{order.receiverCompany}</dd>
               </div>
             )}
             {order.taxNo && (
               <div>
-                <dt>Tax No</dt>
+                <dt>{t('order.taxNo')}</dt>
                 <dd>{order.taxNo}</dd>
               </div>
             )}
@@ -159,7 +160,7 @@ export function OrderDetail() {
         </section>
 
         <section className="order__card">
-          <h2 className="order__card-title">Shipping</h2>
+          <h2 className="order__card-title">{t('order.shipTitle')}</h2>
           <p className="order__text order__address">
             {order.addressLine}
             <br />
@@ -169,9 +170,9 @@ export function OrderDetail() {
           </p>
           {order.trackingNo && (
             <div className="order__notes">
-              <strong>Tracking</strong>
+              <strong>{t('order.tracking')}</strong>
               <p className="order__text">
-                {order.logisticsCompany ?? 'Carrier'} / {order.trackingNo}
+                {order.logisticsCompany ?? t('order.carrier')} / {order.trackingNo}
               </p>
             </div>
           )}
@@ -179,19 +180,24 @@ export function OrderDetail() {
 
         <div className="order__actions">
           <button type="button" className="btn btn--primary" onClick={onConfirmCompleted}>
-            Confirm completed
+            {t('order.confirmDone')}
           </button>
           <button type="button" className="btn btn--ghost" onClick={onCreateAfterSale}>
-            Request after-sale
+            {t('order.afterSale')}
           </button>
           <Link to="/catalog" className="btn btn--primary">
-            Continue shopping
+            {t('common.continueShopping')}
           </Link>
-          <Link to="/admin/orders" className="btn btn--ghost">
-            管理后台订单
+          <Link to="/user/orders" className="btn btn--ghost">
+            {t('order.myOrders')}
           </Link>
+          {me?.role === 'ADMIN' && (
+            <Link to="/admin/orders" className="btn btn--ghost">
+              {t('footer.admin')}
+            </Link>
+          )}
           <Link to="/" className="btn btn--ghost">
-            Back to home
+            {t('common.backHome')}
           </Link>
         </div>
       </div>

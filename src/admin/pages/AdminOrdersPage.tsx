@@ -1,11 +1,12 @@
 /**
- * 管理端订单列表：数据来自 `GET /api/v1/admin/orders`。
+ * 管理端订单列表：`GET /api/v1/admin/orders`。
  *
- * 提供「前台订单详情」外链（新标签打开）、以及录入物流 / 推进状态的弹窗（对应 PATCH 管理接口）。
+ * 设计稿对齐：顶部四个 Tab（全部 / 待付款 / 待发货·配送 / 已完成）+ 关键字筛选；
+ * 字典展示优先读 locale 文件 `dict.ORDER_STATUS.*`，缺省回退库内中文标签。
  */
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { App, Button, Input, Modal, Select, Space, Table, Tag, Typography } from 'antd'
+import { App, Button, Input, Select, Space, Table, Tabs, Tag, Typography } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import type { ChangeEvent } from 'react'
@@ -16,12 +17,15 @@ import {
   useAdminUpdateOrderTracking,
   useDictItems,
 } from '../../hooks/apiHooks'
+import { useDictLabel, useI18n } from '../../i18n/I18nProvider'
 import type { components } from '../../generated/voyage-paths'
 import { voyage } from '../../openapi/voyageSdk'
+import { StandardModal } from '../components/StandardModal'
 
 type OrderRow = components['schemas']['OrderView']
 
-/** 将后端订单状态映射为 Ant Design Tag 的预设颜色 */
+type OrderTab = 'all' | 'pending' | 'shipping' | 'done'
+
 function statusColor(status: string) {
   switch (status) {
     case 'COMPLETED':
@@ -35,24 +39,50 @@ function statusColor(status: string) {
   }
 }
 
+function matchesOrderTab(status: string, tab: OrderTab): boolean {
+  switch (tab) {
+    case 'all':
+      return true
+    case 'pending':
+      return status === 'PENDING_PAYMENT'
+    case 'shipping':
+      return status === 'PAID' || status === 'SHIPPED'
+    case 'done':
+      return status === 'DELIVERED' || status === 'COMPLETED'
+    default:
+      return true
+  }
+}
+
+function OrderStatusTag({ status, apiLabel }: { status: string; apiLabel: string }) {
+  const text = useDictLabel('ORDER_STATUS', status, apiLabel)
+  return <Tag color={statusColor(status)}>{text}</Tag>
+}
+
 export function AdminOrdersPage() {
   const { message } = App.useApp()
+  const { t } = useI18n()
   const { data: orders = [], isLoading, refetch } = useAdminOrders()
   const { data: orderStatusItems = [] } = useDictItems('ORDER_STATUS')
   const trackingMut = useAdminUpdateOrderTracking()
   const statusMut = useAdminUpdateOrderStatus()
   const flowNextMut = useAdminFlowNextOrderStatus()
+  const [orderTab, setOrderTab] = useState<OrderTab>('all')
   const [trackingModal, setTrackingModal] = useState<OrderRow | null>(null)
   const [trackingNo, setTrackingNo] = useState('')
   const [logisticsCompany, setLogisticsCompany] = useState('')
   const [statusModal, setStatusModal] = useState<OrderRow | null>(null)
   const [nextStatus, setNextStatus] = useState('')
   const [statusRemark, setStatusRemark] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
   const [keyword, setKeyword] = useState('')
   const [historyModalOrderNo, setHistoryModalOrderNo] = useState<string | null>(null)
-  const [histories, setHistories] = useState<Array<{ fromStatus?: string; toStatus: string; changedAt: string; remark?: string }>>([])
+  const [histories, setHistories] = useState<
+    Array<{ fromStatus?: string; toStatus: string; changedAt: string; remark?: string }>
+  >([])
   const [historyLoading, setHistoryLoading] = useState(false)
+
+  const labelForStatus = (code: string) =>
+    orderStatusItems.find((i) => i.itemCode === code)?.itemLabel ?? code
 
   const columns: ProColumns<OrderRow>[] = [
     {
@@ -63,13 +93,18 @@ export function AdminOrdersPage() {
     {
       title: '状态',
       dataIndex: 'status',
-      render: (_, r) => <Tag color={statusColor(r.status)}>{r.status}</Tag>,
+      render: (_, r) => <OrderStatusTag status={r.status} apiLabel={labelForStatus(r.status)} />,
     },
     {
       title: '金额',
       key: 'amt',
       search: false,
-      render: (_, r) => `${r.currency} ${Number(r.totalAmount).toFixed(2)}`,
+      align: 'right',
+      render: (_, r) => (
+        <span className="tabular-nums">
+          {r.currency} {Number(r.totalAmount).toFixed(2)}
+        </span>
+      ),
     },
     {
       title: '收货人',
@@ -91,10 +126,10 @@ export function AdminOrdersPage() {
             前台详情
           </Link>
           <Button type="link" size="small" onClick={() => setTrackingModal(r)}>
-            物流
+            {t('admin.orders.tracking')}
           </Button>
           <Button type="link" size="small" onClick={() => setStatusModal(r)}>
-            状态
+            {t('admin.orders.status')}
           </Button>
           <Button
             type="link"
@@ -110,17 +145,18 @@ export function AdminOrdersPage() {
               }
             }}
           >
-            日志
+            {t('admin.orders.history')}
           </Button>
         </Space>
       ),
     },
   ]
+
   const filteredOrders = orders.filter((o) => {
-    const statusOk = !statusFilter || o.status === statusFilter
+    const tabOk = matchesOrderTab(o.status, orderTab)
     const key = keyword.trim().toLowerCase()
     const kwOk = !key || `${o.orderNo} ${o.receiverName}`.toLowerCase().includes(key)
-    return statusOk && kwOk
+    return tabOk && kwOk
   })
 
   const submitTracking = async () => {
@@ -181,25 +217,26 @@ export function AdminOrdersPage() {
   }
 
   return (
-    <PageContainer title="订单管理" subTitle="状态字典化 + 手动选择 + 自动流转">
+    <PageContainer title={t('admin.orders.title')} subTitle={t('admin.orders.subtitle')}>
+      <Tabs
+        className="admin-page-tab"
+        activeKey={orderTab}
+        onChange={(k) => setOrderTab(k as OrderTab)}
+        style={{ marginBottom: 12 }}
+        items={[
+          { key: 'all', label: t('admin.orders.tabAll') },
+          { key: 'pending', label: t('admin.orders.tabPending') },
+          { key: 'shipping', label: t('admin.orders.tabShipping') },
+          { key: 'done', label: t('admin.orders.tabDone') },
+        ]}
+      />
       <Space style={{ marginBottom: 12 }} wrap>
         <Input
           allowClear
-          placeholder="按订单号/收货人筛选"
+          placeholder={t('admin.orders.keywordPh')}
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           style={{ width: 280 }}
-        />
-        <Select
-          allowClear
-          placeholder="按状态筛选"
-          value={statusFilter || undefined}
-          style={{ width: 260 }}
-          onChange={(value) => setStatusFilter(value ?? '')}
-          options={orderStatusItems.map((item) => ({
-            value: item.itemCode,
-            label: `${item.itemLabel} (${item.itemCode})`,
-          }))}
         />
       </Space>
       <ProTable<OrderRow>
@@ -212,8 +249,8 @@ export function AdminOrdersPage() {
         pagination={{ pageSize: 10, showSizeChanger: true }}
       />
 
-      <Modal
-        title="更新物流"
+      <StandardModal
+        title={t('admin.orders.tracking')}
         open={Boolean(trackingModal)}
         onOk={() => void submitTracking()}
         onCancel={() => {
@@ -237,10 +274,10 @@ export function AdminOrdersPage() {
             onChange={(e) => setLogisticsCompany(e.target.value)}
           />
         </Space>
-      </Modal>
+      </StandardModal>
 
-      <Modal
-        title={`状态流转日志：${historyModalOrderNo ?? ''}`}
+      <StandardModal
+        title={`${t('admin.orders.history')}：${historyModalOrderNo ?? ''}`}
         open={Boolean(historyModalOrderNo)}
         onCancel={() => setHistoryModalOrderNo(null)}
         footer={null}
@@ -258,10 +295,10 @@ export function AdminOrdersPage() {
             { title: '备注', dataIndex: 'remark', render: (v) => v ?? '-' },
           ]}
         />
-      </Modal>
+      </StandardModal>
 
-      <Modal
-        title="推进订单状态"
+      <StandardModal
+        title={t('admin.orders.status')}
         open={Boolean(statusModal)}
         onOk={() => void submitStatus()}
         onCancel={() => {
@@ -303,7 +340,7 @@ export function AdminOrdersPage() {
           value={statusRemark}
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setStatusRemark(e.target.value)}
         />
-      </Modal>
+      </StandardModal>
     </PageContainer>
   )
 }

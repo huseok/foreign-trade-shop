@@ -5,6 +5,7 @@ import { Header } from '../components/Header'
 import { authStore } from '../lib/auth/authStore'
 import { syncLocalCartToServer } from '../lib/cart/localCart'
 import { voyage } from '../openapi/voyageSdk'
+import '../styles/marketplace.css'
 import './MainLayout.css'
 
 export function MainLayout() {
@@ -17,7 +18,7 @@ export function MainLayout() {
   }, [])
 
   return (
-    <div className="main-layout">
+    <div className="main-layout sf-market-root" data-sf-theme="marketplace">
       <Header />
       <main className="main-layout__main">
         <Outlet />

@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v1/auth/captcha": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 注册用图形验证码 */
+        get: operations["authCaptcha"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -100,6 +117,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 前台启用标签列表（目录筛选） */
+        get: operations["tagsListActive"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products/{id}": {
         parameters: {
             query?: never;
@@ -143,6 +177,54 @@ export interface paths {
         put: operations["adminProductsUpdate"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/media/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminMediaUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminTagsList"];
+        put?: never;
+        post: operations["adminTagsCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tags/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["adminTagsUpdate"];
+        post?: never;
+        delete: operations["adminTagsDelete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -344,6 +426,12 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        CaptchaResponse: {
+            /** @description 注册时随 captchaCode 一并提交 */
+            captchaId: string;
+            /** @description data:image/png;base64,... 可直接作为 img src */
+            imageBase64: string;
+        };
         RegisterRequest: {
             /** Format: email */
             email: string;
@@ -351,6 +439,9 @@ export interface components {
             name: string;
             phone?: string;
             country?: string;
+            captchaId: string;
+            /** @description 图片验证码，不区分大小写 */
+            captchaCode: string;
         };
         LoginRequest: {
             /** Format: email */
@@ -376,6 +467,49 @@ export interface components {
             name: string;
             role: string;
         };
+        MediaUploadView: {
+            /** @description 站点相对路径，如 /media/yyyy/MM/uuid_thumb.jpg */
+            thumbUrl: string;
+            /** @description 完整图相对路径 */
+            fullUrl: string;
+        };
+        ProductImageView: {
+            thumbUrl: string;
+            fullUrl: string;
+        };
+        ProductImageRef: {
+            thumbUrl: string;
+            fullUrl: string;
+        };
+        TagView: {
+            /** Format: int64 */
+            id: number;
+            code: string;
+            name: string;
+            sortNo: number;
+            isActive: boolean;
+        };
+        TagUpsertRequest: {
+            code: string;
+            name: string;
+            sortNo?: number;
+            isActive?: boolean;
+        };
+        ProductOptionView: {
+            optionName: string;
+            optionValue: string;
+            sortNo: number;
+        };
+        ProductSkuView: {
+            /** Format: int64 */
+            id: number;
+            skuCode: string;
+            attrJson: string;
+            salePrice: number;
+            stockQty: number;
+            weightKg?: number | null;
+            isActive: boolean;
+        };
         ChangePasswordRequest: {
             oldPassword: string;
             newPassword: string;
@@ -392,8 +526,21 @@ export interface components {
             incoterm?: string | null;
             originCountry?: string | null;
             leadTimeDays?: number | null;
+            weightKg?: number | null;
+            /** Format: int64 */
+            categoryId?: number | null;
+            /** Format: int64 */
+            shippingTemplateId?: number | null;
             isActive: boolean;
+            options?: components["schemas"]["ProductOptionView"][];
+            skus?: components["schemas"]["ProductSkuView"][];
+            /** @description 前台列表优先展示首张 thumbUrl */
+            images?: components["schemas"]["ProductImageView"][];
+            /** @description 商品标签（多对多） */
+            tags?: components["schemas"]["TagView"][];
             price?: number | null;
+            /** @description 划线原价；非空且大于 price 时表示促销价 */
+            listPrice?: number | null;
             currency?: string | null;
         };
         PagedProducts: {
@@ -406,6 +553,8 @@ export interface components {
         ProductAdminUpsertRequest: {
             title: string;
             price: number;
+            /** @description 划线原价，须不低于 price；null 表示不设 */
+            listPrice?: number | null;
             currency: string;
             moq: number;
             description?: string;
@@ -415,7 +564,16 @@ export interface components {
             incoterm?: string;
             originCountry?: string;
             leadTimeDays?: number;
+            weightKg?: number;
+            /** Format: int64 */
+            categoryId?: number;
+            /** Format: int64 */
+            shippingTemplateId?: number;
             isActive: boolean;
+            /** @description null 不改图；[] 清空；非空覆盖排序 */
+            images?: components["schemas"]["ProductImageRef"][];
+            /** @description null 不改标签；[] 清空关联；非空覆盖 */
+            tagIds?: number[];
         };
         IdPayload: {
             /** Format: int64 */
@@ -514,6 +672,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    authCaptcha: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptchaResponse"];
+                };
+            };
+        };
+    };
     authRegister: {
         parameters: {
             query?: never;
@@ -641,6 +819,12 @@ export interface operations {
                 country?: string;
                 /** @description 标题 / SKU / ID 搜索 */
                 q?: string;
+                /** @description 按分类 ID 精确筛选（与类目导航联动） */
+                categoryId?: number;
+                /** @description 按标签 ID 筛选（商品须关联该标签） */
+                tagId?: number;
+                /** @description true 时仅返回活动商品（已设划线价且高于售价） */
+                promo?: boolean;
             };
             header?: never;
             path?: never;
@@ -655,6 +839,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedProducts"];
+                };
+            };
+        };
+    };
+    tagsListActive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagView"][];
                 };
             };
         };
@@ -768,6 +972,125 @@ export interface operations {
                 "application/json": components["schemas"]["ProductAdminUpsertRequest"];
             };
         };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    adminMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadView"];
+                };
+            };
+        };
+    };
+    adminTagsList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagView"][];
+                };
+            };
+        };
+    };
+    adminTagsCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdPayload"];
+                };
+            };
+        };
+    };
+    adminTagsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    adminTagsDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {

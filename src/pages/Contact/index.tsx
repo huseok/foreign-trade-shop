@@ -1,17 +1,26 @@
 /**
  * 联系人页面：
- * 展示站点商务联系人信息，满足“姓名/WA/微信”需求。
+ * 展示站点商务联系人信息，满足「姓名/WA/微信」需求。
  */
+import { useI18n } from '../../i18n/I18nProvider'
+
 export function ContactPage() {
+  const { t } = useI18n()
   return (
     <section className="page-pad">
       <div className="container">
-        <h1 className="page-header__title">联系我们</h1>
-        <p className="page-header__desc">商务合作或采购支持，请通过以下方式联系。</p>
+        <h1 className="page-header__title">{t('contact.title')}</h1>
+        <p className="page-header__desc">{t('contact.desc')}</p>
         <div style={{ marginTop: 24, display: 'grid', gap: 12 }}>
-          <div>姓名：CHZfobkey Team</div>
-          <div>WA：+86 188-0000-0000</div>
-          <div>微信：CHZfobkey_Biz</div>
+          <div>
+            {t('contact.name')}：CHZfobkey Team
+          </div>
+          <div>
+            {t('contact.wa')}：+86 188-0000-0000
+          </div>
+          <div>
+            {t('contact.wechat')}：CHZfobkey_Biz
+          </div>
         </div>
       </div>
     </section>

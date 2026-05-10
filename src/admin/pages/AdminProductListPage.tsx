@@ -2,19 +2,26 @@
  * 管理端商品列表：服务端分页 + 关键词 + 上架状态；入口新建 / 行内编辑。
  */
 import { useEffect, useState } from 'react'
-import { App, Button, Input, Modal, Popconfirm, Select, Space, Table, Typography, Upload } from 'antd'
+import { App, Button, Input, Popconfirm, Select, Space, Table, Typography, Upload } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { Link } from 'react-router-dom'
 import { useAdminBulkProductStatus, useAdminProductsPage, useMe } from '../../hooks/apiHooks'
+import { useI18n } from '../../i18n/I18nProvider'
+import { i18nTpl } from '../../lib/i18nTpl'
+import { productThumbUrl } from '../../lib/media/resolveMediaUrl'
 import type { ProductDto } from '../../types/api'
 import { voyage } from '../../openapi/voyageSdk'
+import { AdminProductQuickCreateModal } from '../components/AdminProductQuickCreateModal'
+import { StandardModal } from '../components/StandardModal'
 
 type StatusFilter = 'all' | 'active' | 'inactive'
 
 export function AdminProductListPage() {
   const { message } = App.useApp()
+  const { t } = useI18n()
   const { data: me, isLoading: meLoading } = useMe(true)
+  const [quickOpen, setQuickOpen] = useState(false)
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(10)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -46,19 +53,19 @@ export function AdminProductListPage() {
 
   useEffect(() => {
     if (!meLoading && me?.role !== 'ADMIN') {
-      message.warning('无管理员权限')
+      message.warning(t('admin.productsList.warnNoAdmin'))
     }
-  }, [me, meLoading, message])
+  }, [me, meLoading, message, t])
 
   if (meLoading) {
-    return <Typography.Paragraph>加载中…</Typography.Paragraph>
+    return <Typography.Paragraph>{t('admin.common.loading')}</Typography.Paragraph>
   }
 
   if (me?.role !== 'ADMIN') {
     return (
       <div>
-        <Typography.Title level={4}>无权限</Typography.Title>
-        <Typography.Paragraph>请使用 ADMIN 账号从后台入口登录。</Typography.Paragraph>
+        <Typography.Title level={4}>{t('admin.common.noPermission')}</Typography.Title>
+        <Typography.Paragraph>{t('admin.common.noPermissionHint')}</Typography.Paragraph>
       </div>
     )
   }
@@ -68,33 +75,47 @@ export function AdminProductListPage() {
 
   const columns: ProColumns<ProductDto>[] = [
     { title: 'ID', dataIndex: 'id', width: 72, fixed: 'left' },
-    { title: '标题', dataIndex: 'title', ellipsis: true },
-    { title: 'SKU', dataIndex: 'skuCode', width: 120, render: (v) => v ?? '—' },
     {
-      title: '价格',
+      title: t('admin.productsList.colThumb'),
+      key: 'thumb',
+      width: 76,
+      search: false,
+      render: (_, r) => {
+        const src = productThumbUrl(r)
+        return src ? (
+          <img src={src} alt="" width={48} height={48} style={{ objectFit: 'cover', borderRadius: 4 }} />
+        ) : (
+          '—'
+        )
+      },
+    },
+    { title: t('admin.productsList.colTitle'), dataIndex: 'title', ellipsis: true },
+    { title: t('admin.productsList.colSku'), dataIndex: 'skuCode', width: 120, render: (v) => v ?? '—' },
+    {
+      title: t('admin.productsList.colPrice'),
       key: 'price',
       width: 140,
       search: false,
       render: (_, r) =>
         r.price == null ? '—' : `${r.currency ?? ''} ${Number(r.price).toFixed(2)}`,
     },
-    { title: 'MOQ', dataIndex: 'moq', width: 80 },
+    { title: t('admin.productsList.colMoq'), dataIndex: 'moq', width: 80 },
     {
-      title: '状态',
+      title: t('admin.productsList.colStatus'),
       dataIndex: 'isActive',
       width: 88,
-      render: (_, r) => (r.isActive ? '上架' : '下架'),
+      render: (_, r) => (r.isActive ? t('admin.productsList.statusOn') : t('admin.productsList.statusOff')),
     },
     {
-      title: '操作',
+      title: t('admin.productsList.colActions'),
       key: 'actions',
       width: 180,
       search: false,
       fixed: 'right',
       render: (_, r) => (
         <Space>
-          <Link to={`/admin/products/${r.id}/edit`}>编辑</Link>
-          <Link to={`/admin/products/${r.id}/sku-matrix`}>规格矩阵</Link>
+          <Link to={`/admin/products/${r.id}/edit`}>{t('admin.productsList.edit')}</Link>
+          <Link to={`/admin/products/${r.id}/sku-matrix`}>{t('admin.productsList.skuMatrix')}</Link>
         </Space>
       ),
     },
@@ -133,7 +154,7 @@ export function AdminProductListPage() {
     const text = await file.text()
     const lines = text.split(/\r?\n/).filter(Boolean)
     if (lines.length <= 1) {
-      message.warning('CSV 无有效数据')
+      message.warning(t('admin.productsList.csvEmpty'))
       return false
     }
     const [head, ...body] = lines
@@ -154,15 +175,15 @@ export function AdminProductListPage() {
         isActive: String(parts[idx('isActive')] || 'true').trim() === 'true',
       }
       if (!payload.title) {
-        errors.push({ line: lineNo, reason: 'title 为空' })
+        errors.push({ line: lineNo, reason: t('admin.productsList.errTitleEmpty') })
         continue
       }
       if (payload.price <= 0) {
-        errors.push({ line: lineNo, reason: 'price 必须 > 0' })
+        errors.push({ line: lineNo, reason: t('admin.productsList.errPrice') })
         continue
       }
       if (payload.moq < 1) {
-        errors.push({ line: lineNo, reason: 'moq 必须 >= 1' })
+        errors.push({ line: lineNo, reason: t('admin.productsList.errMoq') })
         continue
       }
       try {
@@ -173,30 +194,33 @@ export function AdminProductListPage() {
         }
         ok += 1
       } catch {
-        errors.push({ line: lineNo, reason: '调用接口失败' })
+        errors.push({ line: lineNo, reason: t('admin.productsList.errApi') })
       }
     }
     setImportErrors(errors)
     setImportSummary({ ok, total: body.length })
-    message.success(`导入完成，成功 ${ok} 条，失败 ${errors.length} 条`)
+    message.success(i18nTpl(t('admin.productsList.importDone'), { ok, fail: errors.length }))
     setSelectedIds([])
     return false
   }
 
   return (
     <PageContainer
-      title="商品列表"
-      subTitle="支持筛选、批量上下架、CSV 导入导出与规格矩阵维护"
+      title={t('admin.productsList.title')}
+      subTitle={t('admin.productsList.subtitle')}
       extra={[
+        <Button key="quick" onClick={() => setQuickOpen(true)}>
+          {t('admin.products.quickCreate')}
+        </Button>,
         <Link key="new" to="/admin/products/new">
-          <Button type="primary">新建商品</Button>
+          <Button type="primary">{t('admin.products.fullCreate')}</Button>
         </Link>,
       ]}
     >
       <Space wrap style={{ marginBottom: 12 }}>
         <Input.Search
           allowClear
-          placeholder="搜索标题、SKU 或商品 ID（服务端）"
+          placeholder={t('admin.productsList.searchPh')}
           value={qInput}
           onChange={(e) => setQInput(e.target.value)}
           style={{ width: 320 }}
@@ -206,9 +230,9 @@ export function AdminProductListPage() {
           onChange={setStatusFilter}
           style={{ width: 160 }}
           options={[
-            { value: 'all', label: '全部状态' },
-            { value: 'active', label: '仅上架' },
-            { value: 'inactive', label: '仅下架' },
+            { value: 'all', label: t('admin.productsList.filterAll') },
+            { value: 'active', label: t('admin.productsList.filterActive') },
+            { value: 'inactive', label: t('admin.productsList.filterInactive') },
           ]}
         />
         <Button
@@ -219,10 +243,10 @@ export function AdminProductListPage() {
             setPage(0)
           }}
         >
-          重置条件
+          {t('admin.productsList.reset')}
         </Button>
-        <Button onClick={exportCsv}>导出CSV</Button>
-        <Button onClick={downloadTemplate}>下载导入模板</Button>
+        <Button onClick={exportCsv}>{t('admin.productsList.exportCsv')}</Button>
+        <Button onClick={downloadTemplate}>{t('admin.productsList.downloadTpl')}</Button>
         <Upload
           accept=".csv"
           showUploadList={false}
@@ -231,37 +255,41 @@ export function AdminProductListPage() {
             return false
           }}
         >
-          <Button>导入CSV</Button>
+          <Button>{t('admin.productsList.importCsv')}</Button>
         </Upload>
         <Popconfirm
-          title={`确认批量上架 ${selectedIds.length} 条商品？`}
+          title={i18nTpl(t('admin.productsList.bulkOnConfirm'), { n: selectedIds.length })}
           disabled={selectedIds.length === 0}
           onConfirm={async () => {
             await bulkStatusMut.mutateAsync({ ids: selectedIds, isActive: true })
-            message.success(`已批量上架 ${selectedIds.length} 条`)
+            message.success(i18nTpl(t('admin.productsList.bulkOnOk'), { n: selectedIds.length }))
             setSelectedIds([])
           }}
         >
           <Button disabled={selectedIds.length === 0} loading={bulkStatusMut.isPending}>
-            批量上架
+            {t('admin.productsList.bulkOn')}
           </Button>
         </Popconfirm>
         <Popconfirm
-          title={`确认批量下架 ${selectedIds.length} 条商品？`}
+          title={i18nTpl(t('admin.productsList.bulkOffConfirm'), { n: selectedIds.length })}
           disabled={selectedIds.length === 0}
           onConfirm={async () => {
             await bulkStatusMut.mutateAsync({ ids: selectedIds, isActive: false })
-            message.success(`已批量下架 ${selectedIds.length} 条`)
+            message.success(i18nTpl(t('admin.productsList.bulkOffOk'), { n: selectedIds.length }))
             setSelectedIds([])
           }}
         >
           <Button danger disabled={selectedIds.length === 0} loading={bulkStatusMut.isPending}>
-            批量下架
+            {t('admin.productsList.bulkOff')}
           </Button>
         </Popconfirm>
       </Space>
       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-        当前条件共 {total} 条（第 {page + 1} 页，每页 {pageSize} 条）
+        {i18nTpl(t('admin.productsList.pageSummary'), {
+          total,
+          page: page + 1,
+          size: pageSize,
+        })}
       </Typography.Text>
       <ProTable<ProductDto>
         rowKey="id"
@@ -281,33 +309,38 @@ export function AdminProductListPage() {
           pageSize,
           total,
           showSizeChanger: true,
-          showTotal: (t) => `共 ${t} 条`,
+          showTotal: (n) => i18nTpl(t('admin.productsList.showTotal'), { n }),
           onChange: (p, ps) => {
             setPage(p - 1)
             setPageSize(ps)
           },
         }}
       />
-      <Modal
-        title="CSV 导入报告"
+      <AdminProductQuickCreateModal open={quickOpen} onClose={() => setQuickOpen(false)} />
+      <StandardModal
+        title={t('admin.productsList.reportTitle')}
         open={Boolean(importSummary)}
         onCancel={() => setImportSummary(null)}
         footer={null}
         destroyOnClose
       >
         <Typography.Paragraph>
-          共 {importSummary?.total ?? 0} 行，成功 {importSummary?.ok ?? 0} 行，失败 {importErrors.length} 行。
+          {i18nTpl(t('admin.productsList.reportSummary'), {
+            total: importSummary?.total ?? 0,
+            ok: importSummary?.ok ?? 0,
+            fail: importErrors.length,
+          })}
         </Typography.Paragraph>
         <Table
           rowKey={(r) => `${r.line}-${r.reason}`}
           dataSource={importErrors}
           pagination={{ pageSize: 8 }}
           columns={[
-            { title: '行号', dataIndex: 'line', width: 90 },
-            { title: '失败原因', dataIndex: 'reason' },
+            { title: t('admin.productsList.colLine'), dataIndex: 'line', width: 90 },
+            { title: t('admin.productsList.colReason'), dataIndex: 'reason' },
           ]}
         />
-      </Modal>
+      </StandardModal>
     </PageContainer>
   )
 }

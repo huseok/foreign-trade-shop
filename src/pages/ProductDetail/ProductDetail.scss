@@ -35,6 +35,51 @@
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
     width: 100%;
+
+    &--fallback {
+      min-height: 280px;
+    }
+  }
+
+  &__visual {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__hero-img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  &__thumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &__thumb {
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--surface);
+
+    img {
+      width: 56px;
+      height: 56px;
+      object-fit: cover;
+      display: block;
+    }
+
+    &.is-active {
+      border-color: var(--primary);
+    }
   }
 
   &__info {
@@ -54,6 +99,24 @@
     margin: 0.35rem 0 0.5rem;
     color: var(--text-h);
     letter-spacing: -0.02em;
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 0.75rem;
+  }
+
+  &__tag {
+    display: inline-block;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--primary, #2563eb) 12%, transparent);
+    color: var(--primary, #2563eb);
+    border: 1px solid color-mix(in oklch, var(--primary, #2563eb) 28%, transparent);
   }
 
   &__sku {

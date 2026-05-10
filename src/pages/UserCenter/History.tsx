@@ -2,28 +2,41 @@
  * 用户中心-浏览记录模块。
  */
 import { Table } from 'antd'
+import { Link } from 'react-router-dom'
+import { UserCenterShell } from '../../components/UserCenterShell'
 import { useUserBrowseHistories } from '../../hooks/apiHooks'
+import { useI18n } from '../../i18n/I18nProvider'
 
 export function UserHistoryPage() {
+  const { t } = useI18n()
   const { data = [], isLoading } = useUserBrowseHistories(true)
   return (
-    <section className="page-pad">
-      <div className="container">
-        <h1 className="page-header__title">浏览记录</h1>
-        <p className="page-header__desc">回看你浏览过的商品，支持快速再次加购。</p>
-        <Table
-          style={{ marginTop: 16 }}
-          rowKey="id"
-          loading={isLoading}
-          dataSource={data}
-          columns={[
-            { title: '记录ID', dataIndex: 'id', width: 100 },
-            { title: '商品ID', dataIndex: 'productId' },
-            { title: '浏览时间', dataIndex: 'viewedAt' },
-          ]}
-          pagination={false}
-        />
-      </div>
-    </section>
+    <UserCenterShell>
+      <h2 className="page-header__title" style={{ fontSize: '1.35rem', marginBottom: 8 }}>
+        {t('user.historyTitle')}
+      </h2>
+      <p className="page-header__desc">{t('user.historyDesc')}</p>
+      <Table
+        style={{ marginTop: 16 }}
+        rowKey="id"
+        loading={isLoading}
+        dataSource={data}
+        columns={[
+          { title: t('common.recordId'), dataIndex: 'id', width: 100 },
+          {
+            title: t('user.histColProductId'),
+            dataIndex: 'productId',
+            render: (id: number) => (
+              <Link to={`/products/${id}`}>{id}</Link>
+            ),
+          },
+          {
+            title: t('common.viewedAt'),
+            dataIndex: 'viewedAt',
+          },
+        ]}
+        pagination={false}
+      />
+    </UserCenterShell>
   )
 }

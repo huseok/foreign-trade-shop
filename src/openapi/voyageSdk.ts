@@ -18,6 +18,9 @@ type S = components['schemas']
 export const voyage = {
   /** 注册、登录、改密、当前用户 */
   auth: {
+    getCaptcha(): Promise<S['CaptchaResponse']> {
+      return getData<S['CaptchaResponse']>('/api/v1/auth/captcha')
+    },
     register(body: S['RegisterRequest']): Promise<string> {
       return postData<string>('/api/v1/auth/register', body)
     },
@@ -42,12 +45,18 @@ export const voyage = {
       size?: number
       country?: string
       q?: string
+      categoryId?: number
+      tagId?: number
+      promo?: boolean
     }): Promise<S['PagedProducts']> {
       const sp = new URLSearchParams()
       if (params.page != null) sp.set('page', String(params.page))
       if (params.size != null) sp.set('size', String(params.size))
       if (params.country != null && params.country !== '') sp.set('country', params.country)
       if (params.q != null && params.q !== '') sp.set('q', params.q)
+      if (params.categoryId != null) sp.set('categoryId', String(params.categoryId))
+      if (params.tagId != null) sp.set('tagId', String(params.tagId))
+      if (params.promo === true) sp.set('promo', 'true')
       const qs = sp.toString()
       return getData<S['PagedProducts']>(`/api/v1/products${qs ? `?${qs}` : ''}`)
     },
@@ -111,6 +120,15 @@ export const voyage = {
     },
     adminBulkStatus(body: { ids: number[]; isActive: boolean }): Promise<{ updated: number }> {
       return patchData('/api/v1/admin/products/bulk-status', body)
+    },
+  },
+
+  /** 管理端媒体上传（multipart）；返回相对路径，配合 `resolveMediaUrl` 展示 */
+  media: {
+    upload(file: File): Promise<S['MediaUploadView']> {
+      const fd = new FormData()
+      fd.append('file', file)
+      return postFormData<S['MediaUploadView']>('/api/v1/admin/media/upload', fd)
     },
   },
 
@@ -198,6 +216,33 @@ export const voyage = {
       return deleteData(`/api/v1/admin/categories/${id}`)
     },
   },
+
+  /** 商品标签：前台启用列表 + 后台维护 + 商品绑定 tagIds */
+  tags: {
+    listActive(): Promise<S['TagView'][]> {
+      return getData<S['TagView'][]>('/api/v1/tags')
+    },
+    adminList(): Promise<S['TagView'][]> {
+      return getData<S['TagView'][]>('/api/v1/admin/tags')
+    },
+    adminCreate(body: S['TagUpsertRequest']): Promise<S['IdPayload']> {
+      return postData<S['IdPayload']>('/api/v1/admin/tags', body)
+    },
+    adminUpdate(id: number, body: S['TagUpsertRequest']): Promise<string> {
+      return putData<string>(`/api/v1/admin/tags/${id}`, body)
+    },
+    adminDelete(id: number): Promise<string> {
+      return deleteData<string>(`/api/v1/admin/tags/${id}`)
+    },
+  },
+
+  /** 前台展示配置（独立接口，不经站点 CMS） */
+  storefront: {
+    settings(): Promise<S['StorefrontSettings']> {
+      return getData<S['StorefrontSettings']>('/api/v1/storefront/settings')
+    },
+  },
+
   shipping: {
     listTemplates(): Promise<Array<{ id: number; templateName: string; billingMode: string; isActive: boolean }>> {
       return getData('/api/v1/shipping/templates')
@@ -251,6 +296,23 @@ export const voyage = {
     },
   },
   site: {
+    /** 前台匿名可读：首页活动轮播（content_type = PROMO） */
+    listPromos(): Promise<
+      Array<{
+        id: number
+        contentKey: string
+        contentType: string
+        title?: string
+        subtitle?: string
+        body?: string
+        imageUrl?: string
+        actionUrl?: string
+        sortNo: number
+        isActive: boolean
+      }>
+    > {
+      return getData('/api/v1/site/promos')
+    },
     listAdminContents(): Promise<
       Array<{
         id: number
@@ -351,6 +413,11 @@ function getData<T>(url: string) {
 /** POST + 解包 */
 function postData<T>(url: string, body?: unknown) {
   return unwrap(apiClient.post<ApiResponse<T>>(url, body))
+}
+
+/** POST multipart（不传 Content-Type，由浏览器自动带 boundary） */
+function postFormData<T>(url: string, formData: FormData) {
+  return unwrap(apiClient.post<ApiResponse<T>>(url, formData))
 }
 
 /** PUT + 解包 */

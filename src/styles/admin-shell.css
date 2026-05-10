@@ -1,0 +1,31 @@
+/**
+ * 管理后台壳层：与设计稿 admin-content-panel / admin-page-tab 对齐的补充样式。
+ * Ant Design 组件级主题见 theme/adminAntdTheme.ts。
+ */
+.admin-shell {
+  min-height: 100%;
+}
+
+.admin-shell .ant-pro-layout .ant-layout-content {
+  background: var(--adm-bg, #f0f2f5);
+}
+
+.admin-page-tab.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  border-radius: 6px 6px 0 0;
+}
+
+.admin-page-tab .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  font-weight: 600;
+}
+
+.std-modal .ant-modal-header {
+  margin-bottom: 0;
+}
+
+.std-modal .ant-modal-footer {
+  border-top: 1px solid #f0f0f0;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

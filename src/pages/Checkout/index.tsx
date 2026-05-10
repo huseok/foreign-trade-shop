@@ -6,10 +6,12 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart, useCreateOrder } from '../../hooks/apiHooks'
+import { useI18n } from '../../i18n/I18nProvider'
 import { toErrorMessage } from '../../lib/http/error'
 import './Checkout.scss'
 
 export function Checkout() {
+  const { t } = useI18n()
   const { data: cart, isLoading } = useCart()
   const createOrderMutation = useCreateOrder()
   const navigate = useNavigate()
@@ -19,18 +21,19 @@ export function Checkout() {
   const currency = cart?.currency ?? 'USD'
   const [submitMsg, setSubmitMsg] = useState<string | null>(null)
 
-  /**
-   * 提交结账：
-   * 把表单映射为后端 CreateOrderRequest，成功后跳转到 /orders/{orderNo}。
-   */
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
+    const city = String(fd.get('city') ?? '').trim()
+    const region = String(fd.get('region') ?? '').trim()
+    const address2 = String(fd.get('address2') ?? '').trim()
+    const lineMain = String(fd.get('address1') ?? '').trim()
+    const composedLine = [lineMain, city, region, address2].filter(Boolean).join(', ')
     const payload = {
       receiverName: String(fd.get('name') ?? '').trim(),
       receiverPhone: String(fd.get('phone') ?? '').trim(),
       country: String(fd.get('country') ?? '').trim(),
-      addressLine: String(fd.get('address1') ?? '').trim(),
+      addressLine: composedLine || lineMain,
       postalCode: String(fd.get('zip') ?? '').trim() || undefined,
       receiverCompany: String(fd.get('company') ?? '').trim() || undefined,
       taxNo: String(fd.get('taxNo') ?? '').trim() || undefined,
@@ -42,22 +45,28 @@ export function Checkout() {
       const resp = await createOrderMutation.mutateAsync(payload)
       navigate(`/orders/${encodeURIComponent(resp.orderNo)}`)
     } catch (err) {
-      setSubmitMsg(toErrorMessage(err, 'Place order failed'))
+      setSubmitMsg(toErrorMessage(err, t('checkout.failDefault')))
     }
   }
 
   if (isLoading) {
-    return <div className="checkout page-pad"><div className="container narrow"><p>Loading cart...</p></div></div>
+    return (
+      <div className="checkout page-pad">
+        <div className="container narrow">
+          <p>{t('common.loading')}</p>
+        </div>
+      </div>
+    )
   }
 
   if (itemCount === 0) {
     return (
       <div className="checkout page-pad">
         <div className="container narrow">
-          <h1 className="page-header__title">Checkout</h1>
-          <p className="page-header__desc">Your cart is empty.</p>
+          <h1 className="page-header__title">{t('checkout.title')}</h1>
+          <p className="page-header__desc">{t('checkout.empty')}</p>
           <Link to="/catalog" className="btn btn--primary">
-            Browse catalog
+            {t('common.browseCatalog')}
           </Link>
         </div>
       </div>
@@ -68,31 +77,29 @@ export function Checkout() {
     <div className="checkout page-pad">
       <div className="container">
         <header className="page-header">
-          <h1 className="page-header__title">Checkout</h1>
-          <p className="page-header__desc">
-            Submit address and create a real backend order.
-          </p>
+          <h1 className="page-header__title">{t('checkout.title')}</h1>
+          <p className="page-header__desc">{t('checkout.subtitle')}</p>
         </header>
 
         <form className="checkout__grid" onSubmit={handleSubmit}>
           <div className="checkout__forms">
             <section className="checkout__card">
-              <h2 className="checkout__card-title">Contact</h2>
+              <h2 className="checkout__card-title">{t('checkout.contactTitle')}</h2>
               <div className="field-row">
                 <label className="field">
-                  <span className="field__label">Full name</span>
+                  <span className="field__label">{t('checkout.fullName')}</span>
                   <input
                     className="input"
                     name="name"
                     required
                     autoComplete="name"
-                    placeholder="Jane Buyer"
+                    placeholder={t('checkout.fullNamePh')}
                   />
                 </label>
               </div>
               <div className="field-row field-row--2">
                 <label className="field">
-                  <span className="field__label">Email</span>
+                  <span className="field__label">{t('checkout.email')}</span>
                   <input
                     className="input"
                     type="email"
@@ -103,7 +110,7 @@ export function Checkout() {
                   />
                 </label>
                 <label className="field">
-                  <span className="field__label">Phone</span>
+                  <span className="field__label">{t('checkout.phone')}</span>
                   <input
                     className="input"
                     type="tel"
@@ -117,9 +124,9 @@ export function Checkout() {
             </section>
 
             <section className="checkout__card">
-              <h2 className="checkout__card-title">Shipping address</h2>
+              <h2 className="checkout__card-title">{t('checkout.shipTitle')}</h2>
               <label className="field">
-                <span className="field__label">Company (optional)</span>
+                <span className="field__label">{t('checkout.company')}</span>
                 <input
                   className="input"
                   name="company"
@@ -127,7 +134,7 @@ export function Checkout() {
                 />
               </label>
               <label className="field">
-                <span className="field__label">Address line 1</span>
+                <span className="field__label">{t('checkout.address1')}</span>
                 <input
                   className="input"
                   name="address1"
@@ -136,41 +143,41 @@ export function Checkout() {
                 />
               </label>
               <label className="field">
-                <span className="field__label">Address line 2</span>
+                <span className="field__label">{t('checkout.address2')}</span>
                 <input className="input" name="address2" autoComplete="address-line2" />
               </label>
               <div className="field-row field-row--2">
                 <label className="field">
-                  <span className="field__label">Tax No (optional)</span>
+                  <span className="field__label">{t('checkout.taxNo')}</span>
                   <input className="input" name="taxNo" />
                 </label>
                 <label className="field">
-                  <span className="field__label">Incoterm (optional)</span>
-                  <input className="input" name="incoterm" placeholder="FOB" />
+                  <span className="field__label">{t('checkout.incoterm')}</span>
+                  <input className="input" name="incoterm" placeholder={t('checkout.incotermPh')} />
                 </label>
               </div>
               <label className="field">
-                <span className="field__label">Shipping method (optional)</span>
-                <input className="input" name="shippingMethod" placeholder="SEA / AIR" />
+                <span className="field__label">{t('checkout.shipMethod')}</span>
+                <input className="input" name="shippingMethod" placeholder={t('checkout.shipMethodPh')} />
               </label>
               <div className="field-row field-row--3">
                 <label className="field">
-                  <span className="field__label">City</span>
+                  <span className="field__label">{t('checkout.city')}</span>
                   <input className="input" name="city" required autoComplete="address-level2" />
                 </label>
                 <label className="field">
-                  <span className="field__label">Region</span>
+                  <span className="field__label">{t('checkout.region')}</span>
                   <input className="input" name="region" autoComplete="address-level1" />
                 </label>
                 <label className="field">
-                  <span className="field__label">Postal code</span>
+                  <span className="field__label">{t('checkout.postal')}</span>
                   <input className="input" name="zip" required autoComplete="postal-code" />
                 </label>
               </div>
               <label className="field">
-                <span className="field__label">Country</span>
+                <span className="field__label">{t('checkout.country')}</span>
                 <select className="input" name="country" required autoComplete="country">
-                  <option value="">Select</option>
+                  <option value="">{t('common.select')}</option>
                   <option value="US">United States</option>
                   <option value="GB">United Kingdom</option>
                   <option value="DE">Germany</option>
@@ -181,14 +188,14 @@ export function Checkout() {
             </section>
 
             <section className="checkout__card">
-              <h2 className="checkout__card-title">Notes</h2>
+              <h2 className="checkout__card-title">{t('checkout.notesTitle')}</h2>
               <label className="field">
-                <span className="field__label">Order notes (optional)</span>
+                <span className="field__label">{t('checkout.orderNotes')}</span>
                 <textarea
                   className="input input--textarea"
                   name="notes"
                   rows={3}
-                  placeholder="Delivery window, customs references…"
+                  placeholder={t('checkout.notesPh')}
                 />
               </label>
             </section>
@@ -196,7 +203,7 @@ export function Checkout() {
 
           <aside className="checkout__aside">
             <div className="checkout__summary">
-              <h2 className="checkout__summary-title">Order summary</h2>
+              <h2 className="checkout__summary-title">{t('checkout.summaryTitle')}</h2>
               <ul className="checkout__lines">
                 {rows.map((item) => (
                   <li key={item.itemId} className="checkout__line">
@@ -210,17 +217,17 @@ export function Checkout() {
                 ))}
               </ul>
               <div className="checkout__summary-row">
-                <span>Subtotal</span>
+                <span>{t('common.subtotal')}</span>
                 <span>
                   {currency} {subtotal.toFixed(2)}
                 </span>
               </div>
               <div className="checkout__summary-row checkout__summary-row--muted">
-                <span>Shipping</span>
-                <span>TBD</span>
+                <span>{t('common.shipping')}</span>
+                <span>{t('checkout.shipTbd')}</span>
               </div>
               <div className="checkout__summary-total">
-                <span>Total</span>
+                <span>{t('common.total')}</span>
                 <span>
                   {currency} {subtotal.toFixed(2)}
                 </span>
@@ -230,13 +237,10 @@ export function Checkout() {
                 className="btn btn--primary btn--block"
                 disabled={createOrderMutation.isPending}
               >
-                {createOrderMutation.isPending ? 'Placing order...' : 'Place order'}
+                {createOrderMutation.isPending ? t('checkout.placing') : t('checkout.placeOrder')}
               </button>
               {submitMsg && <p className="checkout__legal">{submitMsg}</p>}
-              <p className="checkout__legal">
-                By placing an order you agree to our Terms and Privacy Policy
-                (placeholder).
-              </p>
+              <p className="checkout__legal">{t('common.termsHint')}</p>
             </div>
           </aside>
         </form>

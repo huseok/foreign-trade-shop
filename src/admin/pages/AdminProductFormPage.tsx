@@ -9,61 +9,28 @@ import { AdminProductUpsertFields } from '../components/AdminProductUpsertFields
 import {
   useCategories,
   useAdminProductDetail,
+  useAdminTags,
   useCreateAdminProduct,
   useMe,
   useShippingTemplates,
   useUpdateAdminProduct,
 } from '../../hooks/apiHooks'
-import type { AdminProductUpsertRequest, ProductDto } from '../../types/api'
+import type { ProductDto } from '../../types/api'
 import { toErrorMessage } from '../../lib/http/error'
-
-type ProductFormValues = {
-  title: string
-  price: number
-  currency: string
-  moq: number
-  description?: string
-  skuCode?: string
-  hsCode?: string
-  unit?: string
-  incoterm?: string
-  originCountry?: string
-  leadTimeDays?: number
-  weightKg?: number
-  categoryId?: number
-  shippingTemplateId?: number
-  isActive: boolean
-}
+import {
+  adminProductFormValuesToPayload,
+  type AdminProductFormValues,
+} from '../lib/adminProductFormPayload'
 
 type ProductFormOps = {
-  setFieldsValue: (values: Partial<ProductFormValues>) => void
+  setFieldsValue: (values: Partial<AdminProductFormValues>) => void
 }
 
-function valuesToPayload(values: ProductFormValues): AdminProductUpsertRequest {
-  return {
-    title: String(values.title ?? '').trim(),
-    price: Number(values.price),
-    currency: String(values.currency ?? '').trim().toUpperCase(),
-    moq: Number(values.moq),
-    description: values.description ? String(values.description).trim() : undefined,
-    skuCode: values.skuCode ? String(values.skuCode).trim() : undefined,
-    hsCode: values.hsCode ? String(values.hsCode).trim() : undefined,
-    unit: values.unit ? String(values.unit).trim() : undefined,
-    incoterm: values.incoterm ? String(values.incoterm).trim().toUpperCase() : undefined,
-    originCountry: values.originCountry ? String(values.originCountry).trim() : undefined,
-    leadTimeDays: values.leadTimeDays == null ? undefined : Number(values.leadTimeDays),
-    // 以下字段后端已支持，当前前端类型源于旧 OpenAPI，故通过扩展对象传递。
-    ...(values.weightKg != null ? { weightKg: Number(values.weightKg) } : {}),
-    ...(values.categoryId != null ? { categoryId: Number(values.categoryId) } : {}),
-    ...(values.shippingTemplateId != null ? { shippingTemplateId: Number(values.shippingTemplateId) } : {}),
-    isActive: Boolean(values.isActive),
-  } as AdminProductUpsertRequest
-}
-
-function productToFormValues(p: ProductDto) {
+function productToFormValues(p: ProductDto): AdminProductFormValues {
   return {
     title: p.title,
-    price: p.price ?? undefined,
+    price: p.price != null ? Number(p.price) : 0,
+    listPrice: p.listPrice != null ? Number(p.listPrice) : undefined,
     currency: p.currency ?? 'USD',
     moq: p.moq,
     description: p.description ?? undefined,
@@ -73,10 +40,12 @@ function productToFormValues(p: ProductDto) {
     incoterm: p.incoterm ?? undefined,
     originCountry: p.originCountry ?? undefined,
     leadTimeDays: p.leadTimeDays ?? undefined,
-    weightKg: (p as { weightKg?: number }).weightKg ?? undefined,
-    categoryId: (p as { categoryId?: number }).categoryId ?? undefined,
-    shippingTemplateId: (p as { shippingTemplateId?: number }).shippingTemplateId ?? undefined,
+    weightKg: p.weightKg ?? undefined,
+    categoryId: p.categoryId ?? undefined,
+    shippingTemplateId: p.shippingTemplateId ?? undefined,
+    tagIds: p.tags?.map((tg) => tg.id) ?? [],
     isActive: p.isActive,
+    images: p.images?.map((i) => ({ thumbUrl: i.thumbUrl, fullUrl: i.fullUrl })) ?? [],
   }
 }
 
@@ -84,7 +53,7 @@ export function AdminProductFormPage() {
   const { productId } = useParams<{ productId: string }>()
   const navigate = useNavigate()
   const { message } = App.useApp()
-  const [form] = Form.useForm<ProductFormValues>()
+  const [form] = Form.useForm<AdminProductFormValues>()
 
   const idNum = productId ? Number(productId) : NaN
   const isEdit = productId != null && productId !== 'new' && Number.isFinite(idNum)
@@ -96,6 +65,7 @@ export function AdminProductFormPage() {
   const updateMutation = useUpdateAdminProduct()
   const { data: categories = [] } = useCategories()
   const { data: shippingTemplates = [] } = useShippingTemplates()
+  const { data: tagList = [] } = useAdminTags()
 
   useEffect(() => {
     if (product && isEdit) {
@@ -177,8 +147,8 @@ export function AdminProductFormPage() {
           <Form
             form={form}
             layout="vertical"
-            onFinish={async (values: ProductFormValues) => {
-              const payload = valuesToPayload(values)
+            onFinish={async (values: AdminProductFormValues) => {
+              const payload = adminProductFormValuesToPayload(values)
               try {
                 if (isEdit && product) {
                   await updateMutation.mutateAsync({ id: product.id, payload })
@@ -193,9 +163,13 @@ export function AdminProductFormPage() {
                 message.error(toErrorMessage(err, isEdit ? '保存失败' : '创建失败'))
               }
             }}
-            initialValues={{ currency: 'USD', moq: 1, isActive: true }}
+            initialValues={{ currency: 'USD', moq: 1, isActive: true, images: [], tagIds: [] }}
           >
-            <AdminProductUpsertFields categories={categories} shippingTemplates={shippingTemplates} />
+            <AdminProductUpsertFields
+              categories={categories}
+              shippingTemplates={shippingTemplates}
+              tags={tagList.map((tg) => ({ id: tg.id, name: tg.name, code: tg.code, isActive: tg.isActive }))}
+            />
             <Form.Item style={{ marginBottom: 0 }}>
               <Space wrap>
                 <Button type="primary" htmlType="submit" loading={submitting} disabled={submitting}>

@@ -4,15 +4,19 @@
  * 支持通过弹窗调用 `PATCH .../admin/after-sales/{id}/status` 更新状态。
  */
 import { useState } from 'react'
-import { App, Button, Input, Modal, Space, Tag, Typography } from 'antd'
+import { App, Button, Input, Space, Tag, Typography } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { useAdminAfterSales, useAdminUpdateAfterSaleStatus } from '../../hooks/apiHooks'
 import type { components } from '../../generated/voyage-paths'
+import { useI18n } from '../../i18n/I18nProvider'
+import { i18nTpl } from '../../lib/i18nTpl'
+import { StandardModal } from '../components/StandardModal'
 
 type Row = components['schemas']['AfterSaleView']
 
 export function AdminAfterSalesPage() {
+  const { t } = useI18n()
   const { message } = App.useApp()
   const { data: rows = [], isLoading, refetch } = useAdminAfterSales()
   const statusMut = useAdminUpdateAfterSaleStatus()
@@ -20,23 +24,23 @@ export function AdminAfterSalesPage() {
   const [status, setStatus] = useState('')
 
   const columns: ProColumns<Row>[] = [
-    { title: 'ID', dataIndex: 'id', width: 80, search: false },
-    { title: '订单号', dataIndex: 'orderNo', search: false },
+    { title: t('admin.afterSales.colId'), dataIndex: 'id', width: 80, search: false },
+    { title: t('admin.afterSales.colOrderNo'), dataIndex: 'orderNo', search: false },
     {
-      title: '状态',
+      title: t('admin.afterSales.colStatus'),
       dataIndex: 'status',
       search: false,
       render: (_, r) => <Tag>{r.status}</Tag>,
     },
-    { title: '内容', dataIndex: 'content', ellipsis: true, search: false },
+    { title: t('admin.afterSales.colContent'), dataIndex: 'content', ellipsis: true, search: false },
     {
-      title: '操作',
+      title: t('admin.afterSales.colActions'),
       key: 'act',
       width: 120,
       search: false,
       render: (_, r) => (
         <Button type="link" size="small" onClick={() => setModal(r)}>
-          更新状态
+          {t('admin.afterSales.updateStatus')}
         </Button>
       ),
     },
@@ -44,22 +48,22 @@ export function AdminAfterSalesPage() {
 
   const submit = async () => {
     if (!modal || !status.trim()) {
-      message.warning('请填写状态')
+      message.warning(t('admin.afterSales.warnStatus'))
       return
     }
     try {
       await statusMut.mutateAsync({ id: modal.id, body: { status: status.trim() } })
-      message.success('已更新')
+      message.success(t('admin.afterSales.success'))
       setModal(null)
       setStatus('')
       void refetch()
     } catch {
-      message.error('更新失败')
+      message.error(t('admin.afterSales.fail'))
     }
   }
 
   return (
-    <PageContainer title="售后工单" subTitle="数据来自 /api/v1/admin/after-sales">
+    <PageContainer title={t('admin.afterSales.title')} subTitle={t('admin.afterSales.subtitle')}>
       <ProTable<Row>
         rowKey="id"
         loading={isLoading}
@@ -69,8 +73,8 @@ export function AdminAfterSalesPage() {
         dataSource={rows}
         pagination={{ pageSize: 10, showSizeChanger: true }}
       />
-      <Modal
-        title="更新售后状态"
+      <StandardModal
+        title={t('admin.afterSales.modalTitle')}
         open={Boolean(modal)}
         onOk={() => void submit()}
         onCancel={() => {
@@ -82,10 +86,12 @@ export function AdminAfterSalesPage() {
         destroyOnClose
       >
         <Space direction="vertical" style={{ width: '100%' }}>
-          <Typography.Text type="secondary">工单 #{modal?.id}</Typography.Text>
-          <Input placeholder="新状态" value={status} onChange={(e) => setStatus(e.target.value)} />
+          <Typography.Text type="secondary">
+            {modal ? i18nTpl(t('admin.afterSales.ticketLabel'), { id: String(modal.id) }) : ''}
+          </Typography.Text>
+          <Input placeholder={t('admin.afterSales.statusPh')} value={status} onChange={(e) => setStatus(e.target.value)} />
         </Space>
-      </Modal>
+      </StandardModal>
     </PageContainer>
   )
 }
