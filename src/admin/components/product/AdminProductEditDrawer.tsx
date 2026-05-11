@@ -58,6 +58,7 @@ export function AdminProductEditDrawer({ productId, onClose }: Props) {
       }
       placement="right"
       width={720}
+      mask={false}
       open={open}
       onClose={onClose}
       destroyOnClose

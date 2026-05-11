@@ -4,7 +4,8 @@
  * Tab 分组、关键字筛选、物流与状态推进；状态展示优先使用字典与 locale（`dict.ORDER_STATUS.*`）。
  */
 import { useState } from 'react'
-import { App, Button, Flex, Input, Modal, Select, Space, Table, Tabs, Tag, Typography } from 'antd'
+import { DownOutlined } from '@ant-design/icons'
+import { App, Button, Dropdown, Flex, Input, Modal, Select, Space, Table, Tabs, Tag, Typography } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import type { ChangeEvent } from 'react'
@@ -105,6 +106,17 @@ export function AdminOrdersPage() {
   const labelForStatus = (code: string) =>
     orderStatusItems.find((i) => i.itemCode === code)?.itemLabel ?? code
 
+  const openOrderHistory = async (orderNo: string) => {
+    setHistoryModalOrderNo(orderNo)
+    setHistoryLoading(true)
+    try {
+      const data = await voyage.audit.listOrderHistoriesByOrderNo(orderNo)
+      setHistories(data)
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
   const columns: ProColumns<OrderRow>[] = [
     {
       title: t('admin.orders.colOrderNo'),
@@ -142,38 +154,38 @@ export function AdminOrdersPage() {
       key: 'actions',
       search: false,
       render: (_, r) => (
-        <Space wrap>
-          <Button
-            type="link"
-            size="small"
-            href={`/orders/${encodeURIComponent(r.orderNo)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t('admin.orders.viewOrder')}
-          </Button>
+        <Space wrap size={4}>
           <Button type="link" size="small" onClick={() => setTrackingModal(r)}>
             {t('admin.orders.tracking')}
           </Button>
           <Button type="link" size="small" onClick={() => setStatusModal(r)}>
             {t('admin.orders.status')}
           </Button>
-          <Button
-            type="link"
-            size="small"
-            onClick={async () => {
-              setHistoryModalOrderNo(r.orderNo)
-              setHistoryLoading(true)
-              try {
-                const data = await voyage.audit.listOrderHistoriesByOrderNo(r.orderNo)
-                setHistories(data)
-              } finally {
-                setHistoryLoading(false)
-              }
+          <Dropdown
+            trigger={['click']}
+            placement="bottomRight"
+            menu={{
+              style: { minWidth: 112 },
+              items: [
+                { key: 'view', label: t('admin.orders.viewOrder') },
+                { key: 'history', label: t('admin.orders.history') },
+              ],
+              onClick: ({ key, domEvent }) => {
+                domEvent.stopPropagation()
+                if (key === 'view') {
+                  window.open(`/orders/${encodeURIComponent(r.orderNo)}`, '_blank', 'noopener,noreferrer')
+                  return
+                }
+                if (key === 'history') {
+                  void openOrderHistory(r.orderNo)
+                }
+              },
             }}
           >
-            {t('admin.orders.history')}
-          </Button>
+            <Button type="link" size="small">
+              {t('admin.orders.more')} <DownOutlined style={{ fontSize: 10 }} />
+            </Button>
+          </Dropdown>
         </Space>
       ),
     },

@@ -562,6 +562,7 @@ export function AdminProductListPage() {
         title={previewProduct?.title ?? ''}
         placement="right"
         width={560}
+        mask={false}
         open={previewProduct != null}
         onClose={() => setPreviewProduct(null)}
         destroyOnClose
