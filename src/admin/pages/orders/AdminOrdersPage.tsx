@@ -1,8 +1,7 @@
 /**
- * ????????`GET /api/v1/admin/orders`?
+ * 管理后台订单：`GET /api/v1/admin/orders`。
  *
- * ?????????? Tab??? / ??? / ?????? / ????+ ??????
- * ??????? locale ?? `dict.ORDER_STATUS.*`????????????
+ * Tab 分组、关键字筛选、物流与状态推进；状态展示优先使用字典与 locale（`dict.ORDER_STATUS.*`）。
  */
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -61,7 +60,7 @@ function matchesOrderTab(status: string, tab: OrderTab): boolean {
   }
 }
 
-/** ??????????????? sortNo??????? */
+/** 结合字典 sortNo 推断状态顺序；缺失时用内置兜底序列 */
 function statusProgressRank(
   code: string,
   items: Array<{ itemCode: string; sortNo: number }>,
@@ -109,17 +108,17 @@ export function AdminOrdersPage() {
 
   const columns: ProColumns<OrderRow>[] = [
     {
-      title: '???',
+      title: t('admin.orders.colOrderNo'),
       dataIndex: 'orderNo',
       render: (_, r) => <Typography.Text code>{r.orderNo}</Typography.Text>,
     },
     {
-      title: '??',
+      title: t('admin.orders.colStatus'),
       dataIndex: 'status',
       render: (_, r) => <OrderStatusTag status={r.status} apiLabel={labelForStatus(r.status)} />,
     },
     {
-      title: '??',
+      title: t('admin.orders.colAmount'),
       key: 'amt',
       search: false,
       align: 'right',
@@ -130,23 +129,28 @@ export function AdminOrdersPage() {
       ),
     },
     {
-      title: '???',
+      title: t('admin.orders.colReceiver'),
       dataIndex: 'receiverName',
     },
     {
-      title: '??',
+      title: t('admin.orders.colTracking'),
       key: 'track',
       search: false,
-      render: (_, r) => r.trackingNo ?? '?',
+      render: (_, r) => r.trackingNo?.trim() || t('admin.orders.emptyMark'),
     },
     {
-      title: '??',
+      title: t('admin.orders.colActions'),
       key: 'actions',
       search: false,
       render: (_, r) => (
         <Space wrap>
-          <Link to={`/orders/${encodeURIComponent(r.orderNo)}`} target="_blank" rel="noreferrer">
-            ????
+          <Link
+            to={`/orders/${encodeURIComponent(r.orderNo)}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: 'var(--adm-link, #1677ff)' }}
+          >
+            {t('admin.orders.viewOrder')}
           </Link>
           <Button type="link" size="small" onClick={() => setTrackingModal(r)}>
             {t('admin.orders.tracking')}
@@ -184,7 +188,7 @@ export function AdminOrdersPage() {
 
   const submitTracking = async () => {
     if (!trackingModal || !trackingNo.trim()) {
-      message.warning('??????')
+      message.warning(t('admin.orders.warnTrackingRequired'))
       return
     }
     try {
@@ -192,19 +196,19 @@ export function AdminOrdersPage() {
         orderNo: trackingModal.orderNo,
         body: { trackingNo: trackingNo.trim(), logisticsCompany: logisticsCompany.trim() || undefined },
       })
-      message.success('?????')
+      message.success(t('admin.orders.trackingOk'))
       setTrackingModal(null)
       setTrackingNo('')
       setLogisticsCompany('')
       void refetch()
     } catch {
-      message.error('????')
+      message.error(t('admin.orders.trackingFail'))
     }
   }
 
   const runStatusUpdate = async () => {
     if (!statusModal || !nextStatus.trim()) {
-      message.warning('???????')
+      message.warning(t('admin.orders.warnStatusRequired'))
       return
     }
     try {
@@ -212,19 +216,19 @@ export function AdminOrdersPage() {
         orderNo: statusModal.orderNo,
         body: { status: nextStatus.trim().toUpperCase(), remark: statusRemark.trim() || undefined },
       })
-      message.success('?????')
+      message.success(t('admin.orders.statusOk'))
       setStatusModal(null)
       setNextStatus('')
       setStatusRemark('')
       void refetch()
     } catch {
-      message.error('?????????????????')
+      message.error(t('admin.orders.statusFail'))
     }
   }
 
   const submitStatus = () => {
     if (!statusModal || !nextStatus.trim()) {
-      message.warning('???????')
+      message.warning(t('admin.orders.warnStatusRequired'))
       return
     }
     const cur = statusModal.status
@@ -255,13 +259,13 @@ export function AdminOrdersPage() {
         orderNo: statusModal.orderNo,
         remark: statusRemark.trim() || undefined,
       })
-      message.success('??????????')
+      message.success(t('admin.orders.flowNextOk'))
       setStatusModal(null)
       setNextStatus('')
       setStatusRemark('')
       void refetch()
     } catch {
-      message.error('??????????????????')
+      message.error(t('admin.orders.flowNextFail'))
     }
   }
 
@@ -318,12 +322,12 @@ export function AdminOrdersPage() {
       >
         <Space direction="vertical" style={{ width: '100%' }}>
           <Input
-            placeholder="??? trackingNo"
+            placeholder={t('admin.orders.trackingNoPh')}
             value={trackingNo}
             onChange={(e) => setTrackingNo(e.target.value)}
           />
           <Input
-            placeholder="????????"
+            placeholder={t('admin.orders.logisticsPh')}
             value={logisticsCompany}
             onChange={(e) => setLogisticsCompany(e.target.value)}
           />
@@ -331,7 +335,7 @@ export function AdminOrdersPage() {
       </StandardModal>
 
       <StandardModal
-        title={`${t('admin.orders.history')}?${historyModalOrderNo ?? ''}`}
+        title={i18nTpl(t('admin.orders.historyModalTitle'), { orderNo: historyModalOrderNo ?? '' })}
         open={Boolean(historyModalOrderNo)}
         onCancel={() => setHistoryModalOrderNo(null)}
         footer={null}
@@ -359,7 +363,7 @@ export function AdminOrdersPage() {
               dataIndex: 'fromStatus',
               width: 140,
               ellipsis: true,
-              render: (v: string | undefined) => v ?? '?',
+              render: (v: string | undefined) => v?.trim() || t('admin.orders.emptyMark'),
             },
             {
               title: t('admin.orders.historyColTo'),
@@ -377,7 +381,7 @@ export function AdminOrdersPage() {
               title: t('admin.orders.historyColRemark'),
               dataIndex: 'remark',
               ellipsis: true,
-              render: (v: string | undefined) => v ?? '?',
+              render: (v: string | undefined) => v?.trim() || t('admin.orders.emptyMark'),
             },
           ]}
         />
@@ -396,21 +400,30 @@ export function AdminOrdersPage() {
         okButtonProps={{ disabled: statusMut.isPending || flowNextMut.isPending }}
         cancelButtonProps={{ disabled: statusMut.isPending || flowNextMut.isPending }}
         footer={(_, { OkBtn, CancelBtn }) => (
-          <>
-            <Button onClick={() => void submitFlowNext()} loading={flowNextMut.isPending}>
-              ??????
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 8,
+              justifyContent: 'flex-end',
+              width: '100%',
+              alignItems: 'center',
+            }}
+          >
+            <Button type="default" onClick={() => void submitFlowNext()} loading={flowNextMut.isPending}>
+              {t('admin.orders.flowNext')}
             </Button>
             <CancelBtn />
             <OkBtn />
-          </>
+          </div>
         )}
         destroyOnClose
       >
-        <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
-          ??????? ORDER_STATUS????????????????????????????????????
+        <Typography.Paragraph type="secondary" style={{ fontSize: 12, marginBottom: 12 }}>
+          {t('admin.orders.statusModalHint')}
         </Typography.Paragraph>
         <Select
-          placeholder="??????"
+          placeholder={t('admin.orders.statusSelectPh')}
           value={nextStatus || undefined}
           onChange={setNextStatus}
           style={{ width: '100%' }}
@@ -422,7 +435,7 @@ export function AdminOrdersPage() {
         <Input.TextArea
           style={{ marginTop: 12 }}
           rows={3}
-          placeholder="????????"
+          placeholder={t('admin.orders.remarkPh')}
           value={statusRemark}
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setStatusRemark(e.target.value)}
         />

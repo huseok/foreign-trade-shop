@@ -5,6 +5,63 @@
 .admin-shell {
   --adm-bg: #f0f2f5;
   min-height: 100%;
+  /* 与商城 :root 的 prefers-color-scheme: dark 隔离，避免浅色字变量叠在深色侧栏上 */
+  color-scheme: light;
+  color: rgba(0, 0, 0, 0.88);
+  background: var(--adm-bg, #f0f2f5);
+}
+
+/* 深色侧栏：保证未选中项在深蓝底上可读（全局 a { color: inherit } 曾破坏菜单对比度） */
+.admin-shell .ant-layout-sider-dark {
+  background: #001529 !important;
+}
+
+.admin-shell .ant-layout-sider-dark .ant-menu-dark.ant-menu-inline .ant-menu-item,
+.admin-shell .ant-layout-sider-dark .ant-menu-dark .ant-menu-submenu-title {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.admin-shell .ant-layout-sider-dark .ant-menu-dark .ant-menu-item:hover,
+.admin-shell .ant-layout-sider-dark .ant-menu-dark .ant-menu-submenu-title:hover {
+  color: #fff !important;
+}
+
+.admin-shell .ant-layout-sider-dark .ant-menu-dark .ant-menu-item-selected {
+  color: #fff !important;
+}
+
+.admin-shell .ant-layout-sider-dark .ant-menu-dark .ant-menu-item a,
+.admin-shell .ant-layout-sider-dark .ant-menu-dark .ant-menu-submenu-title a {
+  color: inherit !important;
+}
+
+.admin-shell .ant-pro-sider.ant-layout-sider-dark .ant-pro-sider-logo {
+  background: transparent;
+}
+
+/* 顶栏浅色背景上的标题与操作区 */
+.admin-shell .ant-pro-layout .ant-layout-header {
+  color: rgba(0, 0, 0, 0.88);
+  background: #fff !important;
+}
+
+.admin-shell .ant-pro-layout .ant-layout-header .ant-pro-global-header-logo h1 {
+  color: rgba(0, 0, 0, 0.88);
+}
+
+/* 下拉 / 日期等浮层挂在 admin-shell 内时的兜底（避免系统深色 scheme 影响 antd 变量） */
+.admin-shell .ant-select-dropdown,
+.admin-shell .ant-picker-dropdown,
+.admin-shell .ant-dropdown {
+  color-scheme: light;
+}
+
+.admin-shell .ant-select-item {
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.admin-shell .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  color: rgba(0, 0, 0, 0.88);
 }
 
 .admin-shell .ant-pro-layout .ant-layout-content {

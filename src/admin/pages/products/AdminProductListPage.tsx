@@ -1,12 +1,12 @@
 /**
- * ???????????????????CSV???????????
+ * 管理后台商品列表：分页、筛选、CSV 导入导出与快捷新建。
  */
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { App, Button, Input, Popconfirm, Select, Space, Table, Typography, Upload } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { queryKeys, useAdminBulkProductStatus, useAdminProductsPage, useMe } from '../../../hooks/apiHooks'
 import { useI18n } from '../../../i18n/I18nProvider'
 import { i18nTpl } from '../../../lib/i18nTpl'
@@ -25,7 +25,7 @@ import {
   rowCellsToRecord,
 } from '../../lib/productCsv'
 
-/** ??????????????????????? */
+/** 展开行内默认预览的图片张数 */
 const EXPAND_IMAGE_PREVIEW_COUNT = 6
 
 function ProductExpandContent({ product }: { product: ProductDto }) {
@@ -93,6 +93,7 @@ type StatusFilter = 'all' | 'active' | 'inactive'
 export function AdminProductListPage() {
   const { message } = App.useApp()
   const { t } = useI18n()
+  const navigate = useNavigate()
   const qc = useQueryClient()
   const { data: me, isLoading: meLoading } = useMe(true)
   const [quickOpen, setQuickOpen] = useState(false)
@@ -310,9 +311,9 @@ export function AdminProductListPage() {
         <Button key="quick" onClick={() => setQuickOpen(true)}>
           {t('admin.products.quickCreate')}
         </Button>,
-        <Link key="new" to="/admin/products/new">
-          <Button type="primary">{t('admin.products.fullCreate')}</Button>
-        </Link>,
+        <Button key="new" type="primary" onClick={() => navigate('/admin/products/new')}>
+          {t('admin.products.fullCreate')}
+        </Button>,
       ]}
     >
       <Space wrap style={{ marginBottom: 12 }}>

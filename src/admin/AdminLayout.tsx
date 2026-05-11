@@ -2,7 +2,8 @@
  * 管理后台主布局（Pro 版本）：
  * 使用 ProLayout 提供标准后台壳层能力（菜单、头部、内容容器）。
  */
-import { Typography } from 'antd'
+import { useRef } from 'react'
+import { ConfigProvider, Typography } from 'antd'
 import {
   AppstoreOutlined,
   BookOutlined,
@@ -27,6 +28,7 @@ export function AdminLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { data: me } = useMe(true)
+  const shellRef = useRef<HTMLDivElement>(null)
 
   const menuRoutes = [
     { path: '/admin/orders', name: t('admin.menu.orders'), icon: <ShoppingCartOutlined /> },
@@ -41,37 +43,40 @@ export function AdminLayout() {
   ]
 
   return (
-    <div className="admin-shell">
-      <ProLayout
-        title={t('admin.title')}
-        logo={false}
-        layout="side"
-        navTheme="realDark"
-        location={{ pathname: location.pathname }}
-        route={{ routes: menuRoutes }}
-        menu={{ type: 'sub' }}
-        fixSiderbar
-        avatarProps={{ title: me?.email ?? 'admin' }}
-        menuItemRender={(item, dom) => <Link to={item.path ?? '/admin/orders'}>{dom}</Link>}
-        actionsRender={() => [
-          <Typography.Link key="go-site" href="/" target="_blank">
-            <GlobalOutlined /> {t('admin.siteLink')}
-          </Typography.Link>,
-          <Typography.Link
-            key="logout"
-            onClick={() => {
-              authStore.clearToken()
-              navigate('/admin/login', { replace: true })
-            }}
-          >
-            <LogoutOutlined /> {t('admin.logout')}
-          </Typography.Link>,
-        ]}
-      >
-        <div style={{ padding: 24 }}>
-          <Outlet />
-        </div>
-      </ProLayout>
+    <div ref={shellRef} className="admin-shell">
+      <ConfigProvider getPopupContainer={() => shellRef.current ?? document.body}>
+        <ProLayout
+          title={t('admin.title')}
+          logo={false}
+          layout="side"
+          navTheme="realDark"
+          location={{ pathname: location.pathname }}
+          route={{ routes: menuRoutes }}
+          menu={{ type: 'sub' }}
+          fixSiderbar
+          avatarProps={{ title: me?.email ?? 'admin' }}
+          menuItemRender={(item, dom) => <Link to={item.path ?? '/admin/orders'}>{dom}</Link>}
+          actionsRender={() => [
+            <Typography.Link key="go-site" href="/" target="_blank" style={{ color: 'rgba(0,0,0,0.88)' }}>
+              <GlobalOutlined /> {t('admin.siteLink')}
+            </Typography.Link>,
+            <Typography.Link
+              key="logout"
+              style={{ color: 'rgba(0,0,0,0.88)' }}
+              onClick={() => {
+                authStore.clearToken()
+                navigate('/admin/login', { replace: true })
+              }}
+            >
+              <LogoutOutlined /> {t('admin.logout')}
+            </Typography.Link>,
+          ]}
+        >
+          <div style={{ padding: 24 }}>
+            <Outlet />
+          </div>
+        </ProLayout>
+      </ConfigProvider>
     </div>
   )
 }
