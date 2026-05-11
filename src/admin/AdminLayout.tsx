@@ -2,7 +2,7 @@
  * 管理后台主布局（Pro 版本）：
  * 使用 ProLayout 提供标准后台壳层能力（菜单、头部、内容容器）。
  */
-import { Typography } from 'antd'
+import { Button } from 'antd'
 import {
   AppstoreOutlined,
   BookOutlined,
@@ -54,22 +54,25 @@ export function AdminLayout() {
         avatarProps={{ title: me?.email ?? 'admin' }}
         menuItemRender={(item, dom) => <Link to={item.path ?? '/admin/orders'}>{dom}</Link>}
         actionsRender={() => [
-          <Typography.Link key="go-site" href="/" target="_blank" rel="noopener noreferrer">
-            <GlobalOutlined /> {t('admin.siteLink')}
-          </Typography.Link>,
-          <Typography.Link
+          <Button key="go-site" type="link" href="/" target="_blank" rel="noopener noreferrer" icon={<GlobalOutlined />}>
+            {t('admin.siteLink')}
+          </Button>,
+          <Button
             key="logout"
+            type="link"
+            icon={<LogoutOutlined />}
             onClick={() => {
               authStore.clearToken()
               navigate('/admin/login', { replace: true })
             }}
           >
-            <LogoutOutlined /> {t('admin.logout')}
-          </Typography.Link>,
+            {t('admin.logout')}
+          </Button>,
         ]}
-        contentStyle={{ padding: 24 }}
       >
-        <Outlet />
+        <div style={{ padding: 24 }}>
+          <Outlet />
+        </div>
       </ProLayout>
     </div>
   )

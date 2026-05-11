@@ -1,6 +1,5 @@
 /**
- * 管理后台壳层：少量页面级补充样式。
- * 侧栏、顶栏、菜单等以 Ant Design Pro / ConfigProvider 主题为默认外观，不在此覆盖。
+ * 管理后台：仅保留内容区背景变量；其余交给 Ant Design / ProLayout。
  */
 .admin-shell {
   --adm-bg: #f0f2f5;
@@ -11,37 +10,8 @@
   background: var(--adm-bg, #f0f2f5);
 }
 
-.admin-page-tab.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
-  border-radius: 6px 6px 0 0;
-}
-
-.admin-page-tab .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
-  font-weight: 600;
-}
-
-.std-modal .ant-modal-header {
-  margin-bottom: 0;
-}
-
-.std-modal .ant-modal-footer {
-  border-top: 1px solid #f0f0f0;
-}
-
 .tabular-nums {
   font-variant-numeric: tabular-nums;
-}
-
-/* 表格分页：略加重底栏，便于扫读 */
-.admin-table-pagination.ant-pagination {
-  margin-top: 12px;
-  padding: 10px 14px;
-  background: #fafafa;
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
-}
-
-.admin-table-pagination.ant-pagination .ant-pagination-total-text {
-  color: rgba(0, 0, 0, 0.65);
 }
 
 .std-modal .ant-modal-body {
