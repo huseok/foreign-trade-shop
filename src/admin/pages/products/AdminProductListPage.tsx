@@ -3,7 +3,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { App, Button, Drawer, Input, Popconfirm, Select, Space, Switch, Table, Typography, Upload } from 'antd'
+import { App, Button, Descriptions, Drawer, Input, Popconfirm, Select, Space, Switch, Table, Tag, Typography, Upload } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { Link, useNavigate } from 'react-router-dom'
@@ -13,6 +13,7 @@ import { i18nTpl } from '../../../lib/i18nTpl'
 import { productThumbUrl, resolveMediaUrl } from '../../../lib/media/resolveMediaUrl'
 import type { ProductDto } from '../../../types/api'
 import { voyage } from '../../../openapi/voyageSdk'
+import { AdminProductEditDrawer } from '../../components/product/AdminProductEditDrawer'
 import { AdminProductQuickCreateModal } from '../../components/product/AdminProductQuickCreateModal'
 import { StandardModal } from '../../components/shared/StandardModal'
 import {
@@ -28,6 +29,11 @@ import {
 /** 展开行内默认预览的图片张数 */
 const EXPAND_IMAGE_PREVIEW_COUNT = 6
 
+function formatMoneyAmount(v: number | null | undefined): string {
+  if (v == null) return '—'
+  return Number(v).toFixed(2)
+}
+
 function ProductExpandContent({ product }: { product: ProductDto }) {
   const { t } = useI18n()
   const [showAllImages, setShowAllImages] = useState(false)
@@ -35,8 +41,84 @@ function ProductExpandContent({ product }: { product: ProductDto }) {
   const visible = showAllImages ? imgs : imgs.slice(0, EXPAND_IMAGE_PREVIEW_COUNT)
   const restCount = Math.max(0, imgs.length - EXPAND_IMAGE_PREVIEW_COUNT)
 
+  const cur = (product.currency ?? '').trim()
+  const priceLine =
+    product.price == null ? '—' : `${cur ? `${cur} ` : ''}${Number(product.price).toFixed(2)}`.trim()
+
+  const optionSummary =
+    product.options && product.options.length > 0
+      ? [...product.options]
+          .sort((a, b) => a.sortNo - b.sortNo)
+          .map((o) => `${o.optionName}: ${o.optionValue}`)
+          .join(' · ')
+      : null
+
+  const skuSummary =
+    product.skus && product.skus.length > 0
+      ? `${product.skus.length} · ${product.skus
+          .slice(0, 5)
+          .map((s) => s.skuCode)
+          .join(', ')}${product.skus.length > 5 ? '…' : ''}`
+      : null
+
   return (
     <div style={{ padding: '4px 0 12px', maxWidth: 960 }}>
+      <div style={{ marginBottom: 16 }}>
+        <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
+          {t('admin.productsList.previewSummarySection')}
+        </Typography.Text>
+        <Descriptions bordered size="small" column={1}>
+          <Descriptions.Item label={t('admin.productsList.previewId')}>{product.id}</Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.colSku')}>{product.skuCode ?? '—'}</Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewPrice')}>{priceLine}</Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewListPrice')}>
+            {formatMoneyAmount(product.listPrice)}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewCostPrice')}>
+            {formatMoneyAmount(product.costPrice)}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewCurrency')}>{cur || '—'}</Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.colMoq')}>{product.moq}</Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewListingStatus')}>
+            {product.isActive ? t('admin.productsList.statusOn') : t('admin.productsList.statusOff')}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewHsCode')}>{product.hsCode ?? '—'}</Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewUnit')}>{product.unit ?? '—'}</Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewIncoterm')}>{product.incoterm ?? '—'}</Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewOriginCountry')}>
+            {product.originCountry ?? '—'}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewLeadTimeDays')}>
+            {product.leadTimeDays != null ? product.leadTimeDays : '—'}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewWeightKg')}>
+            {product.weightKg != null ? String(product.weightKg) : '—'}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewCategoryId')}>
+            {product.categoryId != null ? product.categoryId : '—'}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewShippingTemplateId')}>
+            {product.shippingTemplateId != null ? product.shippingTemplateId : '—'}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admin.productsList.previewTags')}>
+            {product.tags && product.tags.length > 0 ? (
+              <Space size={[4, 4]} wrap>
+                {product.tags.map((tg) => (
+                  <Tag key={tg.id}>{tg.name}</Tag>
+                ))}
+              </Space>
+            ) : (
+              '—'
+            )}
+          </Descriptions.Item>
+          {optionSummary ? (
+            <Descriptions.Item label={t('admin.productsList.previewOptions')}>{optionSummary}</Descriptions.Item>
+          ) : null}
+          {skuSummary ? (
+            <Descriptions.Item label={t('admin.productsList.previewSkuSummary')}>{skuSummary}</Descriptions.Item>
+          ) : null}
+        </Descriptions>
+      </div>
       <div style={{ marginBottom: 8 }}>
         <Typography.Text strong>{t('admin.productsList.expandImagesSection')}</Typography.Text>
         {imgs.length === 0 ? (
@@ -106,6 +188,7 @@ export function AdminProductListPage() {
   const [importErrors, setImportErrors] = useState<Array<{ line: number; reason: string }>>([])
   const [importSummary, setImportSummary] = useState<{ ok: number; total: number } | null>(null)
   const [previewProduct, setPreviewProduct] = useState<ProductDto | null>(null)
+  const [editProductId, setEditProductId] = useState<number | null>(null)
   const [switchBusyId, setSwitchBusyId] = useState<number | null>(null)
   const bulkStatusMut = useAdminBulkProductStatus()
 
@@ -229,8 +312,19 @@ export function AdminProductListPage() {
       fixed: 'right',
       render: (_, r) => (
         <Space>
-          <Link to={`/admin/products/${r.id}/edit`}>{t('admin.productsList.edit')}</Link>
-          <Link to={`/admin/products/${r.id}/sku-matrix`}>{t('admin.productsList.skuMatrix')}</Link>
+          <Button
+            type="link"
+            style={{ padding: 0, height: 'auto' }}
+            onClick={(e) => {
+              e.stopPropagation()
+              setEditProductId(r.id)
+            }}
+          >
+            {t('admin.productsList.edit')}
+          </Button>
+          <Link to={`/admin/products/${r.id}/sku-matrix`} onClick={(e) => e.stopPropagation()}>
+            {t('admin.productsList.skuMatrix')}
+          </Link>
         </Space>
       ),
     },
@@ -474,6 +568,7 @@ export function AdminProductListPage() {
       >
         {previewProduct ? <ProductExpandContent product={previewProduct} /> : null}
       </Drawer>
+      <AdminProductEditDrawer productId={editProductId} onClose={() => setEditProductId(null)} />
       <AdminProductQuickCreateModal open={quickOpen} onClose={() => setQuickOpen(false)} />
       <StandardModal
         title={t('admin.productsList.reportTitle')}

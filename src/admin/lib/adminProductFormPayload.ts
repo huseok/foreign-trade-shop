@@ -1,4 +1,4 @@
-import type { AdminProductUpsertRequest } from '../../types/api'
+import type { AdminProductUpsertRequest, ProductDto } from '../../types/api'
 
 /** 与 `AdminProductUpsertFields` 字段一致，用于新建/编辑/快捷弹窗提交 */
 export type AdminProductFormValues = {
@@ -23,6 +23,31 @@ export type AdminProductFormValues = {
   tagIds?: number[]
   isActive: boolean
   images?: Array<{ thumbUrl: string; fullUrl: string }>
+}
+
+/** 管理端详情 DTO → 与 `AdminProductUpsertFields` 一致的表单初值 */
+export function productDtoToAdminFormValues(p: ProductDto): AdminProductFormValues {
+  return {
+    title: p.title,
+    price: p.price != null ? Number(p.price) : 0,
+    listPrice: p.listPrice != null ? Number(p.listPrice) : undefined,
+    costPrice: p.costPrice != null ? Number(p.costPrice) : undefined,
+    currency: p.currency ?? 'USD',
+    moq: p.moq,
+    description: p.description ?? '',
+    skuCode: p.skuCode ?? undefined,
+    hsCode: p.hsCode ?? undefined,
+    unit: p.unit ?? undefined,
+    incoterm: p.incoterm ?? undefined,
+    originCountry: p.originCountry ?? undefined,
+    leadTimeDays: p.leadTimeDays ?? undefined,
+    weightKg: p.weightKg ?? undefined,
+    categoryId: p.categoryId ?? undefined,
+    shippingTemplateId: p.shippingTemplateId ?? undefined,
+    tagIds: p.tags?.map((tg) => tg.id) ?? [],
+    isActive: p.isActive,
+    images: p.images?.map((i) => ({ thumbUrl: i.thumbUrl, fullUrl: i.fullUrl })) ?? [],
+  }
 }
 
 function trimStr(v: unknown): string {

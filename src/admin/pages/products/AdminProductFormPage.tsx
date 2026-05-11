@@ -15,39 +15,15 @@ import {
   useShippingTemplates,
   useUpdateAdminProduct,
 } from '../../../hooks/apiHooks'
-import type { ProductDto } from '../../../types/api'
 import { toErrorMessage } from '../../../lib/http/error'
 import {
   adminProductFormValuesToPayload,
+  productDtoToAdminFormValues,
   type AdminProductFormValues,
 } from '../../lib/adminProductFormPayload'
 
 type ProductFormOps = {
   setFieldsValue: (values: Partial<AdminProductFormValues>) => void
-}
-
-function productToFormValues(p: ProductDto): AdminProductFormValues {
-  return {
-    title: p.title,
-    price: p.price != null ? Number(p.price) : 0,
-    listPrice: p.listPrice != null ? Number(p.listPrice) : undefined,
-    costPrice: p.costPrice != null ? Number(p.costPrice) : undefined,
-    currency: p.currency ?? 'USD',
-    moq: p.moq,
-    description: p.description ?? '',
-    skuCode: p.skuCode ?? undefined,
-    hsCode: p.hsCode ?? undefined,
-    unit: p.unit ?? undefined,
-    incoterm: p.incoterm ?? undefined,
-    originCountry: p.originCountry ?? undefined,
-    leadTimeDays: p.leadTimeDays ?? undefined,
-    weightKg: p.weightKg ?? undefined,
-    categoryId: p.categoryId ?? undefined,
-    shippingTemplateId: p.shippingTemplateId ?? undefined,
-    tagIds: p.tags?.map((tg) => tg.id) ?? [],
-    isActive: p.isActive,
-    images: p.images?.map((i) => ({ thumbUrl: i.thumbUrl, fullUrl: i.fullUrl })) ?? [],
-  }
 }
 
 export function AdminProductFormPage() {
@@ -70,7 +46,7 @@ export function AdminProductFormPage() {
 
   useEffect(() => {
     if (product && isEdit) {
-      ;(form as unknown as ProductFormOps).setFieldsValue(productToFormValues(product))
+      ;(form as unknown as ProductFormOps).setFieldsValue(productDtoToAdminFormValues(product))
     }
   }, [product, isEdit, form])
 
