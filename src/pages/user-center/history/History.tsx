@@ -3,9 +3,9 @@
  */
 import { Table } from 'antd'
 import { Link } from 'react-router-dom'
-import { UserCenterShell } from '../../components/UserCenterShell'
-import { useUserBrowseHistories } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { UserCenterShell } from '../../../components/UserCenterShell'
+import { useUserBrowseHistories } from '../../../hooks/apiHooks'
+import { useI18n } from '../../../i18n/I18nProvider'
 
 export function UserHistoryPage() {
   const { t } = useI18n()

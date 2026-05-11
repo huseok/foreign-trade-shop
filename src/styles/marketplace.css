@@ -5,8 +5,9 @@
 .sf-market-root[data-sf-theme='marketplace'] {
   /* 商城壳统一浅色：不受系统深色偏好影响，避免首页 Hero 与目录页明暗割裂 */
   color-scheme: light;
-  --sf-bg: oklch(98.6% 0.008 280);
-  --sf-surface: oklch(100% 0.004 280);
+  /* 页面底略降亮度，与纯白卡片/轮播区形成层次，避免「一片白」 */
+  --sf-bg: oklch(96.4% 0.018 282);
+  --sf-surface: oklch(99.2% 0.008 280);
   --sf-fg: oklch(22% 0.02 265);
   --sf-muted: oklch(48% 0.02 265);
   --sf-border: oklch(90% 0.012 280);
@@ -69,6 +70,19 @@
 
 .sf-mp-category-strip a:hover {
   text-decoration: underline;
+}
+
+/* 用户中心顶栏与退出 */
+.sf-user-center__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sf-user-center__header .page-header__title {
+  margin-bottom: 0;
 }
 
 /* 用户中心子导航 */

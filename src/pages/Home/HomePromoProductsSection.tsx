@@ -14,6 +14,10 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out
 }
 
+/**
+ * 活动区每「页」展示的商品个数（同一屏一行内并排，不堆成多行）。
+ * 断点与顶栏类目带常见布局对齐：窄屏 1 个、中屏 2 个、宽屏 3 个。
+ */
 function usePromoProductsChunkSize(): number {
   const [n, setN] = useState(3)
   useEffect(() => {
@@ -86,6 +90,7 @@ function HomePromoProductsCarousel({
   chunkSize,
 }: {
   slides: ProductDto[][]
+  /** 屏宽变化时用于强制重建轮播，避免内部轨道宽度缓存错乱 */
   chunkSize: number
 }) {
   const [activeIdx, setActiveIdx] = useState(0)
@@ -103,12 +108,8 @@ function HomePromoProductsCarousel({
       >
         {slides.map((group, idx) => (
           <div key={idx}>
-            <div
-              className="home-promo-products__row"
-              style={{
-                gridTemplateColumns: `repeat(${group.length}, minmax(0, 1fr))`,
-              }}
-            >
+            {/* 单行 flex + nowrap，列数仅由当前组长度决定，不会出现第二行商品 */}
+            <div className="home-promo-products__row">
               {group.map((product) => (
                 <HomePromoProductCard key={product.id} product={product} />
               ))}

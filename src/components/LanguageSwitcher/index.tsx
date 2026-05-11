@@ -1,8 +1,10 @@
 /**
  * 全局语言切换：持久化 localStorage，详见 `I18nProvider`。
+ * 文案标签固定为英文 “Language”，不随界面语言切换。
  */
 import { Select } from 'antd'
 import { useI18n, type LocaleId } from '../../i18n/I18nProvider'
+import './LanguageSwitcher.scss'
 
 const OPTIONS: Array<{ value: LocaleId; label: string }> = [
   { value: 'zh-CN', label: '中文' },
@@ -10,17 +12,20 @@ const OPTIONS: Array<{ value: LocaleId; label: string }> = [
 ]
 
 export function LanguageSwitcher({ size = 'small' }: { size?: 'small' | 'middle' }) {
-  const { locale, setLocale, t } = useI18n()
+  const { locale, setLocale } = useI18n()
   return (
-    <Select
-      size={size}
-      variant="borderless"
-      value={locale}
-      aria-label={t('header.language')}
-      options={OPTIONS}
-      onChange={(v) => setLocale(v as LocaleId)}
-      popupMatchSelectWidth={false}
-      style={{ minWidth: 100 }}
-    />
+    <div className="language-switcher">
+      <span className="language-switcher__label">Language</span>
+      <Select
+        size={size}
+        variant="borderless"
+        value={locale}
+        aria-label="Language"
+        options={OPTIONS}
+        onChange={(v) => setLocale(v as LocaleId)}
+        popupMatchSelectWidth={false}
+        style={{ minWidth: 100 }}
+      />
+    </div>
   )
 }

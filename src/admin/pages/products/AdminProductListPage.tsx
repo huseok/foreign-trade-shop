@@ -1,25 +1,99 @@
 /**
- * 管理端商品列表：服务端分页 + 关键词 + 上架状态；入口新建 / 行内编辑。
+ * ???????????????????CSV???????????
  */
 import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { App, Button, Input, Popconfirm, Select, Space, Table, Typography, Upload } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { Link } from 'react-router-dom'
-import { useAdminBulkProductStatus, useAdminProductsPage, useMe } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
-import { i18nTpl } from '../../lib/i18nTpl'
-import { productThumbUrl } from '../../lib/media/resolveMediaUrl'
-import type { ProductDto } from '../../types/api'
-import { voyage } from '../../openapi/voyageSdk'
-import { AdminProductQuickCreateModal } from '../components/AdminProductQuickCreateModal'
-import { StandardModal } from '../components/StandardModal'
+import { queryKeys, useAdminBulkProductStatus, useAdminProductsPage, useMe } from '../../../hooks/apiHooks'
+import { useI18n } from '../../../i18n/I18nProvider'
+import { i18nTpl } from '../../../lib/i18nTpl'
+import { productThumbUrl, resolveMediaUrl } from '../../../lib/media/resolveMediaUrl'
+import type { ProductDto } from '../../../types/api'
+import { voyage } from '../../../openapi/voyageSdk'
+import { AdminProductQuickCreateModal } from '../../components/product/AdminProductQuickCreateModal'
+import { StandardModal } from '../../components/shared/StandardModal'
+import {
+  applyProductCsvRow,
+  defaultProductImportBase,
+  parseCsvFile,
+  productDtoToCsvLine,
+  productDtoToImportBase,
+  PRODUCT_CSV_HEADERS,
+  rowCellsToRecord,
+} from '../../lib/productCsv'
+
+/** ??????????????????????? */
+const EXPAND_IMAGE_PREVIEW_COUNT = 6
+
+function ProductExpandContent({ product }: { product: ProductDto }) {
+  const { t } = useI18n()
+  const [showAllImages, setShowAllImages] = useState(false)
+  const imgs = product.images ?? []
+  const visible = showAllImages ? imgs : imgs.slice(0, EXPAND_IMAGE_PREVIEW_COUNT)
+  const restCount = Math.max(0, imgs.length - EXPAND_IMAGE_PREVIEW_COUNT)
+
+  return (
+    <div style={{ padding: '4px 0 12px', maxWidth: 960 }}>
+      <div style={{ marginBottom: 8 }}>
+        <Typography.Text strong>{t('admin.productsList.expandImagesSection')}</Typography.Text>
+        {imgs.length === 0 ? (
+          <Typography.Text type="secondary" style={{ marginLeft: 8 }}>
+            {t('admin.productsList.noImages')}
+          </Typography.Text>
+        ) : null}
+      </div>
+      {imgs.length > 0 ? (
+        <>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {visible.map((img, idx) => {
+              const src = resolveMediaUrl(img.fullUrl || img.thumbUrl)
+              if (!src) return null
+              return (
+                <a key={`${src}-${idx}`} href={src} target="_blank" rel="noreferrer" title={src}>
+                  <img
+                    src={src}
+                    alt=""
+                    width={112}
+                    height={112}
+                    style={{
+                      objectFit: 'cover',
+                      borderRadius: 8,
+                      border: '1px solid var(--adm-border, #f0f0f0)',
+                      display: 'block',
+                    }}
+                  />
+                </a>
+              )
+            })}
+          </div>
+          {restCount > 0 ? (
+            <Button type="link" size="small" style={{ paddingLeft: 0, marginTop: 4 }} onClick={() => setShowAllImages(!showAllImages)}>
+              {showAllImages ? t('admin.productsList.collapseImages') : i18nTpl(t('admin.productsList.expandMoreImages'), { n: restCount })}
+            </Button>
+          ) : null}
+        </>
+      ) : null}
+      {product.description ? (
+        <Typography.Paragraph style={{ marginTop: 12, marginBottom: 0 }} type="secondary">
+          <Typography.Text strong style={{ color: 'rgba(0,0,0,0.88)' }}>
+            {t('admin.productsList.expandDescriptionLabel')}
+          </Typography.Text>
+          <span style={{ display: 'block', marginTop: 6, whiteSpace: 'pre-wrap' }}>{product.description}</span>
+        </Typography.Paragraph>
+      ) : null}
+    </div>
+  )
+}
 
 type StatusFilter = 'all' | 'active' | 'inactive'
 
 export function AdminProductListPage() {
   const { message } = App.useApp()
   const { t } = useI18n()
+  const qc = useQueryClient()
   const { data: me, isLoading: meLoading } = useMe(true)
   const [quickOpen, setQuickOpen] = useState(false)
   const [page, setPage] = useState(0)
@@ -85,19 +159,19 @@ export function AdminProductListPage() {
         return src ? (
           <img src={src} alt="" width={48} height={48} style={{ objectFit: 'cover', borderRadius: 4 }} />
         ) : (
-          '—'
+          '?'
         )
       },
     },
     { title: t('admin.productsList.colTitle'), dataIndex: 'title', ellipsis: true },
-    { title: t('admin.productsList.colSku'), dataIndex: 'skuCode', width: 120, render: (v) => v ?? '—' },
+    { title: t('admin.productsList.colSku'), dataIndex: 'skuCode', width: 120, render: (v) => v ?? '?' },
     {
       title: t('admin.productsList.colPrice'),
       key: 'price',
       width: 140,
       search: false,
       render: (_, r) =>
-        r.price == null ? '—' : `${r.currency ?? ''} ${Number(r.price).toFixed(2)}`,
+        r.price == null ? '?' : `${r.currency ?? ''} ${Number(r.price).toFixed(2)}`,
     },
     { title: t('admin.productsList.colMoq'), dataIndex: 'moq', width: 80 },
     {
@@ -122,12 +196,9 @@ export function AdminProductListPage() {
   ]
 
   const exportCsv = () => {
-    const header = ['id', 'title', 'price', 'currency', 'moq', 'isActive']
-    const lines = rows.map((r) =>
-      [r.id, `"${r.title.replaceAll('"', '""')}"`, r.price ?? '', r.currency ?? 'USD', r.moq, r.isActive]
-        .join(',')
-    )
-    const csv = [header.join(','), ...lines].join('\n')
+    const header = PRODUCT_CSV_HEADERS.join(',')
+    const lines = rows.map(productDtoToCsvLine)
+    const csv = `\ufeff${[header, ...lines].join('\n')}`
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -138,9 +209,27 @@ export function AdminProductListPage() {
   }
 
   const downloadTemplate = () => {
-    const header = ['id', 'title', 'price', 'currency', 'moq', 'isActive']
-    const sample = ['', 'Sample Product', '19.99', 'USD', '2', 'true']
-    const csv = [header.join(','), sample.join(',')].join('\n')
+    const header = PRODUCT_CSV_HEADERS.join(',')
+    const sample = [
+      '',
+      'Sample Product',
+      '19.99',
+      '',
+      'USD',
+      '2',
+      'true',
+      'short description',
+      'SKU-001',
+      '',
+      'pcs',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+    ].join(',')
+    const csv = `\ufeff${[header, sample].join('\n')}`
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -152,55 +241,64 @@ export function AdminProductListPage() {
 
   const importCsv = async (file: File) => {
     const text = await file.text()
-    const lines = text.split(/\r?\n/).filter(Boolean)
-    if (lines.length <= 1) {
+    const parsed = parseCsvFile(text)
+    if (!parsed) {
       message.warning(t('admin.productsList.csvEmpty'))
       return false
     }
-    const [head, ...body] = lines
-    const cols = head.split(',').map((x) => x.trim())
-    const idx = (name: string) => cols.indexOf(name)
+    const { headers, rows: body } = parsed
+    if (!headers.includes('title') || !headers.includes('price')) {
+      message.warning(t('admin.productsList.errImportHeader'))
+      return false
+    }
     let ok = 0
     const errors: Array<{ line: number; reason: string }> = []
     for (let i = 0; i < body.length; i += 1) {
       const lineNo = i + 2
-      const line = body[i]
-      const parts = line.split(',')
-      const id = Number(parts[idx('id')] || '')
-      const payload = {
-        title: (parts[idx('title')] || '').replace(/^"|"$/g, ''),
-        price: Number(parts[idx('price')] || 0),
-        currency: (parts[idx('currency')] || 'USD').trim(),
-        moq: Number(parts[idx('moq')] || 1),
-        isActive: String(parts[idx('isActive')] || 'true').trim() === 'true',
-      }
-      if (!payload.title) {
-        errors.push({ line: lineNo, reason: t('admin.productsList.errTitleEmpty') })
-        continue
-      }
-      if (payload.price <= 0) {
-        errors.push({ line: lineNo, reason: t('admin.productsList.errPrice') })
-        continue
-      }
-      if (payload.moq < 1) {
-        errors.push({ line: lineNo, reason: t('admin.productsList.errMoq') })
-        continue
-      }
-      try {
-        if (Number.isFinite(id) && id > 0) {
-          await voyage.products.adminUpdate(id, payload)
-        } else {
-          await voyage.products.adminCreate(payload)
+      const record = rowCellsToRecord(headers, body[i])
+      const idRaw = (record.id ?? '').trim()
+      const idNum = idRaw === '' ? NaN : Number(idRaw)
+
+      if (Number.isFinite(idNum) && idNum > 0) {
+        let existing
+        try {
+          existing = await voyage.products.adminGetById(idNum)
+        } catch {
+          errors.push({ line: lineNo, reason: t('admin.productsList.errImportIdNotFound') })
+          continue
         }
-        ok += 1
-      } catch {
-        errors.push({ line: lineNo, reason: t('admin.productsList.errApi') })
+        const base = productDtoToImportBase(existing)
+        const merged = applyProductCsvRow(base, record, { isUpdate: true })
+        if (!merged.ok) {
+          errors.push({ line: lineNo, reason: `${t('admin.productsList.errImportMerge')}: ${merged.reason}` })
+          continue
+        }
+        try {
+          await voyage.products.adminUpdate(idNum, merged.payload)
+          ok += 1
+        } catch {
+          errors.push({ line: lineNo, reason: t('admin.productsList.errApi') })
+        }
+      } else {
+        const base = defaultProductImportBase()
+        const merged = applyProductCsvRow(base, record, { isUpdate: false })
+        if (!merged.ok) {
+          errors.push({ line: lineNo, reason: `${t('admin.productsList.errImportMerge')}: ${merged.reason}` })
+          continue
+        }
+        try {
+          await voyage.products.adminCreate(merged.payload)
+          ok += 1
+        } catch {
+          errors.push({ line: lineNo, reason: t('admin.productsList.errApi') })
+        }
       }
     }
     setImportErrors(errors)
     setImportSummary({ ok, total: body.length })
     message.success(i18nTpl(t('admin.productsList.importDone'), { ok, fail: errors.length }))
     setSelectedIds([])
+    void qc.invalidateQueries({ queryKey: queryKeys.productsRoot })
     return false
   }
 
@@ -299,6 +397,9 @@ export function AdminProductListPage() {
         options={false}
         columns={columns}
         dataSource={rows}
+        expandable={{
+          expandedRowRender: (record) => <ProductExpandContent product={record} />,
+        }}
         rowSelection={{
           selectedRowKeys: selectedIds,
           onChange: (keys) => setSelectedIds(keys.map((x) => Number(x))),
@@ -310,6 +411,7 @@ export function AdminProductListPage() {
           total,
           showSizeChanger: true,
           showTotal: (n) => i18nTpl(t('admin.productsList.showTotal'), { n }),
+          className: 'admin-table-pagination',
           onChange: (p, ps) => {
             setPage(p - 1)
             setPageSize(ps)
@@ -323,6 +425,8 @@ export function AdminProductListPage() {
         onCancel={() => setImportSummary(null)}
         footer={null}
         destroyOnClose
+        width={640}
+        styles={{ body: { maxHeight: 'min(70vh, 480px)', overflowY: 'auto', paddingTop: 12 } }}
       >
         <Typography.Paragraph>
           {i18nTpl(t('admin.productsList.reportSummary'), {
@@ -333,11 +437,18 @@ export function AdminProductListPage() {
         </Typography.Paragraph>
         <Table
           rowKey={(r) => `${r.line}-${r.reason}`}
+          size="small"
           dataSource={importErrors}
-          pagination={{ pageSize: 8 }}
+          pagination={{
+            pageSize: 8,
+            showSizeChanger: true,
+            pageSizeOptions: ['8', '16', '32'],
+            showTotal: (n) => i18nTpl(t('admin.productsList.showTotal'), { n }),
+            className: 'admin-table-pagination',
+          }}
           columns={[
             { title: t('admin.productsList.colLine'), dataIndex: 'line', width: 90 },
-            { title: t('admin.productsList.colReason'), dataIndex: 'reason' },
+            { title: t('admin.productsList.colReason'), dataIndex: 'reason', ellipsis: true },
           ]}
         />
       </StandardModal>

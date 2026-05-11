@@ -6,6 +6,8 @@ export type AdminProductFormValues = {
   price: number
   /** 划线原价；可选，须不低于售价 */
   listPrice?: number | null
+  /** 成本价；可选，≥0 */
+  costPrice?: number | null
   currency: string
   moq: number
   description?: string
@@ -23,26 +25,74 @@ export type AdminProductFormValues = {
   images?: Array<{ thumbUrl: string; fullUrl: string }>
 }
 
+function trimStr(v: unknown): string {
+  return v == null ? '' : String(v).trim()
+}
+
+function optTrimStr(v: unknown): string | null {
+  const t = trimStr(v)
+  return t === '' ? null : t
+}
+
+function optInt(v: unknown): number | null {
+  if (v == null || v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? Math.trunc(n) : null
+}
+
+function optNumber(v: unknown): number | null {
+  if (v == null || v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
+/**
+ * 组装 PUT/POST 负载。
+ * 可选字段显式传 null，避免 JSON 省略键导致后端 Kotlin 默认值把字段清空（尤其是 description）。
+ */
 export function adminProductFormValuesToPayload(values: AdminProductFormValues): AdminProductUpsertRequest {
-  return {
-    title: String(values.title ?? '').trim(),
+  const listPriceRaw = values.listPrice
+  const listPrice =
+    listPriceRaw != null && listPriceRaw !== '' && Number(listPriceRaw) > 0 ? Number(listPriceRaw) : null
+
+  const costPriceRaw = values.costPrice
+  const costPrice =
+    costPriceRaw != null &&
+    costPriceRaw !== '' &&
+    Number.isFinite(Number(costPriceRaw)) &&
+    Number(costPriceRaw) >= 0
+      ? Number(costPriceRaw)
+      : null
+
+  const payload: AdminProductUpsertRequest & Record<string, unknown> = {
+    title: trimStr(values.title),
     price: Number(values.price),
-    listPrice:
-      values.listPrice != null && values.listPrice > 0 ? Number(values.listPrice) : null,
-    currency: String(values.currency ?? '').trim().toUpperCase(),
+    listPrice,
+    costPrice,
+    currency: trimStr(values.currency).toUpperCase() || 'USD',
     moq: Number(values.moq),
-    description: values.description ? String(values.description).trim() : undefined,
-    skuCode: values.skuCode ? String(values.skuCode).trim() : undefined,
-    hsCode: values.hsCode ? String(values.hsCode).trim() : undefined,
-    unit: values.unit ? String(values.unit).trim() : undefined,
-    incoterm: values.incoterm ? String(values.incoterm).trim().toUpperCase() : undefined,
-    originCountry: values.originCountry ? String(values.originCountry).trim() : undefined,
-    leadTimeDays: values.leadTimeDays == null ? undefined : Number(values.leadTimeDays),
-    ...(values.weightKg != null ? { weightKg: Number(values.weightKg) } : {}),
-    ...(values.categoryId != null ? { categoryId: Number(values.categoryId) } : {}),
-    ...(values.shippingTemplateId != null ? { shippingTemplateId: Number(values.shippingTemplateId) } : {}),
+    description: trimStr(values.description),
+    skuCode: optTrimStr(values.skuCode),
+    hsCode: optTrimStr(values.hsCode),
+    unit: optTrimStr(values.unit),
+    incoterm: (() => {
+      const t = optTrimStr(values.incoterm)
+      return t == null ? null : t.toUpperCase()
+    })(),
+    originCountry: optTrimStr(values.originCountry),
+    leadTimeDays: optInt(values.leadTimeDays),
+    weightKg: optNumber(values.weightKg),
+    categoryId: optInt(values.categoryId),
+    shippingTemplateId: optInt(values.shippingTemplateId),
     isActive: Boolean(values.isActive),
-    ...(values.images !== undefined ? { images: values.images } : {}),
-    ...(values.tagIds !== undefined ? { tagIds: values.tagIds } : {}),
   }
+
+  if (values.images !== undefined) {
+    payload.images = values.images
+  }
+  if (values.tagIds !== undefined) {
+    payload.tagIds = values.tagIds
+  }
+
+  return payload as AdminProductUpsertRequest
 }

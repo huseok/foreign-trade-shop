@@ -1,16 +1,17 @@
 /**
  * 商品图编排列表：上传走 `POST /api/v1/admin/media/upload`，表单值为 ProductImageRef[]。
- * 列表/卡片展示首张 thumb；详情可切换 full（由 PDP 负责）。
+ * 大图在上传前于浏览器端压缩；小图跳过。支持拖拽与点击。
  */
-import { PlusOutlined } from '@ant-design/icons'
+import { InboxOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, Form, Image, Input, Space, Tag, Typography, Upload } from 'antd'
 import type { UploadProps } from 'antd'
 import { useState } from 'react'
-import { asRcFormInstance } from '../../lib/formAntdCompat'
-import type { AdminProductUpsertRequest } from '../../types/api'
-import { resolveMediaUrl } from '../../lib/media/resolveMediaUrl'
-import { voyage } from '../../openapi/voyageSdk'
-import { useI18n } from '../../i18n/I18nProvider'
+import { asRcFormInstance } from '../../../lib/formAntdCompat'
+import type { AdminProductUpsertRequest } from '../../../types/api'
+import { compressImageForUpload } from '../../../lib/media/compressImageForUpload'
+import { resolveMediaUrl } from '../../../lib/media/resolveMediaUrl'
+import { voyage } from '../../../openapi/voyageSdk'
+import { useI18n } from '../../../i18n/I18nProvider'
 
 type Img = NonNullable<AdminProductUpsertRequest['images']>[number]
 
@@ -21,9 +22,10 @@ export function AdminProductImagesField() {
   const [uploading, setUploading] = useState(false)
 
   const customRequest: UploadProps['customRequest'] = async (options) => {
-    const file = options.file as File
+    const raw = options.file as File
     setUploading(true)
     try {
+      const file = await compressImageForUpload(raw)
       const r = await voyage.media.upload(file)
       const cur = (form.getFieldValue('images') as Img[] | undefined) ?? []
       form.setFieldsValue({ images: [...cur, { thumbUrl: r.thumbUrl, fullUrl: r.fullUrl }] })
@@ -117,13 +119,21 @@ export function AdminProductImagesField() {
                 )
               })}
             </Space>
-            <Upload
+            <Upload.Dragger
               multiple
               accept="image/*"
               showUploadList={false}
               customRequest={customRequest}
               disabled={uploading}
+              style={{ padding: '16px 12px' }}
             >
+              <p className="ant-upload-drag-icon">
+                <InboxOutlined />
+              </p>
+              <p className="ant-upload-text">{t('admin.products.dragHint')}</p>
+              <p className="ant-upload-hint">{t('admin.products.compressHint')}</p>
+            </Upload.Dragger>
+            <Upload multiple accept="image/*" showUploadList={false} customRequest={customRequest} disabled={uploading}>
               <Button icon={<PlusOutlined />} loading={uploading}>
                 {t('admin.products.uploadImages')}
               </Button>

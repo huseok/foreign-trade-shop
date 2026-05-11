@@ -2,7 +2,7 @@
  * 管理端商品新建/编辑共用的表单项（须放在 `<Form>` 内使用）。
  */
 import { Checkbox, Form, Input, InputNumber, Select, Space, Typography } from 'antd'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/I18nProvider'
 import { AdminProductImagesField } from './AdminProductImagesField'
 
 type Option = { id: number; name: string }
@@ -32,6 +32,13 @@ export function AdminProductUpsertFields({ categories = [], shippingTemplates = 
           tooltip="填写且高于现价时，前台活动区等位置显示原价划线 + 现价；留空表示无促销划线价。"
         >
           <InputNumber min={0.01} step={0.01} style={{ width: 160 }} placeholder="无则不填" />
+        </Form.Item>
+        <Form.Item
+          name="costPrice"
+          label="成本价（可选）"
+          tooltip="内部核算用，不会展示给前台访客；留空表示未录入。"
+        >
+          <InputNumber min={0} step={0.01} style={{ width: 160 }} placeholder="无则不填" />
         </Form.Item>
         <Form.Item name="currency" label="币种" rules={[{ required: true, message: '请填写币种' }]}>
           <Input style={{ width: 120 }} placeholder="USD" />

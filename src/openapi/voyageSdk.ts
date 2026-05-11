@@ -68,6 +68,9 @@ export const voyage = {
       size?: number
       q?: string
       active?: boolean
+      categoryId?: number
+      tagId?: number
+      currency?: string
     }): Promise<S['PagedProducts']> {
       const sp = new URLSearchParams()
       if (params.page != null) sp.set('page', String(params.page))
@@ -75,6 +78,9 @@ export const voyage = {
       if (params.q != null && params.q !== '') sp.set('q', params.q)
       if (params.active === true) sp.set('active', 'true')
       if (params.active === false) sp.set('active', 'false')
+      if (params.categoryId != null) sp.set('categoryId', String(params.categoryId))
+      if (params.tagId != null) sp.set('tagId', String(params.tagId))
+      if (params.currency != null && params.currency !== '') sp.set('currency', params.currency)
       const qs = sp.toString()
       return getData<S['PagedProducts']>(`/api/v1/admin/products${qs ? `?${qs}` : ''}`)
     },
@@ -162,8 +168,21 @@ export const voyage = {
     confirmCompleted(orderNo: string): Promise<string> {
       return patchData<string>(`/api/v1/orders/${orderNo}/confirm-completed`)
     },
-    adminList(): Promise<S['OrderView'][]> {
-      return getData<S['OrderView'][]>('/api/v1/admin/orders')
+    adminListPaged(params: {
+      page?: number
+      size?: number
+      q?: string
+      status?: string
+      phase?: string
+    }): Promise<{ items: S['OrderView'][]; total: number; page: number; size: number }> {
+      const sp = new URLSearchParams()
+      if (params.page != null) sp.set('page', String(params.page))
+      if (params.size != null) sp.set('size', String(params.size))
+      if (params.q != null && params.q !== '') sp.set('q', params.q)
+      if (params.status != null && params.status !== '') sp.set('status', params.status)
+      if (params.phase != null && params.phase !== '') sp.set('phase', params.phase)
+      const qs = sp.toString()
+      return getData(`/api/v1/admin/orders${qs ? `?${qs}` : ''}`)
     },
     adminUpdateTracking(orderNo: string, body: S['UpdateTrackingRequest']): Promise<string> {
       return patchData<string>(`/api/v1/admin/orders/${orderNo}/tracking-no`, body)
@@ -186,6 +205,9 @@ export const voyage = {
     },
     adminList(): Promise<S['AfterSaleView'][]> {
       return getData<S['AfterSaleView'][]>('/api/v1/admin/after-sales')
+    },
+    adminCreateAsAdmin(body: S['CreateAfterSaleRequest']): Promise<string> {
+      return postData<string>('/api/v1/admin/after-sales', body)
     },
     adminUpdateStatus(id: number, body: S['UpdateAfterSaleStatusRequest']): Promise<string> {
       return patchData<string>(`/api/v1/admin/after-sales/${id}/status`, body)
@@ -344,8 +366,8 @@ export const voyage = {
     },
   },
   audit: {
-    listLogs(): Promise<
-      Array<{
+    listLogsPaged(params: { page?: number; size?: number }): Promise<{
+      items: Array<{
         id: number
         actorUserId?: number
         actorRole?: string
@@ -355,8 +377,15 @@ export const voyage = {
         detailJson?: string
         createdAt: string
       }>
-    > {
-      return getData('/api/v1/admin/audit/logs')
+      total: number
+      page: number
+      size: number
+    }> {
+      const sp = new URLSearchParams()
+      if (params.page != null) sp.set('page', String(params.page))
+      if (params.size != null) sp.set('size', String(params.size))
+      const qs = sp.toString()
+      return getData(`/api/v1/admin/audit/logs${qs ? `?${qs}` : ''}`)
     },
     listOrderHistories(orderId: number): Promise<
       Array<{ id: number; orderId: number; fromStatus?: string; toStatus: string; changedBy?: number; changedAt: string; remark?: string }>

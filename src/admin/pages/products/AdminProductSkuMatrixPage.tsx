@@ -3,7 +3,7 @@ import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useAdminProductSkuMatrix, useAdminUpsertProductSkuMatrix } from '../../hooks/apiHooks'
+import { useAdminProductSkuMatrix, useAdminUpsertProductSkuMatrix } from '../../../hooks/apiHooks'
 
 type AttrInput = { name: string; values: string }
 type MatrixRow = {

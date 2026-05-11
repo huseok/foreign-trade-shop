@@ -1,12 +1,12 @@
 /**
- * 商城订单详情（路由参数 `:id` 实为后端 **orderNo**，可做 URL 编码）。
+ * ??????????? `:id` ???? **orderNo**??? URL ????
  *
- * 数据来自 `useOrderDetail` → `voyage.orders.getByOrderNo`；确认完成与售后创建走 `voyageSdk` 对应方法。
+ * ???? `useOrderDetail` ? `voyage.orders.getByOrderNo`??????????? `voyageSdk` ?????
  */
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { voyage } from '../../openapi/voyageSdk'
-import { useDictItems, useMe, useOrderDetail } from '../../hooks/apiHooks'
+import { useDictItems, useOrderDetail } from '../../hooks/apiHooks'
 import { useDictLabel, useI18n } from '../../i18n/I18nProvider'
 import { toErrorMessage } from '../../lib/http/error'
 import './OrderDetail.scss'
@@ -16,7 +16,6 @@ export function OrderDetail() {
   const { id: rawId } = useParams<{ id: string }>()
   const orderNo = rawId ? decodeURIComponent(rawId) : undefined
   const { data: order, isLoading, refetch } = useOrderDetail(orderNo)
-  const { data: me } = useMe(true)
   const { data: orderStatusItems = [] } = useDictItems('ORDER_STATUS')
   const [msg, setMsg] = useState<string | null>(null)
 
@@ -76,11 +75,6 @@ export function OrderDetail() {
             <Link to="/user/orders" className="btn btn--ghost">
               {t('order.myOrders')}
             </Link>
-            {me?.role === 'ADMIN' && (
-              <Link to="/admin/orders" className="btn btn--ghost">
-                {t('footer.admin')}
-              </Link>
-            )}
           </div>
         </div>
       </div>
@@ -138,11 +132,11 @@ export function OrderDetail() {
           <dl className="order__dl">
             <div>
               <dt>{t('order.name')}</dt>
-              <dd>{order.receiverName || '—'}</dd>
+              <dd>{order.receiverName || '?'}</dd>
             </div>
             <div>
               <dt>{t('order.phone')}</dt>
-              <dd>{order.receiverPhone || '—'}</dd>
+              <dd>{order.receiverPhone || '?'}</dd>
             </div>
             {order.receiverCompany && (
               <div>
@@ -191,11 +185,6 @@ export function OrderDetail() {
           <Link to="/user/orders" className="btn btn--ghost">
             {t('order.myOrders')}
           </Link>
-          {me?.role === 'ADMIN' && (
-            <Link to="/admin/orders" className="btn btn--ghost">
-              {t('footer.admin')}
-            </Link>
-          )}
           <Link to="/" className="btn btn--ghost">
             {t('common.backHome')}
           </Link>

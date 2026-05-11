@@ -200,6 +200,11 @@
             "nullable": true,
             "description": "划线原价；非空且大于 price 时表示促销价"
           },
+          "costPrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "成本价；仅管理端接口可能返回，前台为 null"
+          },
           "currency": { "type": "string", "nullable": true }
         }
       },
@@ -226,6 +231,11 @@
             "type": "number",
             "nullable": true,
             "description": "划线原价，须不低于 price；null 表示不设"
+          },
+          "costPrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "成本价；可选，≥0；null 表示不设"
           },
           "currency": { "type": "string" },
           "moq": { "type": "integer", "minimum": 1 },

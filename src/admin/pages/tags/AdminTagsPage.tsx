@@ -10,11 +10,11 @@ import {
   useAdminDeleteTag,
   useAdminTags,
   useAdminUpdateTag,
-} from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
-import { i18nTpl } from '../../lib/i18nTpl'
-import type { components } from '../../generated/voyage-paths'
-import { StandardModal } from '../components/StandardModal'
+} from '../../../hooks/apiHooks'
+import { useI18n } from '../../../i18n/I18nProvider'
+import { i18nTpl } from '../../../lib/i18nTpl'
+import type { components } from '../../../generated/voyage-paths'
+import { StandardModal } from '../../components/shared/StandardModal'
 
 type TagRow = components['schemas']['TagView']
 

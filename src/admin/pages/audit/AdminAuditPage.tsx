@@ -1,8 +1,9 @@
 import { Typography } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
-import { useAdminAuditLogs } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useState } from 'react'
+import { useAdminAuditLogs } from '../../../hooks/apiHooks'
+import { useI18n } from '../../../i18n/I18nProvider'
 
 type AuditRow = {
   id: number
@@ -20,7 +21,10 @@ type AuditRow = {
  */
 export function AdminAuditPage() {
   const { t } = useI18n()
-  const { data = [], isLoading } = useAdminAuditLogs()
+  const [pageReq, setPageReq] = useState({ page: 0, size: 20 })
+  const { data, isLoading } = useAdminAuditLogs(pageReq)
+  const rows = data?.items ?? []
+  const total = data?.total ?? 0
 
   const columns: ProColumns<AuditRow>[] = [
     { title: t('admin.audit.colId'), dataIndex: 'id', width: 80, search: false },
@@ -45,8 +49,16 @@ export function AdminAuditPage() {
         search={false}
         options={false}
         columns={columns}
-        dataSource={data as AuditRow[]}
-        pagination={{ pageSize: 20, showSizeChanger: true }}
+        dataSource={rows}
+        pagination={{
+          current: pageReq.page + 1,
+          pageSize: pageReq.size,
+          total,
+          showSizeChanger: true,
+          onChange: (page, pageSize) => {
+            setPageReq({ page: page - 1, size: pageSize })
+          },
+        }}
         footer={() => <Typography.Text type="secondary">{t('admin.audit.footerHint')}</Typography.Text>}
       />
     </PageContainer>

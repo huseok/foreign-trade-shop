@@ -562,6 +562,8 @@ export interface components {
             price?: number | null;
             /** @description 划线原价；非空且大于 price 时表示促销价 */
             listPrice?: number | null;
+            /** @description 成本价；仅管理端接口可能返回，前台为 null */
+            costPrice?: number | null;
             currency?: string | null;
         };
         PagedProducts: {
@@ -576,6 +578,8 @@ export interface components {
             price: number;
             /** @description 划线原价，须不低于 price；null 表示不设 */
             listPrice?: number | null;
+            /** @description 成本价；可选，≥0；null 表示不设 */
+            costPrice?: number | null;
             currency: string;
             moq: number;
             description?: string;

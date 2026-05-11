@@ -7,10 +7,10 @@ import {
   useAdminDeleteCategory,
   useAdminUpdateCategory,
   useCategories,
-} from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
-import { i18nTpl } from '../../lib/i18nTpl'
-import { StandardModal } from '../components/StandardModal'
+} from '../../../hooks/apiHooks'
+import { useI18n } from '../../../i18n/I18nProvider'
+import { i18nTpl } from '../../../lib/i18nTpl'
+import { StandardModal } from '../../components/shared/StandardModal'
 
 type CategoryRow = {
   id: number

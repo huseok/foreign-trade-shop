@@ -30,12 +30,15 @@
     font-family: var(--heading);
   }
 
+  /** 与 `public/favicon.png` 同源，保证顶栏与浏览器标签视觉一致 */
   &__mark {
     width: 2rem;
     height: 2rem;
     border-radius: var(--radius-sm);
-    background: linear-gradient(145deg, var(--primary) 0%, var(--primary-dark) 100%);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, white 25%, transparent);
+    flex-shrink: 0;
+    display: block;
+    object-fit: cover;
+    box-shadow: 0 1px 2px color-mix(in oklch, var(--fg) 12%, transparent);
   }
 
   /** 市集桌面搜索：双边框 + 独立搜索按钮 */
@@ -60,8 +63,23 @@
     padding: 0 8px;
     font-size: 12px;
     color: var(--text-h);
-    max-width: 88px;
-    cursor: default;
+    min-width: 5.5rem;
+    max-width: min(11rem, 34vw);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+      z-index: 1;
+    }
+
+    &--mobile {
+      flex: 1 1 9rem;
+      max-width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      min-height: 2.25rem;
+    }
   }
 
   &__search-input {
@@ -185,6 +203,15 @@
     grid-column: 1 / -1;
     grid-row: 2;
     justify-self: stretch;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.5rem;
+
+    .site-header__input {
+      flex: 1 1 12rem;
+      min-width: 0;
+      width: auto;
+    }
   }
 
   &__input {
@@ -256,7 +283,7 @@
     }
 
     &__search-mobile {
-      display: block;
+      display: flex;
     }
   }
 }

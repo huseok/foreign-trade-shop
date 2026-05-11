@@ -2,9 +2,9 @@
  * 用户中心-地址管理模块。
  */
 import { App, Button, Card, Form, Input, Switch, Table } from 'antd'
-import { UserCenterShell } from '../../components/UserCenterShell'
-import { useCreateUserAddress, useUserAddresses } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { UserCenterShell } from '../../../components/UserCenterShell'
+import { useCreateUserAddress, useUserAddresses } from '../../../hooks/apiHooks'
+import { useI18n } from '../../../i18n/I18nProvider'
 
 export function UserAddressesPage() {
   const { t } = useI18n()

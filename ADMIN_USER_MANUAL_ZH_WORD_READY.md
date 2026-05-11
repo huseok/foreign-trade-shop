@@ -1,9 +1,9 @@
-# CHZfobkey 管理后台用户操作手册（Word排版版）
+# CHZautokeys 管理后台用户操作手册（Word排版版）
 
 ## 文档信息
 
-- 文档名称：CHZfobkey 管理后台用户操作手册
-- 适用系统：CHZfobkey 管理后台（`/admin/*`）
+- 文档名称：CHZautokeys 管理后台用户操作手册
+- 适用系统：CHZautokeys 管理后台（`/admin/*`）
 - 适用角色：管理员（ADMIN）
 - 版本号：V1.0
 - 编制日期：2026-04-13

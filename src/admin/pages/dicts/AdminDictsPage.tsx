@@ -1,8 +1,9 @@
-import { App, Button, Card, Form, Input, Space, Typography } from 'antd'
+import { QuestionCircleOutlined } from '@ant-design/icons'
+import { App, Button, Card, Form, Input, Space, Tooltip, Typography } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
-import { useAdminCreateDictItem, useAdminCreateDictType, useDictTypes } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useAdminCreateDictItem, useAdminCreateDictType, useDictTypes } from '../../../hooks/apiHooks'
+import { useI18n } from '../../../i18n/I18nProvider'
 
 type DictTypeRow = { dictCode: string; dictName: string }
 
@@ -21,8 +22,37 @@ export function AdminDictsPage() {
     { title: t('admin.dicts.colName'), dataIndex: 'dictName', search: false },
   ]
 
+  const helpParagraphs = t('admin.dicts.helpBody').split(/\n\n+/).filter(Boolean)
+
   return (
-    <PageContainer title={t('admin.dicts.title')} subTitle={t('admin.dicts.subtitle')}>
+    <PageContainer
+      title={
+        <Space align="center" size={8}>
+          <span>{t('admin.dicts.title')}</span>
+          <Tooltip
+            title={
+              <div style={{ maxWidth: 380 }}>
+                {helpParagraphs.map((para, i) => (
+                  <p key={i} style={{ margin: i === 0 ? 0 : '10px 0 0', lineHeight: 1.55 }}>
+                    {para}
+                  </p>
+                ))}
+              </div>
+            }
+            placement="bottomLeft"
+            mouseEnterDelay={0.05}
+            overlayStyle={{ maxWidth: 400 }}
+          >
+            <QuestionCircleOutlined
+              tabIndex={0}
+              aria-label={t('admin.dicts.helpAria')}
+              style={{ cursor: 'help', color: 'rgba(0,0,0,0.45)', fontSize: 16 }}
+            />
+          </Tooltip>
+        </Space>
+      }
+      subTitle={t('admin.dicts.subtitle')}
+    >
       <Space direction="vertical" style={{ width: '100%' }} size="large">
         <Card title={t('admin.dicts.cardNewType')}>
           <Form

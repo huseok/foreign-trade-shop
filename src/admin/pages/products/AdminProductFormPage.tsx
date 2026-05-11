@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 import { App, Button, Card, Form, Result, Space, Spin, Typography } from 'antd'
 import { PageContainer } from '@ant-design/pro-components'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { AdminProductUpsertFields } from '../components/AdminProductUpsertFields'
+import { AdminProductUpsertFields } from '../../components/product/AdminProductUpsertFields'
 import {
   useCategories,
   useAdminProductDetail,
@@ -14,13 +14,13 @@ import {
   useMe,
   useShippingTemplates,
   useUpdateAdminProduct,
-} from '../../hooks/apiHooks'
-import type { ProductDto } from '../../types/api'
-import { toErrorMessage } from '../../lib/http/error'
+} from '../../../hooks/apiHooks'
+import type { ProductDto } from '../../../types/api'
+import { toErrorMessage } from '../../../lib/http/error'
 import {
   adminProductFormValuesToPayload,
   type AdminProductFormValues,
-} from '../lib/adminProductFormPayload'
+} from '../../lib/adminProductFormPayload'
 
 type ProductFormOps = {
   setFieldsValue: (values: Partial<AdminProductFormValues>) => void
@@ -31,9 +31,10 @@ function productToFormValues(p: ProductDto): AdminProductFormValues {
     title: p.title,
     price: p.price != null ? Number(p.price) : 0,
     listPrice: p.listPrice != null ? Number(p.listPrice) : undefined,
+    costPrice: p.costPrice != null ? Number(p.costPrice) : undefined,
     currency: p.currency ?? 'USD',
     moq: p.moq,
-    description: p.description ?? undefined,
+    description: p.description ?? '',
     skuCode: p.skuCode ?? undefined,
     hsCode: p.hsCode ?? undefined,
     unit: p.unit ?? undefined,

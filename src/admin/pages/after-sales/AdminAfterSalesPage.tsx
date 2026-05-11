@@ -7,11 +7,11 @@ import { useState } from 'react'
 import { App, Button, Input, Space, Tag, Typography } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
-import { useAdminAfterSales, useAdminUpdateAfterSaleStatus } from '../../hooks/apiHooks'
-import type { components } from '../../generated/voyage-paths'
-import { useI18n } from '../../i18n/I18nProvider'
-import { i18nTpl } from '../../lib/i18nTpl'
-import { StandardModal } from '../components/StandardModal'
+import { useAdminAfterSales, useAdminUpdateAfterSaleStatus } from '../../../hooks/apiHooks'
+import type { components } from '../../../generated/voyage-paths'
+import { useI18n } from '../../../i18n/I18nProvider'
+import { i18nTpl } from '../../../lib/i18nTpl'
+import { StandardModal } from '../../components/shared/StandardModal'
 
 type Row = components['schemas']['AfterSaleView']
 

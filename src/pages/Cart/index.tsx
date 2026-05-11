@@ -1,9 +1,10 @@
 /**
- * 购物车页：
- * 基于后端真实购物车接口，支持改数量、删除和金额汇总。
+ * Cart page: server cart when logged in; guest cart uses localStorage and fetches product details by id for thumbs/titles.
  */
+import { useQueries } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { useCart, useRemoveCartItem, useUpdateCartItem } from '../../hooks/apiHooks'
+import { useMemo, useEffect, useState } from 'react'
+import { queryKeys, useCart, useRemoveCartItem, useUpdateCartItem } from '../../hooks/apiHooks'
 import { authStore } from '../../lib/auth/authStore'
 import {
   getLocalCartItems,
@@ -11,9 +12,12 @@ import {
   removeLocalCartItem,
   updateLocalCartItem,
 } from '../../lib/cart/localCart'
-import { useEffect, useState } from 'react'
 import { useI18n } from '../../i18n/I18nProvider'
+import { productThumbUrl } from '../../lib/media/resolveMediaUrl'
+import { voyage } from '../../openapi/voyageSdk'
 import './Cart.scss'
+
+const CART_PRODUCT_STALE_MS = 5 * 60 * 1000
 
 export function Cart() {
   const { t } = useI18n()
@@ -23,25 +27,68 @@ export function Cart() {
   useEffect(() => onLocalCartUpdated(() => setLocalItems(getLocalCartItems())), [])
   const updateMutation = useUpdateCartItem()
   const removeMutation = useRemoveCartItem()
-  const rows = loggedIn
-    ? cart?.items ?? []
-    : localItems.map((x) => ({
-        itemId: x.productId,
-        productId: x.productId,
-        title: `${t('common.product')} #${x.productId}`,
-        quantity: x.quantity,
-        unitPrice: '0',
-        currency: 'USD',
-        lineAmount: '0',
-        moq: 1,
-      }))
-  const itemCount = rows.reduce((sum, item) => sum + item.quantity, 0)
+
+  const rows = useMemo(
+    () =>
+      loggedIn
+        ? cart?.items ?? []
+        : localItems.map((x) => ({
+            itemId: x.productId,
+            productId: x.productId,
+            title: `${t('common.product')} #${x.productId}`,
+            quantity: x.quantity,
+            unitPrice: '0',
+            currency: 'USD',
+            lineAmount: '0',
+            moq: 1,
+          })),
+    [loggedIn, cart?.items, localItems, t],
+  )
+
+  const productIds = useMemo(() => [...new Set(rows.map((r) => r.productId))], [rows])
+
+  const productQueries = useQueries({
+    queries: productIds.map((id) => ({
+      queryKey: queryKeys.product(id),
+      queryFn: () => voyage.products.getById(id),
+      staleTime: CART_PRODUCT_STALE_MS,
+      gcTime: 15 * 60 * 1000,
+      enabled: productIds.length > 0,
+    })),
+  })
+
+  const metaByProductId = useMemo(() => {
+    const m = new Map<number, { thumb: string; title?: string; moq: number }>()
+    productIds.forEach((id, i) => {
+      const p = productQueries[i]?.data
+      const moq = Math.max(1, p?.moq ?? 1)
+      m.set(id, {
+        thumb: productThumbUrl(p ?? {}),
+        title: p?.title,
+        moq,
+      })
+    })
+    return m
+  }, [productIds, productQueries])
+
+  const rowsResolved = useMemo(
+    () =>
+      rows.map((row) => {
+        const meta = metaByProductId.get(row.productId)
+        const moq = Math.max(1, Number((row as { moq?: number }).moq ?? meta?.moq ?? 1))
+        const title = meta?.title && !loggedIn ? meta.title : row.title
+        return { ...row, title, moq, thumbUrl: meta?.thumb ?? '' }
+      }),
+    [rows, metaByProductId, loggedIn],
+  )
+
+  const itemCount = rowsResolved.reduce((sum, item) => sum + item.quantity, 0)
   const subtotal = Number(cart?.totalAmount ?? 0)
   const currency = cart?.currency ?? 'USD'
 
   const handleQtyChange = (itemId: number, qty: number) => {
-    const row = rows.find((x) => x.itemId === itemId)
-    const minQty = Math.max(1, Number((row as { moq?: number } | undefined)?.moq ?? 1))
+    const row = rowsResolved.find((x) => x.itemId === itemId)
+    const minQty = Math.max(1, Number(row?.moq ?? 1))
     if (!loggedIn) {
       updateLocalCartItem(itemId, Math.max(minQty, qty))
       return
@@ -106,7 +153,7 @@ export function Cart() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((item) => {
+                  {rowsResolved.map((item) => {
                     const rowUpdating =
                       updateMutation.isPending &&
                       updateMutation.variables?.itemId === item.itemId
@@ -114,16 +161,16 @@ export function Cart() {
                       removeMutation.isPending &&
                       removeMutation.variables === item.itemId
                     const rowBusy = rowUpdating || rowRemoving
+                    const minQ = Math.max(1, Number(item.moq ?? 1))
                     return (
                     <tr key={item.itemId}>
                       <td>
                         <div className="cart-table__product">
-                          <div
-                            className="cart-table__thumb"
-                            style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #0d9488 100%)' }}
-                            role="img"
-                            aria-hidden
-                          />
+                          <div className="cart-table__thumb" role="img" aria-hidden={!item.thumbUrl}>
+                            {item.thumbUrl ? (
+                              <img className="cart-table__thumb-img" src={item.thumbUrl} alt="" loading="lazy" />
+                            ) : null}
+                          </div>
                           <div>
                             <Link
                               to={`/products/${item.productId}`}
@@ -141,7 +188,7 @@ export function Cart() {
                       <td data-label={t('cart.colQty')}>
                         <input
                           type="number"
-                          min={Math.max(1, Number((item as { moq?: number }).moq ?? 1))}
+                          min={minQ}
                           className="input input--qty"
                           value={item.quantity}
                           disabled={rowBusy}
@@ -151,7 +198,7 @@ export function Cart() {
                           aria-label={t('cart.removeAria').replace('{{title}}', item.title)}
                         />
                         <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                          {t('product.moq')}: {Math.max(1, Number((item as { moq?: number }).moq ?? 1))}
+                          {t('product.moq')}: {minQ}
                         </div>
                       </td>
                       <td data-label={t('cart.colSubtotal')}>
@@ -164,7 +211,7 @@ export function Cart() {
                           disabled={rowBusy}
                           onClick={() => handleRemove(item.itemId)}
                         >
-                          {rowRemoving ? '…' : t('common.remove')}
+                          {rowRemoving ? '...' : t('common.remove')}
                         </button>
                       </td>
                     </tr>

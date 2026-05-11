@@ -2,9 +2,9 @@
  * 用户中心-账户资料：`useMe` 展示邮箱、姓名与角色。
  */
 import { Card, Descriptions } from 'antd'
-import { UserCenterShell } from '../../components/UserCenterShell'
-import { useMe } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { UserCenterShell } from '../../../components/UserCenterShell'
+import { useMe } from '../../../hooks/apiHooks'
+import { useI18n } from '../../../i18n/I18nProvider'
 
 export function UserProfilePage() {
   const { t } = useI18n()

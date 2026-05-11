@@ -1,5 +1,5 @@
 {
-  "brand": "CHZfobkey",
+  "brand": "CHZautokeys",
   "common": {
     "loading": "Loading…",
     "search": "Search",
@@ -46,7 +46,8 @@
     "menu": "Menu",
     "language": "Language",
     "categories": "Categories",
-    "searchGo": "Go"
+    "searchGo": "Go",
+    "searchCategoryScope": "Limit search to category"
   },
   "catalog": {
     "title": "Catalog",
@@ -65,7 +66,10 @@
     "countrySuffix": " · country {{c}}",
     "querySuffix": " · “{{q}}”",
     "categorySuffix": " · category {{name}}",
-    "tagSuffix": " · tag {{name}}"
+    "tagSuffix": " · tag {{name}}",
+    "inCart": "{{n}} in cart",
+    "addCartOk": "Added to cart",
+    "addCartFail": "Could not add to cart"
   },
   "product": {
     "loginForPrice": "Log in to view price",
@@ -77,13 +81,13 @@
     "tags": "Tags"
   },
   "home": {
-    "eyebrow": "CHZfobkey · Global commerce platform",
+    "eyebrow": "CHZautokeys · Global commerce platform",
     "heroTitle": "Sourcing, purchasing, and fulfillment in one place",
     "heroLead": "Sign-in, catalog, product detail, cart, checkout, user center, and admin — a consistent experience for cross-border trade.",
     "ctaCatalog": "Shop catalog",
     "ctaTrust": "Why us",
     "siteIntroTitle": "About this site",
-    "siteIntroDesc": "CHZfobkey offers structured product data, pricing, and fulfillment flows so teams can decide and buy faster.",
+    "siteIntroDesc": "CHZautokeys offers structured product data, pricing, and fulfillment flows so teams can decide and buy faster.",
     "bannerTitle": "Promo banner",
     "bannerText": "Seasonal highlights — jump to a sample product detail.",
     "bannerCta": "View sample product",
@@ -104,7 +108,7 @@
     "trust3Title": "Supplier quality",
     "trust3Text": "Structured listings and traceable credentials.",
     "contactTitle": "Contacts",
-    "contactLine": "Name: CHZfobkey Team · WA: +86 188-0000-0000 · WeChat: CHZfobkey_Biz"
+    "contactLine": "Name: CHZautokeys Team · WA: +86 188-0000-0000 · WeChat: CHZautokeys_Biz"
   },
   "footer": {
     "tagline": "Sourcing, quality checks, and export-friendly documentation for growing brands.",
@@ -117,7 +121,7 @@
     "admin": "Merchant admin",
     "privacy": "Privacy Policy",
     "terms": "Terms",
-    "rights": "© {{year}} CHZfobkey. All rights reserved."
+    "rights": "© {{year}} CHZautokeys. All rights reserved."
   },
   "cart": {
     "title": "Cart",
@@ -232,6 +236,7 @@
   },
   "user": {
     "shellTitle": "Account",
+    "logout": "Log out",
     "navProfile": "Profile",
     "navOrders": "Orders",
     "navHistory": "History",
@@ -277,7 +282,7 @@
     }
   },
   "admin": {
-    "title": "CHZfobkey Admin",
+    "title": "CHZautokeys Admin",
     "siteLink": "Storefront",
     "logout": "Log out",
     "menu": {
@@ -361,7 +366,16 @@
       "keywordPh": "Order no. / receiver",
       "tracking": "Tracking",
       "status": "Status",
-      "history": "History"
+      "history": "History",
+      "showTotal": "{{n}} total",
+      "statusRevertTitle": "Revert order status?",
+      "statusRevertDesc": "Change status from \"{{from}}\" to \"{{to}}\". Reverting may affect fulfillment records. Continue?",
+      "statusRevertOk": "Save",
+      "statusRevertCancel": "Cancel",
+      "historyColFrom": "From",
+      "historyColTo": "To",
+      "historyColTime": "Time",
+      "historyColRemark": "Remark"
     },
     "products": {
       "quickCreate": "Quick add product",
@@ -379,7 +393,9 @@
       "imageMoveUp": "Up",
       "imageMoveDown": "Down",
       "imageRemove": "Remove",
-      "uploadImages": "Upload images (multi-select)"
+      "uploadImages": "Upload images (multi-select)",
+      "dragHint": "Drag images here or click to browse (multi-select)",
+      "compressHint": "Images above ~200KB are compressed in the browser before upload; smaller files are sent as-is."
     },
     "common": {
       "loading": "Loading…",
@@ -455,7 +471,9 @@
       "itemCreated": "Item created",
       "itemCreateFail": "Item create failed",
       "codePattern": "Uppercase letters, digits, underscore only",
-      "footerApiHint": "Items API: /api/v1/dicts/{dictCode}/items"
+      "footerApiHint": "Items API: /api/v1/dicts/{dictCode}/items",
+      "helpAria": "How this page works",
+      "helpBody": "1. Create a dictionary type first: code must be UPPER_SNAKE (e.g. ORDER_STATUS); name is human-readable. It appears in the table below.\n\n2. Add items: set Dict code to that type; Item code is for logic/APIs (keep stable), Item label is what users see.\n\n3. Storefront pages load options by dict code; to change wording you usually edit item labels only."
     },
     "audit": {
       "title": "Audit log",
@@ -534,8 +552,13 @@
       "reportSummary": "{{total}} row(s): {{ok}} ok, {{fail}} failed.",
       "colLine": "Line",
       "colReason": "Reason",
-      "colThumb": "Thumb",
-      "colTitle": "Title",
+      "colThumb": "Cover",
+      "colTitle": "Product name",
+      "expandImagesSection": "Images",
+      "noImages": "No images",
+      "expandMoreImages": "Show {{n}} more",
+      "collapseImages": "Show fewer",
+      "expandDescriptionLabel": "Description",
       "colSku": "SKU",
       "colPrice": "Price",
       "colMoq": "MOQ",
@@ -551,7 +574,10 @@
       "errTitleEmpty": "title is empty",
       "errPrice": "price must be > 0",
       "errMoq": "moq must be >= 1",
-      "errApi": "API request failed"
+      "errApi": "API request failed",
+      "errImportHeader": "Invalid CSV header (need at least title, price)",
+      "errImportIdNotFound": "Product id not found",
+      "errImportMerge": "Row merge failed"
     }
   }
 }

@@ -115,6 +115,9 @@ export type AdminProductsListParams = {
   q?: string
   /** 不传=全部；true=仅上架；false=仅下架 */
   active?: boolean
+  categoryId?: number
+  tagId?: number
+  currency?: string
 }
 
 /** 管理端商品分页列表（含下架） */
@@ -127,6 +130,9 @@ export function useAdminProductsPage(params: AdminProductsListParams) {
       params.size,
       params.q ?? '',
       params.active === true ? '1' : params.active === false ? '0' : '',
+      params.categoryId ?? '',
+      params.tagId ?? '',
+      params.currency ?? '',
     ] as const,
     queryFn: () => voyage.products.adminListPaged(params),
   })
@@ -277,11 +283,45 @@ export function useOrderDetail(orderNo?: string) {
   })
 }
 
-/** 管理端：全量订单列表（需 ADMIN + voyage 接口） */
+export type AdminOrdersListParams = {
+  page: number
+  size: number
+  q?: string
+  /** 精确订单状态（与 phase 同时存在时优先 status） */
+  status?: string
+  /**
+   * 阶段：ALL 或不传为全部；FULFILLING=待发货+配送中；DONE=已送达或已完成；
+   * 亦可传 PENDING_PAYMENT / PAID / SHIPPED / DELIVERED / COMPLETED / CANCELLED。
+   */
+  phase?: string
+}
+
+/** 管理端：分页订单列表 */
+export function useAdminOrdersPage(params: AdminOrdersListParams) {
+  return useQuery({
+    queryKey: [
+      ...queryKeys.adminOrders,
+      params.page,
+      params.size,
+      params.q ?? '',
+      params.status ?? '',
+      params.phase ?? '',
+    ] as const,
+    queryFn: () => voyage.orders.adminListPaged(params),
+  })
+}
+
+/**
+ * 管理端：订单数组（单次请求较大 size，供 `AdminOrdersPage` 等在客户端按 Tab/关键词筛选）。
+ * 若订单量极大，应改为强制使用 {@link useAdminOrdersPage} 做服务端分页。
+ */
 export function useAdminOrders() {
   return useQuery({
-    queryKey: queryKeys.adminOrders,
-    queryFn: () => voyage.orders.adminList(),
+    queryKey: [...queryKeys.adminOrders, 'list-flat'] as const,
+    queryFn: async () => {
+      const res = await voyage.orders.adminListPaged({ page: 0, size: 500 })
+      return res.items
+    },
   })
 }
 
@@ -353,6 +393,17 @@ export function useAdminUpdateAfterSaleStatus() {
       id: number
       body: components['schemas']['UpdateAfterSaleStatusRequest']
     }) => voyage.afterSales.adminUpdateStatus(id, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.adminAfterSales })
+    },
+  })
+}
+
+/** 管理端：代客创建售后（工单归属买家） */
+export function useAdminCreateAfterSale() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (body: components['schemas']['CreateAfterSaleRequest']) => voyage.afterSales.adminCreateAsAdmin(body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.adminAfterSales })
     },
@@ -558,10 +609,10 @@ export function useAdminUpsertSiteContent() {
   })
 }
 
-export function useAdminAuditLogs() {
+export function useAdminAuditLogs(params: { page: number; size: number }) {
   return useQuery({
-    queryKey: queryKeys.auditLogs,
-    queryFn: () => voyage.audit.listLogs(),
+    queryKey: [...queryKeys.auditLogs, params.page, params.size] as const,
+    queryFn: () => voyage.audit.listLogsPaged(params),
   })
 }
 

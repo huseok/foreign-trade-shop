@@ -7,16 +7,16 @@ import {
   useCategories,
   useCreateAdminProduct,
   useShippingTemplates,
-} from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
-import { toErrorMessage } from '../../lib/http/error'
-import { asRcFormInstance } from '../../lib/formAntdCompat'
+} from '../../../hooks/apiHooks'
+import { useI18n } from '../../../i18n/I18nProvider'
+import { toErrorMessage } from '../../../lib/http/error'
+import { asRcFormInstance } from '../../../lib/formAntdCompat'
 import {
   adminProductFormValuesToPayload,
   type AdminProductFormValues,
-} from '../lib/adminProductFormPayload'
+} from '../../lib/adminProductFormPayload'
 import { AdminProductUpsertFields } from './AdminProductUpsertFields'
-import { StandardModal } from './StandardModal'
+import { StandardModal } from '../shared/StandardModal'
 
 type Props = {
   open: boolean

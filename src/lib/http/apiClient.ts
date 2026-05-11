@@ -96,6 +96,14 @@ export function bootstrapAuthRefreshSchedule() {
   scheduleAccessTokenRefresh(left)
 }
 
+/** 退出登录时调用，避免沿用过期会话继续 refresh */
+export function cancelScheduledAccessTokenRefresh() {
+  if (accessRefreshTimer) {
+    clearTimeout(accessRefreshTimer)
+    accessRefreshTimer = null
+  }
+}
+
 export function scheduleAccessTokenRefresh(expiresInSeconds: number) {
   if (accessRefreshTimer) {
     clearTimeout(accessRefreshTimer)

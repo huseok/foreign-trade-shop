@@ -182,40 +182,74 @@
   }
 }
 
-/** 首页轮播共用：圆点指示器 + 数字下标 */
+/** 首页轮播共用：圆点指示器 + 数字下标（react-slick 圆点绘制在 button::before 上） */
 .home-carousel-block {
+  width: 100%;
+
+  .ant-carousel,
+  .slick-slider,
+  .slick-list {
+    width: 100%;
+  }
+
   .slick-dots {
-    bottom: 2px;
+    bottom: 6px;
 
     li {
       margin: 0 6px;
     }
 
     li button {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: color-mix(in srgb, var(--text) 28%, var(--border)) !important;
+      width: 12px !important;
+      height: 12px !important;
+      padding: 0 !important;
       opacity: 1 !important;
     }
 
-    li.slick-active button {
+    /* 可见的圆点在这里，而非 button 背景 */
+    li button::before {
+      content: '' !important;
+      width: 10px !important;
+      height: 10px !important;
+      border-radius: 50% !important;
+      background: oklch(52% 0.02 265) !important;
+      opacity: 0.38 !important;
+      inset: auto !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      box-sizing: border-box !important;
+    }
+
+    li.slick-active button::before {
+      opacity: 1 !important;
       background: var(--primary) !important;
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
+      box-shadow:
+        0 0 0 2px oklch(99% 0.01 280),
+        0 0 0 3px color-mix(in oklch, var(--primary) 55%, transparent);
     }
   }
 
   &__index {
-    margin: 0.35rem 0 0;
-    padding-bottom: 0.15rem;
+    margin: 0.45rem 0 0;
+    padding: 0.2rem 0.5rem 0.25rem;
     text-align: center;
     font-size: 0.8125rem;
-    font-weight: 600;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.04em;
-    color: var(--text-h);
-    opacity: 0.92;
+    letter-spacing: 0.06em;
+    color: oklch(38% 0.04 265);
+    background: color-mix(in oklch, var(--sf-fg, var(--fg)) 6%, transparent);
+    border-radius: 999px;
+    display: inline-block;
+    min-width: 3.5rem;
+    align-self: center;
   }
+
+  /* 轮播占满宽，数字下标单独居中 */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .home-promo {
@@ -360,16 +394,25 @@
     padding-bottom: 1.75rem;
   }
 
+  /** 每页轮播一条「横排」：flex + nowrap，禁止商品折到第二行（与 chunk 1/2/3 一致）。 */
   &__row {
-    display: grid;
-    gap: 1rem;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
     align-items: stretch;
+    gap: 1rem;
+    width: 100%;
     min-height: 0;
+    justify-content: center;
   }
 
   &__card {
     display: flex;
     flex-direction: column;
+    flex: 1 1 0;
+    min-width: 0;
+    width: 100%;
+    max-width: min(22rem, 100%);
     text-decoration: none;
     color: inherit;
     border-radius: var(--radius-md);
@@ -387,13 +430,17 @@
   }
 
   &__media {
+    flex: 0 0 auto;
+    width: 100%;
     aspect-ratio: 4 / 3;
+    overflow: hidden;
     background: color-mix(in srgb, var(--primary) 8%, var(--surface));
 
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: center;
       display: block;
     }
   }
@@ -527,7 +574,10 @@
  * 与 `marketplace` 壳层同色变量，不再跟随系统深色 — 与目录等页一致。
  */
 .home.home--boutique {
-  background: var(--bg);
+  /* 轻渐变底 + 仍吃 marketplace 的 --bg，层次更清晰 */
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 0%, color-mix(in oklch, var(--primary) 10%, var(--bg)) 0%, transparent 55%),
+    var(--bg);
 
   .section {
     padding-block: clamp(2.75rem, 6vw, 4.25rem);
@@ -569,13 +619,14 @@
   .home-cats__card {
     transition:
       transform 0.22s ease,
-      box-shadow 0.22s ease;
-    border: none;
+      box-shadow 0.22s ease,
+      border-color 0.2s ease;
+    border: 1px solid oklch(88% 0.02 285);
     border-radius: 14px;
     padding: 1.35rem 1.5rem;
     box-shadow:
-      0 1px 0 color-mix(in oklch, var(--fg) 5%, transparent),
-      0 14px 36px color-mix(in oklch, var(--fg) 7%, transparent);
+      0 1px 0 color-mix(in oklch, var(--fg) 6%, transparent),
+      0 12px 32px color-mix(in oklch, var(--fg) 9%, transparent);
 
     &:nth-child(3n + 1) {
       background: oklch(97.5% 0.025 340);
@@ -605,13 +656,15 @@
   .product-grid--boutique .product-card {
     transition:
       transform 0.22s ease,
-      box-shadow 0.22s ease;
-    border: none;
+      box-shadow 0.22s ease,
+      border-color 0.2s ease;
+    border: 1px solid oklch(88% 0.022 285);
     border-radius: 14px;
     overflow: hidden;
+    background: oklch(99.4% 0.006 282);
     box-shadow:
-      0 1px 0 color-mix(in oklch, var(--fg) 5%, transparent),
-      0 12px 32px color-mix(in oklch, var(--fg) 8%, transparent);
+      0 1px 0 color-mix(in oklch, var(--fg) 6%, transparent),
+      0 10px 26px color-mix(in oklch, var(--fg) 10%, transparent);
 
     .product-card__img:not(.product-card__img--photo) {
       background: linear-gradient(
@@ -623,8 +676,9 @@
 
     &:hover {
       transform: translateY(-3px);
+      border-color: color-mix(in oklch, var(--primary) 42%, oklch(88% 0.022 285));
       box-shadow:
-        0 1px 0 color-mix(in oklch, var(--fg) 6%, transparent),
+        0 1px 0 color-mix(in oklch, var(--fg) 7%, transparent),
         0 18px 46px color-mix(in oklch, var(--primary) 18%, transparent);
     }
   }
@@ -639,11 +693,12 @@
   }
 
   .trust-card {
-    border: none;
+    border: 1px solid oklch(89% 0.018 285);
     border-radius: 14px;
+    background: oklch(99.2% 0.005 282);
     box-shadow:
-      0 1px 0 color-mix(in oklch, var(--fg) 5%, transparent),
-      0 10px 28px color-mix(in oklch, var(--fg) 7%, transparent);
+      0 1px 0 color-mix(in oklch, var(--fg) 6%, transparent),
+      0 10px 28px color-mix(in oklch, var(--fg) 9%, transparent);
 
     &__icon {
       border-radius: 999px;
@@ -654,40 +709,43 @@
   }
 
   .home-promo__slide {
-    border: none;
+    border: 1px solid oklch(87% 0.024 285);
     border-radius: 16px;
     box-shadow:
-      0 1px 0 color-mix(in oklch, var(--fg) 5%, transparent),
-      0 14px 40px color-mix(in oklch, var(--fg) 8%, transparent);
+      0 1px 0 color-mix(in oklch, var(--fg) 6%, transparent),
+      0 12px 36px color-mix(in oklch, var(--fg) 11%, transparent);
 
     background: linear-gradient(
       135deg,
-      oklch(99.2% 0.012 340) 0%,
-      oklch(98.5% 0.008 280) 100%
+      oklch(98.8% 0.018 340) 0%,
+      oklch(98.2% 0.014 280) 100%
     );
   }
 
   .home-promo-products__card {
     transition:
       transform 0.2s ease,
-      box-shadow 0.2s ease;
-    border: none;
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+    border: 1px solid oklch(88% 0.022 285);
     border-radius: 14px;
+    background: oklch(99.4% 0.006 282);
     box-shadow:
-      0 1px 0 color-mix(in oklch, var(--fg) 5%, transparent),
-      0 10px 28px color-mix(in oklch, var(--fg) 7%, transparent);
+      0 1px 0 color-mix(in oklch, var(--fg) 6%, transparent),
+      0 10px 28px color-mix(in oklch, var(--fg) 10%, transparent);
 
     &:hover {
       transform: translateY(-2px);
+      border-color: color-mix(in oklch, var(--primary) 38%, oklch(88% 0.022 285));
     }
   }
 
   .home-newsletter__box {
-    border: none;
+    border: 1px solid oklch(87% 0.022 285);
     border-radius: 16px;
     box-shadow:
-      0 1px 0 color-mix(in oklch, var(--fg) 5%, transparent),
-      0 12px 36px color-mix(in oklch, var(--fg) 8%, transparent);
+      0 1px 0 color-mix(in oklch, var(--fg) 6%, transparent),
+      0 12px 36px color-mix(in oklch, var(--fg) 10%, transparent);
 
     background: linear-gradient(
       135deg,

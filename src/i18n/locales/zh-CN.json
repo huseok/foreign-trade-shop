@@ -1,5 +1,5 @@
 {
-  "brand": "CHZfobkey",
+  "brand": "CHZautokeys",
   "common": {
     "loading": "加载中…",
     "search": "搜索",
@@ -46,7 +46,8 @@
     "menu": "菜单",
     "language": "语言",
     "categories": "类目",
-    "searchGo": "搜索"
+    "searchGo": "搜索",
+    "searchCategoryScope": "限定搜索的类目"
   },
   "catalog": {
     "title": "商品目录",
@@ -65,7 +66,10 @@
     "countrySuffix": " · 国家 {{c}}",
     "querySuffix": " · 「{{q}}」",
     "categorySuffix": " · 类目 {{name}}",
-    "tagSuffix": " · 标签 {{name}}"
+    "tagSuffix": " · 标签 {{name}}",
+    "inCart": "购物车中 {{n}} 件",
+    "addCartOk": "已加入购物车",
+    "addCartFail": "加入购物车失败"
   },
   "product": {
     "loginForPrice": "登录后查看价格",
@@ -77,13 +81,13 @@
     "tags": "标签"
   },
   "home": {
-    "eyebrow": "CHZfobkey · 全球商贸平台",
+    "eyebrow": "CHZautokeys · 全球商贸平台",
     "heroTitle": "专业选品、采购、履约一体化站点",
     "heroLead": "覆盖登录注册、分类选品、商品详情、购物车、订单履约、用户中心与后台管理，用简洁一致的体验支撑跨境电商业务。",
     "ctaCatalog": "去选品",
     "ctaTrust": "站点优势",
     "siteIntroTitle": "站点说明",
-    "siteIntroDesc": "CHZfobkey 提供标准化商品资料、价格体系与履约流程，支持企业客户快速完成采购决策。",
+    "siteIntroDesc": "CHZautokeys 提供标准化商品资料、价格体系与履约流程，支持企业客户快速完成采购决策。",
     "bannerTitle": "活动 Banner",
     "bannerText": "不定期上新热卖活动，点击可快速进入示例商品详情。",
     "bannerCta": "查看活动商品",
@@ -104,7 +108,7 @@
     "trust3Title": "优质供应保障",
     "trust3Text": "商品信息结构化、资质可追溯，减少采购不确定性。",
     "contactTitle": "联系人",
-    "contactLine": "姓名：CHZfobkey Team ｜ WA：+86 188-0000-0000 ｜ 微信：CHZfobkey_Biz"
+    "contactLine": "姓名：CHZautokeys Team ｜ WA：+86 188-0000-0000 ｜ 微信：CHZautokeys_Biz"
   },
   "footer": {
     "tagline": "为成长型品牌提供寻源、质检与出口友好单证支持。",
@@ -117,7 +121,7 @@
     "admin": "商家后台",
     "privacy": "隐私政策",
     "terms": "服务条款",
-    "rights": "© {{year}} CHZfobkey. 保留所有权利。"
+    "rights": "© {{year}} CHZautokeys. 保留所有权利。"
   },
   "cart": {
     "title": "购物车",
@@ -232,6 +236,7 @@
   },
   "user": {
     "shellTitle": "用户中心",
+    "logout": "退出登录",
     "navProfile": "账户资料",
     "navOrders": "订单中心",
     "navHistory": "浏览记录",
@@ -277,7 +282,7 @@
     }
   },
   "admin": {
-    "title": "CHZfobkey 后台",
+    "title": "CHZautokeys 后台",
     "siteLink": "前台站点",
     "logout": "退出",
     "menu": {
@@ -361,7 +366,16 @@
       "keywordPh": "按订单号/收货人筛选",
       "tracking": "更新物流",
       "status": "推进订单状态",
-      "history": "日志"
+      "history": "日志",
+      "showTotal": "共 {{n}} 条",
+      "statusRevertTitle": "确认回退订单状态？",
+      "statusRevertDesc": "将把状态由「{{from}}」改为「{{to}}」。回退可能影响履约记录，请确认后再保存。",
+      "statusRevertOk": "确定保存",
+      "statusRevertCancel": "取消",
+      "historyColFrom": "从状态",
+      "historyColTo": "到状态",
+      "historyColTime": "时间",
+      "historyColRemark": "备注"
     },
     "products": {
       "quickCreate": "快捷新建商品",
@@ -379,7 +393,9 @@
       "imageMoveUp": "上移",
       "imageMoveDown": "下移",
       "imageRemove": "移除",
-      "uploadImages": "上传图片（可多选）"
+      "uploadImages": "上传图片（可多选）",
+      "dragHint": "拖拽图片到此处，或点击选择（可多选）",
+      "compressHint": "大于约 200KB 的图片会在上传前自动压缩，过小文件保持原样。"
     },
     "common": {
       "loading": "加载中…",
@@ -455,7 +471,9 @@
       "itemCreated": "字典项已创建",
       "itemCreateFail": "字典项创建失败",
       "codePattern": "仅支持大写编码",
-      "footerApiHint": "字典项查询接口：/api/v1/dicts/{dictCode}/items"
+      "footerApiHint": "字典项查询接口：/api/v1/dicts/{dictCode}/items",
+      "helpAria": "使用说明",
+      "helpBody": "1. 先创建字典类型：编码用大写字母、数字、下划线（如 ORDER_STATUS），名称便于人读；保存后出现在下方列表。\n\n2. 再创建字典项：「字典编码」填第 1 步的类型编码；「项编码」给程序/接口用（稳定勿随意改），「项名称」是界面展示文案。\n\n3. 订单状态等前台页面会按字典编码拉选项；日常改展示文字一般只改「项名称」即可。"
     },
     "audit": {
       "title": "操作日志",
@@ -514,7 +532,7 @@
     "productsList": {
       "title": "商品列表",
       "subtitle": "支持筛选、批量上下架、CSV 导入导出与规格矩阵维护",
-      "searchPh": "搜索标题、SKU 或商品 ID（服务端）",
+      "searchPh": "搜索商品名称、SKU 或商品 ID（服务端）",
       "filterAll": "全部状态",
       "filterActive": "仅上架",
       "filterInactive": "仅下架",
@@ -534,8 +552,13 @@
       "reportSummary": "共 {{total}} 行，成功 {{ok}} 行，失败 {{fail}} 行。",
       "colLine": "行号",
       "colReason": "失败原因",
-      "colThumb": "缩略图",
-      "colTitle": "标题",
+      "colThumb": "封面图",
+      "colTitle": "商品名称",
+      "expandImagesSection": "商品图片",
+      "noImages": "暂无图片",
+      "expandMoreImages": "展开其余 {{n}} 张",
+      "collapseImages": "收起图片",
+      "expandDescriptionLabel": "描述",
       "colSku": "SKU",
       "colPrice": "价格",
       "colMoq": "MOQ",
@@ -551,7 +574,10 @@
       "errTitleEmpty": "title 为空",
       "errPrice": "price 必须 > 0",
       "errMoq": "moq 必须 >= 1",
-      "errApi": "调用接口失败"
+      "errApi": "调用接口失败",
+      "errImportHeader": "CSV 表头无效（至少需包含 title、price 列）",
+      "errImportIdNotFound": "填写的 id 在库中不存在",
+      "errImportMerge": "行合并失败"
     }
   }
 }

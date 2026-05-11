@@ -7,12 +7,12 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { App, Button, Card, Form, Input, Typography } from 'antd'
-import { useLogin } from '../../hooks/apiHooks'
-import { authStore } from '../../lib/auth/authStore'
-import { scheduleAccessTokenRefresh } from '../../lib/http/apiClient'
-import { voyage } from '../../openapi/voyageSdk'
-import { toErrorMessage } from '../../lib/http/error'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useLogin } from '../../../hooks/apiHooks'
+import { authStore } from '../../../lib/auth/authStore'
+import { scheduleAccessTokenRefresh } from '../../../lib/http/apiClient'
+import { voyage } from '../../../openapi/voyageSdk'
+import { toErrorMessage } from '../../../lib/http/error'
+import { useI18n } from '../../../i18n/I18nProvider'
 
 type FormValues = { email: string; password: string }
 

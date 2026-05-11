@@ -14,7 +14,14 @@ export function Footer() {
     <footer className="site-footer">
       <div className="site-footer__inner container">
         <div className="site-footer__brand">
-          <span className="site-footer__logo-mark" aria-hidden />
+          <img
+            src={`${import.meta.env.BASE_URL}favicon.png`}
+            alt=""
+            className="site-footer__logo-mark"
+            width={40}
+            height={40}
+            decoding="async"
+          />
           <strong>{t('brand')}</strong>
           <p className="site-footer__tagline">{t('footer.tagline')}</p>
         </div>
@@ -44,9 +51,6 @@ export function Footer() {
               </li>
               <li>
                 <a href="#returns">{t('footer.returns')}</a>
-              </li>
-              <li>
-                <Link to="/admin/login">{t('footer.admin')}</Link>
               </li>
             </ul>
           </div>

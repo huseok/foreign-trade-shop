@@ -1,12 +1,12 @@
 /**
- * 管理端订单列表：`GET /api/v1/admin/orders`。
+ * ????????`GET /api/v1/admin/orders`?
  *
- * 设计稿对齐：顶部四个 Tab（全部 / 待付款 / 待发货·配送 / 已完成）+ 关键字筛选；
- * 字典展示优先读 locale 文件 `dict.ORDER_STATUS.*`，缺省回退库内中文标签。
+ * ?????????? Tab??? / ??? / ?????? / ????+ ??????
+ * ??????? locale ?? `dict.ORDER_STATUS.*`????????????
  */
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { App, Button, Input, Select, Space, Table, Tabs, Tag, Typography } from 'antd'
+import { App, Button, Input, Modal, Select, Space, Table, Tabs, Tag, Typography } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import type { ChangeEvent } from 'react'
@@ -16,11 +16,12 @@ import {
   useAdminUpdateOrderStatus,
   useAdminUpdateOrderTracking,
   useDictItems,
-} from '../../hooks/apiHooks'
-import { useDictLabel, useI18n } from '../../i18n/I18nProvider'
-import type { components } from '../../generated/voyage-paths'
-import { voyage } from '../../openapi/voyageSdk'
-import { StandardModal } from '../components/StandardModal'
+} from '../../../hooks/apiHooks'
+import { useDictLabel, useI18n } from '../../../i18n/I18nProvider'
+import { i18nTpl } from '../../../lib/i18nTpl'
+import type { components } from '../../../generated/voyage-paths'
+import { voyage } from '../../../openapi/voyageSdk'
+import { StandardModal } from '../../components/shared/StandardModal'
 
 type OrderRow = components['schemas']['OrderView']
 
@@ -34,8 +35,14 @@ function statusColor(status: string) {
       return 'error'
     case 'PENDING_PAYMENT':
       return 'warning'
-    default:
+    case 'PAID':
       return 'processing'
+    case 'SHIPPED':
+      return 'cyan'
+    case 'DELIVERED':
+      return 'blue'
+    default:
+      return 'default'
   }
 }
 
@@ -54,6 +61,22 @@ function matchesOrderTab(status: string, tab: OrderTab): boolean {
   }
 }
 
+/** ??????????????? sortNo??????? */
+function statusProgressRank(
+  code: string,
+  items: Array<{ itemCode: string; sortNo: number }>,
+): number {
+  const hit = items.find((i) => i.itemCode === code)
+  if (hit != null && typeof hit.sortNo === 'number' && !Number.isNaN(hit.sortNo)) {
+    return hit.sortNo
+  }
+  const fallback = ['PENDING_PAYMENT', 'PAID', 'SHIPPED', 'DELIVERED', 'COMPLETED']
+  const idx = fallback.indexOf(code)
+  if (idx >= 0) return 100 + idx
+  if (code === 'CANCELLED') return 1000
+  return 5000
+}
+
 function OrderStatusTag({ status, apiLabel }: { status: string; apiLabel: string }) {
   const text = useDictLabel('ORDER_STATUS', status, apiLabel)
   return <Tag color={statusColor(status)}>{text}</Tag>
@@ -67,7 +90,7 @@ export function AdminOrdersPage() {
   const trackingMut = useAdminUpdateOrderTracking()
   const statusMut = useAdminUpdateOrderStatus()
   const flowNextMut = useAdminFlowNextOrderStatus()
-  const [orderTab, setOrderTab] = useState<OrderTab>('all')
+  const [orderTab, setOrderTab] = useState<OrderTab>('pending')
   const [trackingModal, setTrackingModal] = useState<OrderRow | null>(null)
   const [trackingNo, setTrackingNo] = useState('')
   const [logisticsCompany, setLogisticsCompany] = useState('')
@@ -86,17 +109,17 @@ export function AdminOrdersPage() {
 
   const columns: ProColumns<OrderRow>[] = [
     {
-      title: '订单号',
+      title: '???',
       dataIndex: 'orderNo',
       render: (_, r) => <Typography.Text code>{r.orderNo}</Typography.Text>,
     },
     {
-      title: '状态',
+      title: '??',
       dataIndex: 'status',
       render: (_, r) => <OrderStatusTag status={r.status} apiLabel={labelForStatus(r.status)} />,
     },
     {
-      title: '金额',
+      title: '??',
       key: 'amt',
       search: false,
       align: 'right',
@@ -107,23 +130,23 @@ export function AdminOrdersPage() {
       ),
     },
     {
-      title: '收货人',
+      title: '???',
       dataIndex: 'receiverName',
     },
     {
-      title: '运单',
+      title: '??',
       key: 'track',
       search: false,
-      render: (_, r) => r.trackingNo ?? '—',
+      render: (_, r) => r.trackingNo ?? '?',
     },
     {
-      title: '操作',
+      title: '??',
       key: 'actions',
       search: false,
       render: (_, r) => (
         <Space wrap>
           <Link to={`/orders/${encodeURIComponent(r.orderNo)}`} target="_blank" rel="noreferrer">
-            前台详情
+            ????
           </Link>
           <Button type="link" size="small" onClick={() => setTrackingModal(r)}>
             {t('admin.orders.tracking')}
@@ -161,7 +184,7 @@ export function AdminOrdersPage() {
 
   const submitTracking = async () => {
     if (!trackingModal || !trackingNo.trim()) {
-      message.warning('请填写运单号')
+      message.warning('??????')
       return
     }
     try {
@@ -169,19 +192,19 @@ export function AdminOrdersPage() {
         orderNo: trackingModal.orderNo,
         body: { trackingNo: trackingNo.trim(), logisticsCompany: logisticsCompany.trim() || undefined },
       })
-      message.success('已更新物流')
+      message.success('?????')
       setTrackingModal(null)
       setTrackingNo('')
       setLogisticsCompany('')
       void refetch()
     } catch {
-      message.error('更新失败')
+      message.error('????')
     }
   }
 
-  const submitStatus = async () => {
+  const runStatusUpdate = async () => {
     if (!statusModal || !nextStatus.trim()) {
-      message.warning('请选择目标状态')
+      message.warning('???????')
       return
     }
     try {
@@ -189,13 +212,39 @@ export function AdminOrdersPage() {
         orderNo: statusModal.orderNo,
         body: { status: nextStatus.trim().toUpperCase(), remark: statusRemark.trim() || undefined },
       })
-      message.success('状态已更新')
+      message.success('?????')
       setStatusModal(null)
       setNextStatus('')
       setStatusRemark('')
       void refetch()
     } catch {
-      message.error('更新失败（请检查状态流转是否合法）')
+      message.error('?????????????????')
+    }
+  }
+
+  const submitStatus = () => {
+    if (!statusModal || !nextStatus.trim()) {
+      message.warning('???????')
+      return
+    }
+    const cur = statusModal.status
+    const next = nextStatus.trim().toUpperCase()
+    const curR = statusProgressRank(cur, orderStatusItems)
+    const nextR = statusProgressRank(next, orderStatusItems)
+    const backward = nextR < curR
+    if (backward) {
+      Modal.confirm({
+        title: t('admin.orders.statusRevertTitle'),
+        content: i18nTpl(t('admin.orders.statusRevertDesc'), {
+          from: labelForStatus(cur),
+          to: labelForStatus(next),
+        }),
+        okText: t('admin.orders.statusRevertOk'),
+        cancelText: t('admin.orders.statusRevertCancel'),
+        onOk: () => runStatusUpdate(),
+      })
+    } else {
+      void runStatusUpdate()
     }
   }
 
@@ -206,13 +255,13 @@ export function AdminOrdersPage() {
         orderNo: statusModal.orderNo,
         remark: statusRemark.trim() || undefined,
       })
-      message.success('已自动流转到下一环节')
+      message.success('??????????')
       setStatusModal(null)
       setNextStatus('')
       setStatusRemark('')
       void refetch()
     } catch {
-      message.error('流转失败（请检查字典配置和当前状态）')
+      message.error('??????????????????')
     }
   }
 
@@ -246,7 +295,12 @@ export function AdminOrdersPage() {
         options={false}
         columns={columns}
         dataSource={filteredOrders}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showTotal: (n) => i18nTpl(t('admin.orders.showTotal'), { n }),
+          className: 'admin-table-pagination',
+        }}
       />
 
       <StandardModal
@@ -264,12 +318,12 @@ export function AdminOrdersPage() {
       >
         <Space direction="vertical" style={{ width: '100%' }}>
           <Input
-            placeholder="运单号 trackingNo"
+            placeholder="??? trackingNo"
             value={trackingNo}
             onChange={(e) => setTrackingNo(e.target.value)}
           />
           <Input
-            placeholder="物流公司（可选）"
+            placeholder="????????"
             value={logisticsCompany}
             onChange={(e) => setLogisticsCompany(e.target.value)}
           />
@@ -277,22 +331,54 @@ export function AdminOrdersPage() {
       </StandardModal>
 
       <StandardModal
-        title={`${t('admin.orders.history')}：${historyModalOrderNo ?? ''}`}
+        title={`${t('admin.orders.history')}?${historyModalOrderNo ?? ''}`}
         open={Boolean(historyModalOrderNo)}
         onCancel={() => setHistoryModalOrderNo(null)}
         footer={null}
         destroyOnClose
+        width={760}
+        styles={{ body: { maxHeight: 'min(72vh, 560px)', overflowY: 'auto', paddingTop: 12 } }}
       >
         <Table
           rowKey={(_, idx) => String(idx)}
+          size="small"
           loading={historyLoading}
-          pagination={false}
           dataSource={histories}
+          pagination={{
+            pageSize: 8,
+            showSizeChanger: true,
+            pageSizeOptions: ['8', '16', '32'],
+            showTotal: (n) => i18nTpl(t('admin.orders.showTotal'), { n }),
+            size: 'default',
+            className: 'admin-table-pagination',
+          }}
+          scroll={{ x: 'max-content' }}
           columns={[
-            { title: '从状态', dataIndex: 'fromStatus', render: (v) => v ?? '-' },
-            { title: '到状态', dataIndex: 'toStatus' },
-            { title: '时间', dataIndex: 'changedAt' },
-            { title: '备注', dataIndex: 'remark', render: (v) => v ?? '-' },
+            {
+              title: t('admin.orders.historyColFrom'),
+              dataIndex: 'fromStatus',
+              width: 140,
+              ellipsis: true,
+              render: (v: string | undefined) => v ?? '?',
+            },
+            {
+              title: t('admin.orders.historyColTo'),
+              dataIndex: 'toStatus',
+              width: 140,
+              ellipsis: true,
+            },
+            {
+              title: t('admin.orders.historyColTime'),
+              dataIndex: 'changedAt',
+              width: 200,
+              ellipsis: true,
+            },
+            {
+              title: t('admin.orders.historyColRemark'),
+              dataIndex: 'remark',
+              ellipsis: true,
+              render: (v: string | undefined) => v ?? '?',
+            },
           ]}
         />
       </StandardModal>
@@ -300,7 +386,7 @@ export function AdminOrdersPage() {
       <StandardModal
         title={t('admin.orders.status')}
         open={Boolean(statusModal)}
-        onOk={() => void submitStatus()}
+        onOk={() => submitStatus()}
         onCancel={() => {
           setStatusModal(null)
           setNextStatus('')
@@ -312,7 +398,7 @@ export function AdminOrdersPage() {
         footer={(_, { OkBtn, CancelBtn }) => (
           <>
             <Button onClick={() => void submitFlowNext()} loading={flowNextMut.isPending}>
-              流转下一环节
+              ??????
             </Button>
             <CancelBtn />
             <OkBtn />
@@ -321,11 +407,11 @@ export function AdminOrdersPage() {
         destroyOnClose
       >
         <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
-          状态来源于字典 ORDER_STATUS；可手动选择目标状态，或一键流转到下一环节。
+          ??????? ORDER_STATUS????????????????????????????????????
         </Typography.Paragraph>
         <Select
-          placeholder="选择目标状态"
-          value={nextStatus}
+          placeholder="??????"
+          value={nextStatus || undefined}
           onChange={setNextStatus}
           style={{ width: '100%' }}
           options={orderStatusItems.map((item) => ({
@@ -336,7 +422,7 @@ export function AdminOrdersPage() {
         <Input.TextArea
           style={{ marginTop: 12 }}
           rows={3}
-          placeholder="流转备注（可选）"
+          placeholder="????????"
           value={statusRemark}
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setStatusRemark(e.target.value)}
         />

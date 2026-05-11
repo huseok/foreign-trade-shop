@@ -1,4 +1,4 @@
-# CHZfobkey 前端架构说明
+# CHZautokeys 前端架构说明
 
 ## 1. 项目定位
 

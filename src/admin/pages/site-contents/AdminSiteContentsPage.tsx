@@ -1,8 +1,8 @@
 import { App, Button, Card, Form, Input, InputNumber, Space, Switch } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
-import { useAdminSiteContents, useAdminUpsertSiteContent } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useAdminSiteContents, useAdminUpsertSiteContent } from '../../../hooks/apiHooks'
+import { useI18n } from '../../../i18n/I18nProvider'
 
 type SiteContentRow = {
   id: number

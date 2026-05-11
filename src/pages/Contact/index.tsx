@@ -13,13 +13,13 @@ export function ContactPage() {
         <p className="page-header__desc">{t('contact.desc')}</p>
         <div style={{ marginTop: 24, display: 'grid', gap: 12 }}>
           <div>
-            {t('contact.name')}：CHZfobkey Team
+            {t('contact.name')}：CHZautokeys Team
           </div>
           <div>
             {t('contact.wa')}：+86 188-0000-0000
           </div>
           <div>
-            {t('contact.wechat')}：CHZfobkey_Biz
+            {t('contact.wechat')}：CHZautokeys_Biz
           </div>
         </div>
       </div>

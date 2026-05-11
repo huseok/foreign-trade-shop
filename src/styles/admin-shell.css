@@ -3,6 +3,7 @@
  * Ant Design 组件级主题见 theme/adminAntdTheme.ts。
  */
 .admin-shell {
+  --adm-bg: #f0f2f5;
   min-height: 100%;
 }
 
@@ -28,4 +29,21 @@
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* 表格分页：略加重底栏，便于扫读 */
+.admin-table-pagination.ant-pagination {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+}
+
+.admin-table-pagination.ant-pagination .ant-pagination-total-text {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.std-modal .ant-modal-body {
+  box-sizing: border-box;
 }
