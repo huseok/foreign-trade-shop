@@ -20,6 +20,7 @@ import { I18nProvider } from './i18n/I18nProvider'
 import { AntdLocaleBridge } from './theme/antdLocaleBridge'
 import './index.css'
 import App from './App.tsx'
+import { AppErrorBoundary } from './components/AppErrorBoundary'
 
 bootstrapAuthRefreshSchedule()
 
@@ -30,7 +31,9 @@ createRoot(document.getElementById('root')!).render(
         <I18nProvider>
           <AntdLocaleBridge>
             <AntdApp>
-              <App />
+              <AppErrorBoundary>
+                <App />
+              </AppErrorBoundary>
             </AntdApp>
           </AntdLocaleBridge>
         </I18nProvider>

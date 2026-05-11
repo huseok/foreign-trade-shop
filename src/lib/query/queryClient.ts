@@ -10,6 +10,11 @@ export const queryClient = new QueryClient({
       retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 30_000,
+      /** 接口失败由页面用占位/默认值承接，不向边界抛错导致白屏 */
+      throwOnError: false,
+    },
+    mutations: {
+      throwOnError: false,
     },
   },
 })

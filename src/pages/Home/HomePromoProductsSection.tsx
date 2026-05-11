@@ -91,10 +91,6 @@ function HomePromoProductsCarousel({
   const [activeIdx, setActiveIdx] = useState(0)
   const total = slides.length
 
-  useEffect(() => {
-    setActiveIdx(0)
-  }, [chunkSize, total])
-
   return (
     <div className="home-carousel-block">
       <Carousel
@@ -148,9 +144,14 @@ export function HomePromoProductsSection() {
     tagId != null,
   )
 
-  const items = data?.items ?? []
+  const items = useMemo(() => data?.items ?? [], [data])
   const chunkSize = usePromoProductsChunkSize()
   const slides = useMemo(() => chunk(items, chunkSize), [items, chunkSize])
+  const promoCarouselKey = useMemo(
+    () =>
+      `${chunkSize}-${slides.map((g) => g.map((p) => p.id).join(',')).join('|')}`,
+    [chunkSize, slides],
+  )
 
   const loading = settingsLoading || (tagId != null && productsLoading)
 
@@ -170,7 +171,7 @@ export function HomePromoProductsSection() {
     <div className="home-promo-products">
       <h2 className="section-title home-promo-products__heading">{t('home.promoProductsTitle')}</h2>
       <p className="home-promo-products__hint">{t('home.promoProductsZoneHint')}</p>
-      <HomePromoProductsCarousel slides={slides} chunkSize={chunkSize} />
+      <HomePromoProductsCarousel key={promoCarouselKey} slides={slides} chunkSize={chunkSize} />
     </div>
   )
 }

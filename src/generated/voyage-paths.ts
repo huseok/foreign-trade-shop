@@ -117,6 +117,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/storefront/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 前台只读配置（与 CMS 分离） */
+        get: operations["storefrontSettingsGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tags": {
         parameters: {
             query?: never;
@@ -489,6 +506,10 @@ export interface components {
             sortNo: number;
             isActive: boolean;
         };
+        StorefrontSettings: {
+            /** @description 首页活动商品轮播绑定的标签编码（与标签管理 code 一致） */
+            homePromoZoneTagCode: string;
+        };
         TagUpsertRequest: {
             code: string;
             name: string;
@@ -839,6 +860,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedProducts"];
+                };
+            };
+        };
+    };
+    storefrontSettingsGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorefrontSettings"];
                 };
             };
         };
