@@ -365,7 +365,7 @@
       "tabDone": "已完成",
       "keywordPh": "按订单号/收货人筛选",
       "tracking": "更新物流",
-      "status": "订单状态",
+      "status": "推进订单状态",
       "history": "日志",
       "showTotal": "共 {{n}} 条",
       "statusRevertTitle": "确认回退订单状态？",

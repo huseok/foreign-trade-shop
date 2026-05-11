@@ -365,7 +365,7 @@
       "tabDone": "Completed",
       "keywordPh": "Order no. / receiver",
       "tracking": "Tracking",
-      "status": "Order status",
+      "status": "Update status",
       "history": "History",
       "showTotal": "{{n}} total",
       "statusRevertTitle": "Revert order status?",

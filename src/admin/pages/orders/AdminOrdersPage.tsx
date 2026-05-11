@@ -4,8 +4,7 @@
  * Tab 分组、关键字筛选、物流与状态推进；状态展示优先使用字典与 locale（`dict.ORDER_STATUS.*`）。
  */
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { App, Button, Input, Modal, Select, Space, Table, Tabs, Tag, Typography } from 'antd'
+import { App, Button, Flex, Input, Modal, Select, Space, Table, Tabs, Tag, Typography } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import type { ChangeEvent } from 'react'
@@ -144,14 +143,15 @@ export function AdminOrdersPage() {
       search: false,
       render: (_, r) => (
         <Space wrap>
-          <Link
-            to={`/orders/${encodeURIComponent(r.orderNo)}`}
+          <Button
+            type="link"
+            size="small"
+            href={`/orders/${encodeURIComponent(r.orderNo)}`}
             target="_blank"
-            rel="noreferrer"
-            style={{ color: 'var(--adm-link, #1677ff)' }}
+            rel="noopener noreferrer"
           >
             {t('admin.orders.viewOrder')}
-          </Link>
+          </Button>
           <Button type="link" size="small" onClick={() => setTrackingModal(r)}>
             {t('admin.orders.tracking')}
           </Button>
@@ -400,22 +400,13 @@ export function AdminOrdersPage() {
         okButtonProps={{ disabled: statusMut.isPending || flowNextMut.isPending }}
         cancelButtonProps={{ disabled: statusMut.isPending || flowNextMut.isPending }}
         footer={(_, { OkBtn, CancelBtn }) => (
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 8,
-              justifyContent: 'flex-end',
-              width: '100%',
-              alignItems: 'center',
-            }}
-          >
+          <Flex justify="flex-end" gap="small" wrap="wrap" align="center">
             <Button type="default" onClick={() => void submitFlowNext()} loading={flowNextMut.isPending}>
               {t('admin.orders.flowNext')}
             </Button>
             <CancelBtn />
             <OkBtn />
-          </div>
+          </Flex>
         )}
         destroyOnClose
       >
