@@ -3,12 +3,14 @@
  * 客户站壳层变量与货架背景；业务组件继续消费全局 index.css 的 --primary 等（MainLayout 内已桥接）。
  */
 .sf-market-root[data-sf-theme='marketplace'] {
-  --sf-bg: oklch(99% 0.002 240);
-  --sf-surface: oklch(100% 0 0);
-  --sf-fg: oklch(18% 0.012 250);
-  --sf-muted: oklch(54% 0.012 250);
-  --sf-border: oklch(92% 0.005 250);
-  --sf-accent: oklch(58% 0.18 255);
+  /* 商城壳统一浅色：不受系统深色偏好影响，避免首页 Hero 与目录页明暗割裂 */
+  color-scheme: light;
+  --sf-bg: oklch(98.6% 0.008 280);
+  --sf-surface: oklch(100% 0.004 280);
+  --sf-fg: oklch(22% 0.02 265);
+  --sf-muted: oklch(48% 0.02 265);
+  --sf-border: oklch(90% 0.012 280);
+  --sf-accent: oklch(52% 0.16 275);
   --sf-radius: 6px;
   --sf-promo-bg: color-mix(in oklch, var(--sf-accent) 9%, var(--sf-bg));
   --sf-shadow: 0 1px 2px color-mix(in oklch, var(--sf-fg) 6%, transparent);
@@ -88,7 +90,7 @@
   color: var(--muted);
   text-decoration: none;
   border-bottom: 2px solid transparent;
-  border-radius: var(--radius) var(--radius) 0 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 .sf-user-nav__link:hover {

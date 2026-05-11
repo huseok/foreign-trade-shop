@@ -523,17 +523,11 @@
 }
 
 /**
- * 首页 · Boutique 皮肤（参考：清爽浅色美妆电商 — 柔和 Hero、叠放装饰块、 pastel 分类与柔和商品卡）
- * 仅作用于 `.home.home--boutique`，不影响目录页等其它路由。
+ * 首页 · Boutique 皮肤（柔和 Hero、 pastel 分类与商品卡）
+ * 与 `marketplace` 壳层同色变量，不再跟随系统深色 — 与目录等页一致。
  */
 .home.home--boutique {
-  @media (prefers-color-scheme: light) {
-    background: oklch(98.8% 0.006 340);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    background: oklch(21% 0.018 320);
-  }
+  background: var(--bg);
 
   .section {
     padding-block: clamp(2.75rem, 6vw, 4.25rem);
@@ -583,18 +577,16 @@
       0 1px 0 color-mix(in oklch, var(--fg) 5%, transparent),
       0 14px 36px color-mix(in oklch, var(--fg) 7%, transparent);
 
-    @media (prefers-color-scheme: light) {
-      &:nth-child(3n + 1) {
-        background: oklch(97.5% 0.025 340);
-      }
+    &:nth-child(3n + 1) {
+      background: oklch(97.5% 0.025 340);
+    }
 
-      &:nth-child(3n + 2) {
-        background: oklch(97.5% 0.022 220);
-      }
+    &:nth-child(3n + 2) {
+      background: oklch(97.5% 0.022 220);
+    }
 
-      &:nth-child(3n + 3) {
-        background: oklch(97.5% 0.02 280);
-      }
+    &:nth-child(3n + 3) {
+      background: oklch(97.5% 0.02 280);
     }
 
     &:hover {
@@ -668,13 +660,11 @@
       0 1px 0 color-mix(in oklch, var(--fg) 5%, transparent),
       0 14px 40px color-mix(in oklch, var(--fg) 8%, transparent);
 
-    @media (prefers-color-scheme: light) {
-      background: linear-gradient(
-        135deg,
-        oklch(99% 0.012 340) 0%,
-        oklch(98% 0.008 280) 100%
-      );
-    }
+    background: linear-gradient(
+      135deg,
+      oklch(99.2% 0.012 340) 0%,
+      oklch(98.5% 0.008 280) 100%
+    );
   }
 
   .home-promo-products__card {
@@ -699,13 +689,11 @@
       0 1px 0 color-mix(in oklch, var(--fg) 5%, transparent),
       0 12px 36px color-mix(in oklch, var(--fg) 8%, transparent);
 
-    @media (prefers-color-scheme: light) {
-      background: linear-gradient(
-        135deg,
-        oklch(98.5% 0.02 340),
-        oklch(99.5% 0.005 280) 100%
-      );
-    }
+    background: linear-gradient(
+      135deg,
+      oklch(98.8% 0.02 340),
+      oklch(99.6% 0.006 280) 100%
+    );
   }
 }
 
@@ -716,20 +704,24 @@
 
   .home-hero__bg {
     inset: 0;
-    background: linear-gradient(
-      125deg,
-      oklch(93.5% 0.045 340) 0%,
-      oklch(91% 0.055 350) 45%,
-      oklch(89% 0.04 320) 100%
-    );
-
-    @media (prefers-color-scheme: dark) {
-      background: linear-gradient(
+    /* 浅紫粉通透背景，保证标题/正文对比度 */
+    background:
+      radial-gradient(
+        ellipse 85% 55% at 78% 18%,
+        color-mix(in oklch, var(--primary) 14%, var(--bg)) 0%,
+        transparent 58%
+      ),
+      radial-gradient(
+        circle at 12% 85%,
+        color-mix(in oklch, var(--primary) 10%, var(--bg)) 0%,
+        transparent 42%
+      ),
+      linear-gradient(
         125deg,
-        oklch(30% 0.06 340) 0%,
-        oklch(25% 0.045 320) 100%
+        color-mix(in oklch, var(--primary) 9%, var(--bg)) 0%,
+        var(--bg) 48%,
+        color-mix(in oklch, var(--primary) 6%, var(--bg)) 100%
       );
-    }
   }
 
   .home-hero__shell {
@@ -751,11 +743,7 @@
   }
 
   .home-hero__eyebrow {
-    color: oklch(36% 0.14 340);
-
-    @media (prefers-color-scheme: dark) {
-      color: oklch(86% 0.07 340);
-    }
+    color: color-mix(in oklch, var(--primary) 78%, var(--fg));
   }
 
   .btn--primary {
@@ -793,14 +781,8 @@
     display: block;
     border-radius: 18px;
     box-shadow:
-      0 12px 36px color-mix(in oklch, var(--fg) 12%, transparent),
-      0 2px 8px color-mix(in oklch, var(--fg) 6%, transparent);
-
-    @media (prefers-color-scheme: dark) {
-      box-shadow:
-        0 16px 40px color-mix(in oklch, black 45%, transparent),
-        0 4px 12px color-mix(in oklch, black 35%, transparent);
-    }
+      0 12px 36px color-mix(in oklch, var(--fg) 10%, transparent),
+      0 2px 8px color-mix(in oklch, var(--fg) 5%, transparent);
   }
 
   .home-hero__panel-card--a {

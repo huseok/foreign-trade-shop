@@ -4,13 +4,13 @@
  * 暗色模式通过 prefers-color-scheme: dark 覆盖下方变量。
  */
 :root {
-  /* Open Design · storefront（index.html 设计变量同源） */
-  --bg: oklch(99% 0.002 240);
-  --surface: oklch(100% 0 0);
-  --fg: oklch(18% 0.012 250);
-  --muted: oklch(54% 0.012 250);
-  --border: oklch(92% 0.005 250);
-  --accent: oklch(58% 0.18 255);
+  /* 浅色基准（与 marketplace 壳接近，商城内在 sf-market-root 内再桥接一次） */
+  --bg: oklch(98.6% 0.008 280);
+  --surface: oklch(100% 0.004 280);
+  --fg: oklch(22% 0.02 265);
+  --muted: oklch(48% 0.02 265);
+  --border: oklch(90% 0.012 280);
+  --accent: oklch(52% 0.16 275);
 
   /* 站内 SCSS 沿用既有语义名 */
   --text-h: var(--fg);
@@ -93,7 +93,7 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--heading);
+  font-family: var(--heading), sans-serif;
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.2;
