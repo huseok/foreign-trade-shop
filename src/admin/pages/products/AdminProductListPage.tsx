@@ -3,7 +3,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { App, Button, Descriptions, Drawer, Input, Popconfirm, Select, Space, Switch, Table, Tag, Typography, Upload } from 'antd'
+import { App, Button, Descriptions, Input, Popconfirm, Popover, Select, Space, Switch, Table, Tag, Typography, Upload } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { Link, useNavigate } from 'react-router-dom'
@@ -13,7 +13,7 @@ import { i18nTpl } from '../../../lib/i18nTpl'
 import { productThumbUrl, resolveMediaUrl } from '../../../lib/media/resolveMediaUrl'
 import type { ProductDto } from '../../../types/api'
 import { voyage } from '../../../openapi/voyageSdk'
-import { AdminProductEditDrawer } from '../../components/product/AdminProductEditDrawer'
+import { AdminProductEditModal } from '../../components/product/AdminProductEditModal'
 import { AdminProductQuickCreateModal } from '../../components/product/AdminProductQuickCreateModal'
 import { StandardModal } from '../../components/shared/StandardModal'
 import {
@@ -34,7 +34,7 @@ function formatMoneyAmount(v: number | null | undefined): string {
   return Number(v).toFixed(2)
 }
 
-function ProductExpandContent({ product }: { product: ProductDto }) {
+function ProductExpandContent({ product, leadWithImages = false }: { product: ProductDto; leadWithImages?: boolean }) {
   const { t } = useI18n()
   const [showAllImages, setShowAllImages] = useState(false)
   const imgs = product.images ?? []
@@ -61,64 +61,67 @@ function ProductExpandContent({ product }: { product: ProductDto }) {
           .join(', ')}${product.skus.length > 5 ? '…' : ''}`
       : null
 
-  return (
-    <div style={{ padding: '4px 0 12px', maxWidth: 960 }}>
-      <div style={{ marginBottom: 16 }}>
-        <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
-          {t('admin.productsList.previewSummarySection')}
-        </Typography.Text>
-        <Descriptions bordered size="small" column={1}>
-          <Descriptions.Item label={t('admin.productsList.previewId')}>{product.id}</Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.colSku')}>{product.skuCode ?? '—'}</Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewPrice')}>{priceLine}</Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewListPrice')}>
-            {formatMoneyAmount(product.listPrice)}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewCostPrice')}>
-            {formatMoneyAmount(product.costPrice)}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewCurrency')}>{cur || '—'}</Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.colMoq')}>{product.moq}</Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewListingStatus')}>
-            {product.isActive ? t('admin.productsList.statusOn') : t('admin.productsList.statusOff')}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewHsCode')}>{product.hsCode ?? '—'}</Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewUnit')}>{product.unit ?? '—'}</Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewIncoterm')}>{product.incoterm ?? '—'}</Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewOriginCountry')}>
-            {product.originCountry ?? '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewLeadTimeDays')}>
-            {product.leadTimeDays != null ? product.leadTimeDays : '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewWeightKg')}>
-            {product.weightKg != null ? String(product.weightKg) : '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewCategoryId')}>
-            {product.categoryId != null ? product.categoryId : '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewShippingTemplateId')}>
-            {product.shippingTemplateId != null ? product.shippingTemplateId : '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('admin.productsList.previewTags')}>
-            {product.tags && product.tags.length > 0 ? (
-              <Space size={[4, 4]} wrap>
-                {product.tags.map((tg) => (
-                  <Tag key={tg.id}>{tg.name}</Tag>
-                ))}
-              </Space>
-            ) : (
-              '—'
-            )}
-          </Descriptions.Item>
-          {optionSummary ? (
-            <Descriptions.Item label={t('admin.productsList.previewOptions')}>{optionSummary}</Descriptions.Item>
-          ) : null}
-          {skuSummary ? (
-            <Descriptions.Item label={t('admin.productsList.previewSkuSummary')}>{skuSummary}</Descriptions.Item>
-          ) : null}
-        </Descriptions>
-      </div>
+  const summaryBlock = (
+    <div style={{ marginBottom: leadWithImages ? 10 : 16 }}>
+      <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
+        {t('admin.productsList.previewSummarySection')}
+      </Typography.Text>
+      <Descriptions bordered size="small" column={1}>
+        <Descriptions.Item label={t('admin.productsList.previewId')}>{product.id}</Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.colSku')}>{product.skuCode ?? '—'}</Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewPrice')}>{priceLine}</Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewListPrice')}>
+          {formatMoneyAmount(product.listPrice)}
+        </Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewCostPrice')}>
+          {formatMoneyAmount(product.costPrice)}
+        </Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewCurrency')}>{cur || '—'}</Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.colMoq')}>{product.moq}</Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewListingStatus')}>
+          {product.isActive ? t('admin.productsList.statusOn') : t('admin.productsList.statusOff')}
+        </Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewHsCode')}>{product.hsCode ?? '—'}</Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewUnit')}>{product.unit ?? '—'}</Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewIncoterm')}>{product.incoterm ?? '—'}</Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewOriginCountry')}>
+          {product.originCountry ?? '—'}
+        </Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewLeadTimeDays')}>
+          {product.leadTimeDays != null ? product.leadTimeDays : '—'}
+        </Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewWeightKg')}>
+          {product.weightKg != null ? String(product.weightKg) : '—'}
+        </Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewCategoryId')}>
+          {product.categoryId != null ? product.categoryId : '—'}
+        </Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewShippingTemplateId')}>
+          {product.shippingTemplateId != null ? product.shippingTemplateId : '—'}
+        </Descriptions.Item>
+        <Descriptions.Item label={t('admin.productsList.previewTags')}>
+          {product.tags && product.tags.length > 0 ? (
+            <Space size={[4, 4]} wrap>
+              {product.tags.map((tg) => (
+                <Tag key={tg.id}>{tg.name}</Tag>
+              ))}
+            </Space>
+          ) : (
+            '—'
+          )}
+        </Descriptions.Item>
+        {optionSummary ? (
+          <Descriptions.Item label={t('admin.productsList.previewOptions')}>{optionSummary}</Descriptions.Item>
+        ) : null}
+        {skuSummary ? (
+          <Descriptions.Item label={t('admin.productsList.previewSkuSummary')}>{skuSummary}</Descriptions.Item>
+        ) : null}
+      </Descriptions>
+    </div>
+  )
+
+  const imagesBlock = (
+    <>
       <div style={{ marginBottom: 8 }}>
         <Typography.Text strong>{t('admin.productsList.expandImagesSection')}</Typography.Text>
         {imgs.length === 0 ? (
@@ -158,14 +161,34 @@ function ProductExpandContent({ product }: { product: ProductDto }) {
           ) : null}
         </>
       ) : null}
-      {product.description ? (
-        <Typography.Paragraph style={{ marginTop: 12, marginBottom: 0 }} type="secondary">
-          <Typography.Text strong style={{ color: 'rgba(0,0,0,0.88)' }}>
-            {t('admin.productsList.expandDescriptionLabel')}
-          </Typography.Text>
-          <span style={{ display: 'block', marginTop: 6, whiteSpace: 'pre-wrap' }}>{product.description}</span>
-        </Typography.Paragraph>
-      ) : null}
+    </>
+  )
+
+  const descriptionBlock =
+    product.description ? (
+      <Typography.Paragraph style={{ marginTop: leadWithImages ? 10 : 12, marginBottom: 0 }} type="secondary">
+        <Typography.Text strong style={{ color: 'rgba(0,0,0,0.88)' }}>
+          {t('admin.productsList.expandDescriptionLabel')}
+        </Typography.Text>
+        <span style={{ display: 'block', marginTop: 6, whiteSpace: 'pre-wrap' }}>{product.description}</span>
+      </Typography.Paragraph>
+    ) : null
+
+  return (
+    <div style={{ padding: leadWithImages ? 0 : '4px 0 12px', maxWidth: leadWithImages ? 480 : 960 }}>
+      {leadWithImages ? (
+        <>
+          {imagesBlock}
+          {summaryBlock}
+          {descriptionBlock}
+        </>
+      ) : (
+        <>
+          {summaryBlock}
+          {imagesBlock}
+          {descriptionBlock}
+        </>
+      )}
     </div>
   )
 }
@@ -187,7 +210,6 @@ export function AdminProductListPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [importErrors, setImportErrors] = useState<Array<{ line: number; reason: string }>>([])
   const [importSummary, setImportSummary] = useState<{ ok: number; total: number } | null>(null)
-  const [previewProduct, setPreviewProduct] = useState<ProductDto | null>(null)
   const [editProductId, setEditProductId] = useState<number | null>(null)
   const [switchBusyId, setSwitchBusyId] = useState<number | null>(null)
   const bulkStatusMut = useAdminBulkProductStatus()
@@ -255,23 +277,36 @@ export function AdminProductListPage() {
       render: (_, r) => {
         const src = productThumbUrl(r)
         return (
-          <Button
-            type="text"
-            aria-label={t('admin.productsList.thumbPreviewAria')}
-            onClick={(e) => {
-              e.stopPropagation()
-              setPreviewProduct(r)
+          <Popover
+            placement="top"
+            trigger="click"
+            destroyOnHidden
+            arrow={{ pointAtCenter: true }}
+            styles={{
+              body: {
+                maxWidth: 520,
+                maxHeight: 'min(72vh, 620px)',
+                overflowY: 'auto',
+                padding: 12,
+              },
             }}
-            style={{ height: 'auto', padding: 0 }}
+            content={<ProductExpandContent product={r} leadWithImages />}
           >
-            {src ? (
-              <img src={src} alt="" width={48} height={48} style={{ objectFit: 'cover', borderRadius: 4, display: 'block' }} />
-            ) : (
-              <Typography.Text type="secondary" style={{ display: 'flex', width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: '1px solid #f0f0f0', background: '#fafafa' }}>
-                —
-              </Typography.Text>
-            )}
-          </Button>
+            <Button
+              type="text"
+              aria-label={t('admin.productsList.thumbPreviewAria')}
+              onClick={(e) => e.stopPropagation()}
+              style={{ height: 'auto', padding: 0 }}
+            >
+              {src ? (
+                <img src={src} alt="" width={48} height={48} style={{ objectFit: 'cover', borderRadius: 4, display: 'block' }} />
+              ) : (
+                <Typography.Text type="secondary" style={{ display: 'flex', width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: '1px solid #f0f0f0', background: '#fafafa' }}>
+                  —
+                </Typography.Text>
+              )}
+            </Button>
+          </Popover>
         )
       },
     },
@@ -490,6 +525,30 @@ export function AdminProductListPage() {
         >
           <Button>{t('admin.productsList.importCsv')}</Button>
         </Upload>
+      </Space>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          columnGap: 12,
+          rowGap: 8,
+          minHeight: 36,
+          marginBottom: 12,
+        }}
+      >
+        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          {i18nTpl(t('admin.productsList.selectedCount'), { n: selectedIds.length })}
+        </Typography.Text>
+        <Button
+          type="link"
+          size="small"
+          disabled={selectedIds.length === 0}
+          style={{ padding: 0, height: 'auto' }}
+          onClick={() => setSelectedIds([])}
+        >
+          {t('admin.productsList.clearSelection')}
+        </Button>
         <Popconfirm
           title={i18nTpl(t('admin.productsList.bulkOnConfirm'), { n: selectedIds.length })}
           disabled={selectedIds.length === 0}
@@ -516,7 +575,7 @@ export function AdminProductListPage() {
             {t('admin.productsList.bulkOff')}
           </Button>
         </Popconfirm>
-      </Space>
+      </div>
       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
         {i18nTpl(t('admin.productsList.pageSummary'), {
           total,
@@ -530,6 +589,7 @@ export function AdminProductListPage() {
         loading={listLoading}
         search={false}
         options={false}
+        tableAlertRender={false}
         columns={columns}
         dataSource={rows}
         rowSelection={{
@@ -558,18 +618,7 @@ export function AdminProductListPage() {
           },
         }}
       />
-      <Drawer
-        title={previewProduct?.title ?? ''}
-        placement="right"
-        width={560}
-        mask={false}
-        open={previewProduct != null}
-        onClose={() => setPreviewProduct(null)}
-        destroyOnClose
-      >
-        {previewProduct ? <ProductExpandContent product={previewProduct} /> : null}
-      </Drawer>
-      <AdminProductEditDrawer productId={editProductId} onClose={() => setEditProductId(null)} />
+      <AdminProductEditModal productId={editProductId} onClose={() => setEditProductId(null)} />
       <AdminProductQuickCreateModal open={quickOpen} onClose={() => setQuickOpen(false)} />
       <StandardModal
         title={t('admin.productsList.reportTitle')}
@@ -577,6 +626,7 @@ export function AdminProductListPage() {
         onCancel={() => setImportSummary(null)}
         footer={null}
         destroyOnClose
+        mask={false}
         width={640}
         styles={{ body: { maxHeight: 'min(70vh, 480px)', overflowY: 'auto', paddingTop: 12 } }}
       >

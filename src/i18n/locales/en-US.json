@@ -570,6 +570,8 @@
       "bulkOffOk": "Deactivated {{n}} product(s)",
       "bulkOn": "Bulk activate",
       "bulkOff": "Bulk deactivate",
+      "selectedCount": "{{n}} selected",
+      "clearSelection": "Clear",
       "toggleEnabled": "Marked active",
       "toggleDisabled": "Marked inactive",
       "toggleFail": "Failed to update status",

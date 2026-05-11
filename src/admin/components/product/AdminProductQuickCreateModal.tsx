@@ -57,6 +57,7 @@ export function AdminProductQuickCreateModal({ open, onClose }: Props) {
       }}
       width={920}
       destroyOnClose
+      mask={false}
       okText={t('admin.products.modalOk')}
       cancelText={t('admin.products.modalCancel')}
       confirmLoading={createMut.isPending}

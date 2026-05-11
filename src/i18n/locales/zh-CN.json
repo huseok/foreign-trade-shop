@@ -570,6 +570,8 @@
       "bulkOffOk": "已批量停用 {{n}} 条",
       "bulkOn": "批量启用",
       "bulkOff": "批量停用",
+      "selectedCount": "已选择 {{n}} 项",
+      "clearSelection": "清空选择",
       "toggleEnabled": "已上架",
       "toggleDisabled": "已下架",
       "toggleFail": "状态更新失败",
