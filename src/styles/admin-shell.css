@@ -1,8 +1,8 @@
 /**
- * 管理后台：仅保留内容区背景变量；其余交给 Ant Design / ProLayout。
+ * 管理后台壳层：与设计稿 admin-content-panel / admin-page-tab 对齐的补充样式。
+ * Ant Design 组件级主题见 theme/adminAntdTheme.ts。
  */
 .admin-shell {
-  --adm-bg: #f0f2f5;
   min-height: 100%;
 }
 
@@ -10,10 +10,22 @@
   background: var(--adm-bg, #f0f2f5);
 }
 
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
+.admin-page-tab.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  border-radius: 6px 6px 0 0;
 }
 
-.std-modal .ant-modal-body {
-  box-sizing: border-box;
+.admin-page-tab .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  font-weight: 600;
+}
+
+.std-modal .ant-modal-header {
+  margin-bottom: 0;
+}
+
+.std-modal .ant-modal-footer {
+  border-top: 1px solid #f0f0f0;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
