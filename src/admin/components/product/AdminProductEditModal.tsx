@@ -19,6 +19,7 @@ import {
   productDtoToAdminFormValues,
   type AdminProductFormValues,
 } from '../../lib/adminProductFormPayload'
+import { getAdminModalContainer } from '../../adminModalRoot'
 import { AdminProductUpsertFields } from './AdminProductUpsertFields'
 import { StandardModal } from '../shared/StandardModal'
 
@@ -77,6 +78,7 @@ export function AdminProductEditModal({ productId, onClose }: Props) {
       open={open}
       width={920}
       destroyOnClose
+      getContainer={getAdminModalContainer}
       mask={false}
       maskClosable={false}
       okText={t('admin.productsList.editSave')}

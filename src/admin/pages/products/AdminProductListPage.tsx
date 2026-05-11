@@ -13,6 +13,7 @@ import { i18nTpl } from '../../../lib/i18nTpl'
 import { productThumbUrl, resolveMediaUrl } from '../../../lib/media/resolveMediaUrl'
 import type { ProductDto } from '../../../types/api'
 import { voyage } from '../../../openapi/voyageSdk'
+import { getAdminModalContainer } from '../../adminModalRoot'
 import { AdminProductEditModal } from '../../components/product/AdminProductEditModal'
 import { AdminProductQuickCreateModal } from '../../components/product/AdminProductQuickCreateModal'
 import { StandardModal } from '../../components/shared/StandardModal'
@@ -626,6 +627,7 @@ export function AdminProductListPage() {
         onCancel={() => setImportSummary(null)}
         footer={null}
         destroyOnClose
+        getContainer={getAdminModalContainer}
         mask={false}
         width={640}
         styles={{ body: { maxHeight: 'min(70vh, 480px)', overflowY: 'auto', paddingTop: 12 } }}

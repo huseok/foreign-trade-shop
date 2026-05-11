@@ -15,6 +15,7 @@ import {
   adminProductFormValuesToPayload,
   type AdminProductFormValues,
 } from '../../lib/adminProductFormPayload'
+import { getAdminModalContainer } from '../../adminModalRoot'
 import { AdminProductUpsertFields } from './AdminProductUpsertFields'
 import { StandardModal } from '../shared/StandardModal'
 
@@ -57,6 +58,7 @@ export function AdminProductQuickCreateModal({ open, onClose }: Props) {
       }}
       width={920}
       destroyOnClose
+      getContainer={getAdminModalContainer}
       mask={false}
       okText={t('admin.products.modalOk')}
       cancelText={t('admin.products.modalCancel')}

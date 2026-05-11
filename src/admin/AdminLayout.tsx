@@ -21,6 +21,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useMe } from '../hooks/apiHooks'
 import { useI18n } from '../i18n/I18nProvider'
 import { authStore } from '../lib/auth/authStore'
+import { ADMIN_MODAL_ROOT_ID } from './adminModalRoot'
 import '../styles/admin-shell.css'
 
 export function AdminLayout() {
@@ -45,6 +46,7 @@ export function AdminLayout() {
 
   return (
     <div className="admin-shell">
+      <div id={ADMIN_MODAL_ROOT_ID} />
       <ProLayout
         layout="side"
         headerRender={false}
