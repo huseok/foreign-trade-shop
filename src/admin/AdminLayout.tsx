@@ -1,13 +1,12 @@
 /**
  * 管理后台主布局（Pro 版本）：
- * 左侧导航 + 无顶栏；标题在侧栏顶，邮箱与前台/退出在侧栏底；支持折叠。
+ * 无顶栏；后台标题由 ProLayout 默认渲染在侧栏顶；邮箱与前台/退出在侧栏底。不改主题色，沿用 antd / Pro 默认样式。
  */
 import { Space, Typography } from 'antd'
 import {
   AppstoreOutlined,
   BookOutlined,
   ClusterOutlined,
-  DashboardOutlined,
   FileSearchOutlined,
   GlobalOutlined,
   LogoutOutlined,
@@ -42,16 +41,14 @@ export function AdminLayout() {
     { path: '/admin/audit', name: t('admin.menu.audit'), icon: <FileSearchOutlined /> },
   ]
 
-  const brandTitle = t('admin.title')
   const email = me?.email ?? ''
 
   return (
     <div className="admin-shell">
       <ProLayout
         layout="side"
-        navTheme="realDark"
         headerRender={false}
-        title={brandTitle}
+        title={t('admin.title')}
         logo={false}
         location={{ pathname: location.pathname }}
         route={{ routes: menuRoutes }}
@@ -59,45 +56,19 @@ export function AdminLayout() {
         fixSiderbar
         menuItemRender={(item, dom) => <Link to={item.path ?? '/admin/orders'}>{dom}</Link>}
         actionsRender={false}
-        menuHeaderRender={(_logo, _title, props) => {
-          const collapsed = Boolean(props?.collapsed)
-          return (
-            <div className="admin-sider-brand">
-              {collapsed ? (
-                <DashboardOutlined className="admin-sider-brand__icon-collapsed" aria-hidden />
-              ) : (
-                <Typography.Title level={5} className="admin-sider-brand__title">
-                  {brandTitle}
-                </Typography.Title>
-              )}
-            </div>
-          )
-        }}
         menuFooterRender={(props) => {
           const collapsed = Boolean(props?.collapsed)
           return (
-            <Space direction="vertical" size={8} className="admin-sider-footer-inner">
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
               {email ? (
-                <Typography.Text
-                  ellipsis={{ tooltip: email }}
-                  className="admin-sider-footer__email"
-                  style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-                >
-                  <UserOutlined aria-hidden />
-                  {!collapsed ? email : null}
+                <Typography.Text ellipsis={{ tooltip: email }}>
+                  <UserOutlined aria-hidden /> {!collapsed ? email : null}
                 </Typography.Text>
               ) : null}
-              <Typography.Link
-                href="/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="admin-sider-footer__link"
-                title={t('admin.siteLink')}
-              >
+              <Typography.Link href="/" target="_blank" rel="noopener noreferrer" title={t('admin.siteLink')}>
                 <GlobalOutlined /> {!collapsed ? ` ${t('admin.siteLink')}` : null}
               </Typography.Link>
               <Typography.Link
-                className="admin-sider-footer__link"
                 title={t('admin.logout')}
                 onClick={() => {
                   authStore.clearToken()

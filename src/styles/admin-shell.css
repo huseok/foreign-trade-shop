@@ -10,59 +10,6 @@
   background: var(--adm-bg, #f0f2f5);
 }
 
-/* 侧栏顶：后台标题（realDark） */
-.admin-shell .admin-sider-brand {
-  padding: 16px 16px 12px;
-}
-
-.admin-shell .ant-layout-sider-collapsed .admin-sider-brand {
-  padding: 12px 8px;
-}
-
-.admin-shell .admin-sider-brand__title.ant-typography {
-  margin: 0 !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  font-size: 15px !important;
-  line-height: 1.35 !important;
-  font-weight: 600 !important;
-}
-
-.admin-shell .admin-sider-brand__icon-collapsed {
-  display: block;
-  margin: 0 auto;
-  font-size: 20px;
-  color: rgba(255, 255, 255, 0.88);
-}
-
-/* 侧栏底：邮箱、前台、退出 */
-.admin-shell .ant-layout-sider-dark .ant-pro-sider-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 12px 16px 16px;
-}
-
-.admin-shell .admin-sider-footer-inner {
-  width: 100%;
-}
-
-.admin-shell .admin-sider-footer__email {
-  color: rgba(255, 255, 255, 0.85) !important;
-  font-size: 12px;
-  width: 100%;
-}
-
-.admin-shell .ant-layout-sider-collapsed .admin-sider-footer__email {
-  justify-content: center;
-  width: auto;
-}
-
-.admin-shell .admin-sider-footer__link.ant-typography {
-  color: rgba(255, 255, 255, 0.65) !important;
-}
-
-.admin-shell .admin-sider-footer__link.ant-typography:hover {
-  color: #fff !important;
-}
-
 .admin-page-tab.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
   border-radius: 6px 6px 0 0;
 }

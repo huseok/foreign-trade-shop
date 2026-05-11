@@ -206,17 +206,19 @@ export function AdminProductListPage() {
     {
       title: t('admin.productsList.colStatus'),
       dataIndex: 'isActive',
-      width: 96,
+      width: 120,
       search: false,
       render: (_, r) => (
-        <Switch
-          checked={r.isActive}
-          checkedChildren={t('admin.productsList.statusOn')}
-          unCheckedChildren={t('admin.productsList.statusOff')}
-          loading={switchBusyId === r.id && bulkStatusMut.isPending}
-          onChange={(checked) => void setProductActive(r.id, checked)}
-          onClick={(e) => e.stopPropagation()}
-        />
+        <div onClick={(e) => e.stopPropagation()} role="presentation">
+          <Space size={8} align="center">
+            <Switch
+              checked={r.isActive}
+              loading={switchBusyId === r.id && bulkStatusMut.isPending}
+              onChange={(checked) => void setProductActive(r.id, checked)}
+            />
+            <Typography.Text>{r.isActive ? t('admin.productsList.statusOn') : t('admin.productsList.statusOff')}</Typography.Text>
+          </Space>
+        </div>
       ),
     },
     {
