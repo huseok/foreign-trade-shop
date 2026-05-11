@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:scope0": "env REACT_COMPILER_SCOPE=0 vite build",
+    "build:scope2": "env REACT_COMPILER_SCOPE=2 vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "codegen:openapi": "openapi-typescript openapi/openapi.json -o src/generated/voyage-paths.ts"

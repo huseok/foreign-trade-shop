@@ -15,7 +15,15 @@
 | 商城样式 | 全局 `index.css` + 页面/组件级 **SCSS** |
 | API 契约 | `openapi/openapi.json` → `openapi-typescript` → `src/generated/voyage-paths.ts` |
 
-本项目启用了 **React Compiler**（Babel），dev/build 可能略慢，属预期。
+本项目可选用 **React Compiler**（Babel）减少运行时无效重渲染。档位由环境变量 **`REACT_COMPILER_SCOPE`** 控制（与发版脚本 **`RELEASE_FRONTEND_COMPILER_SCOPE`** 对应）：
+
+| 值 | 含义 |
+|----|------|
+| **0** | 关闭 Compiler，构建最快 |
+| **1** | 仅 **`src/`** 下除 **`admin/`** 外的源码（默认本地 **`npm run build`**） |
+| **2** | 整个 **`src/`** 含后台，构建最慢 |
+
+详见根目录 **`vite.config.ts`** 顶部注释。快捷：`npm run build:scope0`、`npm run build:scope2`。
 
 ## 快速开始
 
@@ -25,7 +33,7 @@ npm run dev
 ```
 
 - 开发：`npm run dev`，默认 <http://localhost:5173>
-- 生产构建：`npm run build`
+- 生产构建：`npm run build`（默认 scope **1**）；`npm run build:scope0` / `build:scope2` 见上表
 - 预览：`npm run preview`
 - 代码检查：`npm run lint`
 - **从 OpenAPI 重新生成类型**：`npm run codegen:openapi`
