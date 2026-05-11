@@ -3,7 +3,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { App, Button, Input, Popconfirm, Select, Space, Table, Typography, Upload } from 'antd'
+import { App, Button, Drawer, Input, Popconfirm, Select, Space, Switch, Table, Typography, Upload } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { Link, useNavigate } from 'react-router-dom'
@@ -105,6 +105,8 @@ export function AdminProductListPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [importErrors, setImportErrors] = useState<Array<{ line: number; reason: string }>>([])
   const [importSummary, setImportSummary] = useState<{ ok: number; total: number } | null>(null)
+  const [previewProduct, setPreviewProduct] = useState<ProductDto | null>(null)
+  const [switchBusyId, setSwitchBusyId] = useState<number | null>(null)
   const bulkStatusMut = useAdminBulkProductStatus()
 
   useEffect(() => {
@@ -148,6 +150,18 @@ export function AdminProductListPage() {
   const rows = data?.items ?? []
   const total = data?.total ?? 0
 
+  const setProductActive = async (id: number, isActive: boolean) => {
+    setSwitchBusyId(id)
+    try {
+      await bulkStatusMut.mutateAsync({ ids: [id], isActive })
+      message.success(isActive ? t('admin.productsList.toggleEnabled') : t('admin.productsList.toggleDisabled'))
+    } catch {
+      message.error(t('admin.productsList.toggleFail'))
+    } finally {
+      setSwitchBusyId(null)
+    }
+  }
+
   const columns: ProColumns<ProductDto>[] = [
     { title: 'ID', dataIndex: 'id', width: 72, fixed: 'left' },
     {
@@ -157,10 +171,24 @@ export function AdminProductListPage() {
       search: false,
       render: (_, r) => {
         const src = productThumbUrl(r)
-        return src ? (
-          <img src={src} alt="" width={48} height={48} style={{ objectFit: 'cover', borderRadius: 4 }} />
-        ) : (
-          '?'
+        return (
+          <Button
+            type="text"
+            aria-label={t('admin.productsList.thumbPreviewAria')}
+            onClick={(e) => {
+              e.stopPropagation()
+              setPreviewProduct(r)
+            }}
+            style={{ height: 'auto', padding: 0 }}
+          >
+            {src ? (
+              <img src={src} alt="" width={48} height={48} style={{ objectFit: 'cover', borderRadius: 4, display: 'block' }} />
+            ) : (
+              <Typography.Text type="secondary" style={{ display: 'flex', width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: '1px solid #f0f0f0', background: '#fafafa' }}>
+                —
+              </Typography.Text>
+            )}
+          </Button>
         )
       },
     },
@@ -178,8 +206,18 @@ export function AdminProductListPage() {
     {
       title: t('admin.productsList.colStatus'),
       dataIndex: 'isActive',
-      width: 88,
-      render: (_, r) => (r.isActive ? t('admin.productsList.statusOn') : t('admin.productsList.statusOff')),
+      width: 96,
+      search: false,
+      render: (_, r) => (
+        <Switch
+          checked={r.isActive}
+          checkedChildren={t('admin.productsList.statusOn')}
+          unCheckedChildren={t('admin.productsList.statusOff')}
+          loading={switchBusyId === r.id && bulkStatusMut.isPending}
+          onChange={(checked) => void setProductActive(r.id, checked)}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
     },
     {
       title: t('admin.productsList.colActions'),
@@ -398,13 +436,18 @@ export function AdminProductListPage() {
         options={false}
         columns={columns}
         dataSource={rows}
-        expandable={{
-          expandedRowRender: (record) => <ProductExpandContent product={record} />,
-        }}
         rowSelection={{
           selectedRowKeys: selectedIds,
           onChange: (keys) => setSelectedIds(keys.map((x) => Number(x))),
         }}
+        onRow={(record) => ({
+          onClick: (ev) => {
+            const el = ev.target as HTMLElement
+            if (el.closest('a, button, input, textarea, label, .ant-switch')) return
+            const id = record.id
+            setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+          },
+        })}
         scroll={{ x: 720 }}
         pagination={{
           current: page + 1,
@@ -419,6 +462,16 @@ export function AdminProductListPage() {
           },
         }}
       />
+      <Drawer
+        title={previewProduct?.title ?? ''}
+        placement="right"
+        width={560}
+        open={previewProduct != null}
+        onClose={() => setPreviewProduct(null)}
+        destroyOnClose
+      >
+        {previewProduct ? <ProductExpandContent product={previewProduct} /> : null}
+      </Drawer>
       <AdminProductQuickCreateModal open={quickOpen} onClose={() => setQuickOpen(false)} />
       <StandardModal
         title={t('admin.productsList.reportTitle')}

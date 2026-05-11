@@ -2,7 +2,7 @@
  * 管理后台主布局（Pro 版本）：
  * 使用 ProLayout 提供标准后台壳层能力（菜单、头部、内容容器）。
  */
-import { Typography } from 'antd'
+import { Space, Typography } from 'antd'
 import {
   AppstoreOutlined,
   BookOutlined,
@@ -52,20 +52,26 @@ export function AdminLayout() {
         layout="mix"
         avatarProps={{ title: me?.email ?? 'admin' }}
         menuItemRender={(item, dom) => <Link to={item.path ?? '/admin/orders'}>{dom}</Link>}
-        actionsRender={() => [
-          <Typography.Link key="go-site" href="/" target="_blank">
-            <GlobalOutlined /> {t('admin.siteLink')}
-          </Typography.Link>,
-          <Typography.Link
-            key="logout"
-            onClick={() => {
-              authStore.clearToken()
-              navigate('/admin/login', { replace: true })
-            }}
-          >
-            <LogoutOutlined /> {t('admin.logout')}
-          </Typography.Link>,
-        ]}
+        actionsRender={false}
+        menuFooterRender={(props) => {
+          const collapsed = Boolean(props?.collapsed)
+          return (
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <Typography.Link href="/" target="_blank" rel="noopener noreferrer" title={t('admin.siteLink')}>
+                <GlobalOutlined /> {!collapsed ? ` ${t('admin.siteLink')}` : null}
+              </Typography.Link>
+              <Typography.Link
+                title={t('admin.logout')}
+                onClick={() => {
+                  authStore.clearToken()
+                  navigate('/admin/login', { replace: true })
+                }}
+              >
+                <LogoutOutlined /> {!collapsed ? ` ${t('admin.logout')}` : null}
+              </Typography.Link>
+            </Space>
+          )
+        }}
       >
         <div style={{ padding: 24 }}>
           <Outlet />

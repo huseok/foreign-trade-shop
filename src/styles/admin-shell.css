@@ -10,6 +10,27 @@
   background: var(--adm-bg, #f0f2f5);
 }
 
+/* 侧栏底部：前台 / 退出（深色侧栏可读） */
+.admin-shell .ant-layout-sider-dark .ant-pro-sider-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-shell .ant-layout-sider-dark .ant-pro-sider-footer .ant-typography {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.admin-shell .ant-layout-sider-dark .ant-pro-sider-footer .ant-typography:hover {
+  color: #fff;
+}
+
+.admin-shell .ant-layout-sider:not(.ant-layout-sider-dark) .ant-pro-sider-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.admin-shell .ant-layout-sider:not(.ant-layout-sider-dark) .ant-pro-sider-footer .ant-typography {
+  color: rgba(0, 0, 0, 0.65);
+}
+
 .admin-page-tab.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
   border-radius: 6px 6px 0 0;
 }
