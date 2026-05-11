@@ -139,15 +139,6 @@ export function defaultProductImportBase(): AdminProductUpsertRequest {
     currency: 'USD',
     moq: 1,
     description: '',
-    skuCode: null,
-    hsCode: null,
-    unit: null,
-    incoterm: null,
-    originCountry: null,
-    leadTimeDays: null,
-    weightKg: null,
-    categoryId: null,
-    shippingTemplateId: null,
     isActive: true,
   }
 }
@@ -163,15 +154,15 @@ export function productDtoToImportBase(p: ProductDto): AdminProductUpsertRequest
     currency: (p.currency ?? 'USD').toUpperCase(),
     moq: p.moq,
     description: p.description ?? '',
-    skuCode: p.skuCode ?? null,
-    hsCode: p.hsCode ?? null,
-    unit: p.unit ?? null,
-    incoterm: p.incoterm ? String(p.incoterm).trim().toUpperCase() : null,
-    originCountry: p.originCountry ?? null,
-    leadTimeDays: p.leadTimeDays ?? null,
-    weightKg: p.weightKg != null ? Number(p.weightKg) : null,
-    categoryId: p.categoryId ?? null,
-    shippingTemplateId: p.shippingTemplateId ?? null,
+    skuCode: p.skuCode ?? undefined,
+    hsCode: p.hsCode ?? undefined,
+    unit: p.unit ?? undefined,
+    incoterm: p.incoterm ? String(p.incoterm).trim().toUpperCase() : undefined,
+    originCountry: p.originCountry ?? undefined,
+    leadTimeDays: p.leadTimeDays ?? undefined,
+    weightKg: p.weightKg != null ? Number(p.weightKg) : undefined,
+    categoryId: p.categoryId ?? undefined,
+    shippingTemplateId: p.shippingTemplateId ?? undefined,
     isActive: p.isActive,
   }
 }
@@ -199,8 +190,30 @@ export function productDtoToCsvLine(p: ProductDto): string {
   return cells.join(',')
 }
 
-type MutableUpsert = AdminProductUpsertRequest & {
-  description: string | null
+/** CSV 合并过程中的缓冲类型：可选字段允许 null，便于与 importPayloadForApi 转成后端 JSON */
+type MutableUpsert = Omit<
+  AdminProductUpsertRequest,
+  | 'description'
+  | 'skuCode'
+  | 'hsCode'
+  | 'unit'
+  | 'incoterm'
+  | 'originCountry'
+  | 'leadTimeDays'
+  | 'weightKg'
+  | 'categoryId'
+  | 'shippingTemplateId'
+> & {
+  description?: string | null
+  skuCode?: string | null
+  hsCode?: string | null
+  unit?: string | null
+  incoterm?: string | null
+  originCountry?: string | null
+  leadTimeDays?: number | null
+  weightKg?: number | null
+  categoryId?: number | null
+  shippingTemplateId?: number | null
 }
 
 /**
@@ -223,7 +236,7 @@ export function applyProductCsvRow(
     const raw = row[csvKey]
     if (raw === undefined) return
     if (isClearToken(raw)) {
-      b[key] = null
+      b[key] = undefined
       return
     }
     const t = trimOrUndef(raw)
@@ -275,6 +288,7 @@ export function applyProductCsvRow(
       } else if (trimOrUndef(raw) !== undefined) {
         const n = parseFiniteNumber(raw)
         if (n === 'invalid') return { ok: false, reason: 'listPrice 格式无效' }
+        if (n === 'empty') return { ok: false, reason: 'listPrice 不能为空' }
         if (n <= 0) return { ok: false, reason: 'listPrice 须 > 0 或留空/占位符清空' }
         b.listPrice = n
       }
@@ -296,7 +310,9 @@ export function applyProductCsvRow(
     if (raw !== undefined && trimOrUndef(raw) !== undefined) {
       if (isClearToken(raw)) return { ok: false, reason: 'moq 不允许清空' }
       const n = parseFiniteNumber(raw)
-      if (n === 'invalid' || !Number.isInteger(n)) return { ok: false, reason: 'moq 须为整数' }
+      if (n === 'invalid') return { ok: false, reason: 'moq 格式无效' }
+      if (n === 'empty') return { ok: false, reason: 'moq 不能为空' }
+      if (!Number.isInteger(n)) return { ok: false, reason: 'moq 须为整数' }
       if (n < 1) return { ok: false, reason: 'moq 必须 >= 1' }
       b.moq = n
     } else if (!opts.isUpdate && b.moq < 1) {
@@ -319,7 +335,7 @@ export function applyProductCsvRow(
     const raw = row.description
     if (raw !== undefined) {
       if (isClearToken(raw)) {
-        b.description = null
+        b.description = undefined
       } else if (trimOrUndef(raw) !== undefined) {
         b.description = trimOrUndef(raw)!
       } else if (!opts.isUpdate) {
@@ -339,10 +355,12 @@ export function applyProductCsvRow(
     const raw = row.leadTimeDays
     if (raw !== undefined && trimOrUndef(raw) !== undefined) {
       if (isClearToken(raw)) {
-        b.leadTimeDays = null
+        b.leadTimeDays = undefined
       } else {
         const n = parseFiniteNumber(raw)
-        if (n === 'invalid' || !Number.isInteger(n) || n < 0) {
+        if (n === 'invalid') return { ok: false, reason: 'leadTimeDays 格式无效' }
+        if (n === 'empty') return { ok: false, reason: 'leadTimeDays 不能为空' }
+        if (!Number.isInteger(n) || n < 0) {
           return { ok: false, reason: 'leadTimeDays 须为非负整数' }
         }
         b.leadTimeDays = n
@@ -355,10 +373,12 @@ export function applyProductCsvRow(
     const raw = row.weightKg
     if (raw !== undefined && trimOrUndef(raw) !== undefined) {
       if (isClearToken(raw)) {
-        b.weightKg = null
+        b.weightKg = undefined
       } else {
         const n = parseFiniteNumber(raw)
-        if (n === 'invalid' || n < 0) return { ok: false, reason: 'weightKg 须为 >=0 的数字' }
+        if (n === 'invalid') return { ok: false, reason: 'weightKg 格式无效' }
+        if (n === 'empty') return { ok: false, reason: 'weightKg 不能为空' }
+        if (n < 0) return { ok: false, reason: 'weightKg 须为 >=0 的数字' }
         b.weightKg = n
       }
     }
@@ -369,7 +389,7 @@ export function applyProductCsvRow(
     const raw = row.categoryId
     if (raw !== undefined && trimOrUndef(raw) !== undefined) {
       if (isClearToken(raw)) {
-        b.categoryId = null
+        b.categoryId = undefined
       } else {
         const n = parsePositiveInt(raw)
         if (n === 'invalid') return { ok: false, reason: 'categoryId 无效' }
@@ -383,7 +403,7 @@ export function applyProductCsvRow(
     const raw = row.shippingTemplateId
     if (raw !== undefined && trimOrUndef(raw) !== undefined) {
       if (isClearToken(raw)) {
-        b.shippingTemplateId = null
+        b.shippingTemplateId = undefined
       } else {
         const n = parsePositiveInt(raw)
         if (n === 'invalid') return { ok: false, reason: 'shippingTemplateId 无效' }
@@ -404,7 +424,7 @@ export function applyProductCsvRow(
 /**
  * 转成后端接受的 JSON（不写 images/tagIds；description / 可选字段显式 null 表示清空）。
  */
-export function importPayloadForApi(b: AdminProductUpsertRequest): AdminProductUpsertRequest {
+export function importPayloadForApi(b: MutableUpsert): AdminProductUpsertRequest {
   const desc = b.description
   const description =
     desc === null || desc === undefined ? null : String(desc).trim() === '' ? '' : String(desc).trim()

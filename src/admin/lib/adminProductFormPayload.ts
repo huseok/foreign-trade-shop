@@ -46,6 +46,11 @@ function optNumber(v: unknown): number | null {
   return Number.isFinite(n) ? n : null
 }
 
+/** OpenAPI 生成类型多用 `T | undefined`，与内部 `null` 哨兵互转 */
+function nullToUndef<T>(v: T | null): T | undefined {
+  return v ?? undefined
+}
+
 /**
  * 组装 PUT/POST 负载。
  * 可选字段显式传 null，避免 JSON 省略键导致后端 Kotlin 默认值把字段清空（尤其是 description）。
@@ -53,14 +58,11 @@ function optNumber(v: unknown): number | null {
 export function adminProductFormValuesToPayload(values: AdminProductFormValues): AdminProductUpsertRequest {
   const listPriceRaw = values.listPrice
   const listPrice =
-    listPriceRaw != null && listPriceRaw !== '' && Number(listPriceRaw) > 0 ? Number(listPriceRaw) : null
+    listPriceRaw != null && Number(listPriceRaw) > 0 ? Number(listPriceRaw) : null
 
   const costPriceRaw = values.costPrice
   const costPrice =
-    costPriceRaw != null &&
-    costPriceRaw !== '' &&
-    Number.isFinite(Number(costPriceRaw)) &&
-    Number(costPriceRaw) >= 0
+    costPriceRaw != null && Number.isFinite(Number(costPriceRaw)) && Number(costPriceRaw) >= 0
       ? Number(costPriceRaw)
       : null
 
@@ -72,18 +74,18 @@ export function adminProductFormValuesToPayload(values: AdminProductFormValues):
     currency: trimStr(values.currency).toUpperCase() || 'USD',
     moq: Number(values.moq),
     description: trimStr(values.description),
-    skuCode: optTrimStr(values.skuCode),
-    hsCode: optTrimStr(values.hsCode),
-    unit: optTrimStr(values.unit),
+    skuCode: nullToUndef(optTrimStr(values.skuCode)),
+    hsCode: nullToUndef(optTrimStr(values.hsCode)),
+    unit: nullToUndef(optTrimStr(values.unit)),
     incoterm: (() => {
       const t = optTrimStr(values.incoterm)
-      return t == null ? null : t.toUpperCase()
+      return t == null ? undefined : t.toUpperCase()
     })(),
-    originCountry: optTrimStr(values.originCountry),
-    leadTimeDays: optInt(values.leadTimeDays),
-    weightKg: optNumber(values.weightKg),
-    categoryId: optInt(values.categoryId),
-    shippingTemplateId: optInt(values.shippingTemplateId),
+    originCountry: nullToUndef(optTrimStr(values.originCountry)),
+    leadTimeDays: nullToUndef(optInt(values.leadTimeDays)),
+    weightKg: nullToUndef(optNumber(values.weightKg)),
+    categoryId: nullToUndef(optInt(values.categoryId)),
+    shippingTemplateId: nullToUndef(optInt(values.shippingTemplateId)),
     isActive: Boolean(values.isActive),
   }
 
