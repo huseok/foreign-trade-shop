@@ -33,7 +33,6 @@ type SkuRow = {
 export function ProductDetail() {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const location = useLocation()
   const { id: rawId } = useParams<{ id: string }>()
   const id = rawId ? Number(rawId) : undefined
 
