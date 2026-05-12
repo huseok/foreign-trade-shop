@@ -1,9 +1,10 @@
-import { App, Button, Card, Form, Input, InputNumber, Space, Switch, Typography } from 'antd'
+import { App, Alert, Button, Card, Form, Input, InputNumber, Space, Switch, Typography } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAdminProductSkuMatrix, useAdminUpsertProductSkuMatrix } from '../../../hooks/apiHooks'
+import { useI18n } from '../../../i18n/I18nProvider'
 
 type AttrInput = { name: string; values: string }
 type MatrixRow = {
@@ -56,6 +57,7 @@ function cartesian(input: AttrInput[]): Array<Record<string, string>> {
  */
 export function AdminProductSkuMatrixPage() {
   const { message } = App.useApp()
+  const { t } = useI18n()
   const navigate = useNavigate()
   const { productId } = useParams<{ productId: string }>()
   const id = Number(productId)
@@ -280,6 +282,9 @@ export function AdminProductSkuMatrixPage() {
   return (
     <PageContainer title={`SKU 规格矩阵（商品 #${id}）`} subTitle="至少 3 个属性维度，生成笛卡尔积后维护价格/库存/重量">
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      {validAttrCount < 3 && (
+        <Alert type="warning" showIcon message={t('admin.products.attrDimensionsWarning')} />
+      )}
       <Card title="属性与生成" loading={isLoading}>
         <Typography.Paragraph type="secondary">建议至少 3 个属性，例如 Color / Size / Pack。</Typography.Paragraph>
         <Form layout="vertical">

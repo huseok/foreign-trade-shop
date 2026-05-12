@@ -247,6 +247,198 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/coupons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminCouponsList"];
+        put?: never;
+        post: operations["adminCouponsCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/coupons/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["adminCouponsUpdate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/coupons/{id}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adminCouponsPatchActive"];
+        trace?: never;
+    };
+    "/api/v1/admin/promotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPromotionsList"];
+        put?: never;
+        post: operations["adminPromotionsCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/promotions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["adminPromotionsUpdate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/promotions/{id}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adminPromotionsPatchActive"];
+        trace?: never;
+    };
+    "/api/v1/admin/customers": {
+        parameters: {
+            query: {
+                page?: number;
+                size?: number;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminCustomersList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/membership/tier-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminMembershipTierRulesList"];
+        put?: never;
+        post: operations["adminMembershipTierRulesCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/membership/tier-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["adminMembershipTierRulesUpdate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/membership/tier-rules/{id}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adminMembershipTierRulesPatchActive"];
+        trace?: never;
+    };
+    "/api/v1/admin/stats/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminStatsSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cart": {
         parameters: {
             query?: never;
@@ -293,6 +485,106 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["cartUpdateItem"];
+        trace?: never;
+    };
+    "/api/v1/cart/selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["cartUpdateSelection"];
+        trace?: never;
+    };
+    "/api/v1/cart/bulk-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cartBulkDelete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cart/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["cartClear"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cart/reorder-from-order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cartReorderFromOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/user/addresses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["userAddressUpdate"];
+        post?: never;
+        delete: operations["userAddressDelete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/user/addresses/{id}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["userAddressSetDefault"];
         trace?: never;
     };
     "/api/v1/orders": {
@@ -604,6 +896,130 @@ export interface components {
             /** Format: int64 */
             id: number;
         };
+        CouponAdminView: {
+            /** Format: int64 */
+            id: number;
+            code: string;
+            name: string;
+            discountType: string;
+            discountValue: string;
+            minOrderAmount: string;
+            tagFilter?: string | null;
+            /** Format: date-time */
+            validFrom: string;
+            /** Format: date-time */
+            validTo: string;
+            isActive: boolean;
+        };
+        CouponAdminUpsertRequest: {
+            code: string;
+            name: string;
+            discountType: string;
+            discountValue: number;
+            minOrderAmount?: number;
+            tagFilter?: string | null;
+            /** Format: date-time */
+            validFrom: string;
+            /** Format: date-time */
+            validTo: string;
+            isActive?: boolean;
+        };
+        CouponActivePatchRequest: {
+            isActive: boolean;
+        };
+        PromotionAdminView: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            thresholdAmount: string;
+            amountOff: string;
+            tagFilter?: string | null;
+            /** Format: date-time */
+            validFrom: string;
+            /** Format: date-time */
+            validTo: string;
+            isActive: boolean;
+        };
+        PromotionAdminUpsertRequest: {
+            name: string;
+            thresholdAmount: number;
+            amountOff: number;
+            tagFilter?: string | null;
+            /** Format: date-time */
+            validFrom: string;
+            /** Format: date-time */
+            validTo: string;
+            isActive?: boolean;
+        };
+        PromotionActivePatchRequest: {
+            isActive: boolean;
+        };
+        CustomerAdminView: {
+            /** Format: int64 */
+            id: number;
+            email: string;
+            name: string;
+            phone?: string | null;
+            country?: string | null;
+            role: string;
+            status: string;
+            /** Format: date-time */
+            createdAt: string;
+            tier: string;
+            lifetimePaidUsd: string;
+            memberDiscountPercent: number;
+        };
+        PagedCustomers: {
+            items: components["schemas"]["CustomerAdminView"][];
+            /** Format: int64 */
+            total: number;
+            page: number;
+            size: number;
+        };
+        MembershipTierRuleAdminView: {
+            /** Format: int64 */
+            id: number;
+            tierCode: string;
+            minLifetimePaidUsd: string;
+            discountPercent: number;
+            sortNo: number;
+            isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        MembershipTierRuleUpsertRequest: {
+            tierCode: string;
+            minLifetimePaidUsd: number;
+            discountPercent: number;
+            sortNo?: number;
+            isActive?: boolean;
+        };
+        MembershipTierRuleActivePatchRequest: {
+            isActive: boolean;
+        };
+        AdminStatsSummaryView: {
+            /** Format: int64 */
+            totalUsers: number;
+            /** Format: int64 */
+            newUsersLast7Days: number;
+            /** Format: int64 */
+            totalProducts: number;
+            /** Format: int64 */
+            activeProducts: number;
+            /** Format: int64 */
+            totalOrders: number;
+            /** Format: int64 */
+            ordersLast7Days: number;
+            /** Format: int64 */
+            pendingPaymentOrders: number;
+            /** Format: int64 */
+            paidOrders: number;
+            paidRevenueTotal: string;
+            /** Format: int64 */
+            totalAfterSales: number;
+        };
         AddCartItemRequest: {
             /** Format: int64 */
             productId: number;
@@ -612,32 +1028,88 @@ export interface components {
         UpdateCartItemRequest: {
             quantity: number;
         };
+        UpdateCartSelectionRequest: {
+            itemIds: number[];
+            selected: boolean;
+        };
+        BulkDeleteCartRequest: {
+            itemIds: number[];
+        };
         CartItemView: {
             /** Format: int64 */
             itemId: number;
             /** Format: int64 */
             productId: number;
             title: string;
+            moq: number;
             quantity: number;
             unitPrice: string;
             currency: string;
             lineAmount: string;
+            selected: boolean;
+            productActive: boolean;
+            listPrice?: string | null;
+            thumbUrl?: string | null;
         };
         CartView: {
             items: components["schemas"]["CartItemView"][];
             totalAmount: string;
+            selectedSubtotal: string;
             currency: string;
         };
-        CreateOrderRequest: {
+        ReorderToCartRequest: {
+            orderNo: string;
+        };
+        UserAddressView: {
+            /** Format: int64 */
+            id: number;
+            receiverName: string;
+            receiverPhone: string;
+            receiverCompany?: string | null;
+            country: string;
+            addressLine: string;
+            province?: string | null;
+            city?: string | null;
+            postalCode?: string | null;
+            isDefault: boolean;
+        };
+        UserAddressCreateRequest: {
             receiverName: string;
             receiverPhone: string;
             country: string;
             addressLine: string;
+            receiverCompany?: string | null;
+            province?: string | null;
+            city?: string | null;
+            postalCode?: string | null;
+            isDefault?: boolean;
+        };
+        UserAddressUpdateRequest: {
+            receiverName: string;
+            receiverPhone: string;
+            country: string;
+            addressLine: string;
+            receiverCompany?: string | null;
+            province?: string | null;
+            city?: string | null;
+            postalCode?: string | null;
+            isDefault?: boolean;
+        };
+        CreateOrderRequest: {
+            savedAddressId?: number | null;
+            receiverName?: string | null;
+            receiverPhone?: string | null;
+            country?: string | null;
+            addressLine?: string | null;
             postalCode?: string;
             receiverCompany?: string;
             taxNo?: string;
             incoterm?: string;
             shippingMethod?: string;
+            receiverProvince?: string | null;
+            receiverCity?: string | null;
+            cartItemIds?: number[] | null;
+            couponCode?: string | null;
         };
         OrderNoPayload: {
             orderNo: string;
@@ -648,11 +1120,20 @@ export interface components {
             titleSnapshot: string;
             priceSnapshot: string;
             quantity: number;
+            thumbUrl?: string | null;
         };
         OrderView: {
             orderNo: string;
             status: string;
+            paymentStatus: string;
             totalAmount: string;
+            subtotalAmount: string;
+            discountMember: string;
+            discountPromo: string;
+            discountCoupon: string;
+            shippingFee: string;
+            couponCodeSnapshot?: string | null;
+            paypalOrderId?: string | null;
             currency: string;
             receiverName: string;
             receiverPhone: string;
@@ -660,6 +1141,8 @@ export interface components {
             taxNo?: string | null;
             country: string;
             addressLine: string;
+            receiverProvince?: string | null;
+            receiverCity?: string | null;
             postalCode?: string | null;
             incoterm?: string | null;
             shippingMethod?: string | null;
@@ -1148,6 +1631,338 @@ export interface operations {
             };
         };
     };
+    adminCouponsList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CouponAdminView"][];
+                };
+            };
+        };
+    };
+    adminCouponsCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CouponAdminUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdPayload"];
+                };
+            };
+        };
+    };
+    adminCouponsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CouponAdminUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    adminCouponsPatchActive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CouponActivePatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    adminPromotionsList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromotionAdminView"][];
+                };
+            };
+        };
+    };
+    adminPromotionsCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionAdminUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdPayload"];
+                };
+            };
+        };
+    };
+    adminPromotionsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionAdminUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    adminPromotionsPatchActive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionActivePatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    adminCustomersList: {
+        parameters: {
+            query: {
+                page?: number;
+                size?: number;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedCustomers"];
+                };
+            };
+        };
+    };
+    adminMembershipTierRulesList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipTierRuleAdminView"][];
+                };
+            };
+        };
+    };
+    adminMembershipTierRulesCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipTierRuleUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdPayload"];
+                };
+            };
+        };
+    };
+    adminMembershipTierRulesUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipTierRuleUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    adminMembershipTierRulesPatchActive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipTierRuleActivePatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    adminStatsSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminStatsSummaryView"];
+                };
+            };
+        };
+    };
     cartGet: {
         parameters: {
             query?: never;
@@ -1230,6 +2045,165 @@ export interface operations {
         };
         responses: {
             /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    cartUpdateSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCartSelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    cartBulkDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkDeleteCartRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    cartClear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    cartReorderFromOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderToCartRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    userAddressUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserAddressUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    userAddressDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    userAddressSetDefault: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
             200: {
                 headers: {
                     [name: string]: unknown;

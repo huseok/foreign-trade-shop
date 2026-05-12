@@ -1,14 +1,15 @@
 /**
- * ??????????? `:id` ???? **orderNo**??? URL ????
+ * 订单详情页：路由参数 `id` 实际为 **orderNo**（URL 编码）。
  *
- * ???? `useOrderDetail` ? `voyage.orders.getByOrderNo`??????????? `voyageSdk` ?????
+ * 使用 `useOrderDetail` 与 `voyage.orders.getByOrderNo`；类型见 `voyageSdk` 生成 schema。
  */
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { voyage } from '../../openapi/voyageSdk'
-import { useDictItems, useOrderDetail } from '../../hooks/apiHooks'
+import { useDictItems, useOrderDetail, useReorderToCart } from '../../hooks/apiHooks'
 import { useDictLabel, useI18n } from '../../i18n/I18nProvider'
 import { toErrorMessage } from '../../lib/http/error'
+import { resolveMediaUrl } from '../../lib/media/resolveMediaUrl'
 import './OrderDetail.scss'
 
 export function OrderDetail() {
@@ -17,6 +18,8 @@ export function OrderDetail() {
   const orderNo = rawId ? decodeURIComponent(rawId) : undefined
   const { data: order, isLoading, refetch } = useOrderDetail(orderNo)
   const { data: orderStatusItems = [] } = useDictItems('ORDER_STATUS')
+  const reorderMut = useReorderToCart()
+  const navigate = useNavigate()
   const [msg, setMsg] = useState<string | null>(null)
 
   const labelForStatus = (code: string) =>
@@ -49,6 +52,17 @@ export function OrderDetail() {
       setMsg(t('order.msgAfterSale'))
     } catch (err) {
       setMsg(toErrorMessage(err, t('order.failAfterSale')))
+    }
+  }
+
+  const onReorderToCart = async () => {
+    if (!order) return
+    try {
+      setMsg(null)
+      await reorderMut.mutateAsync(order.orderNo)
+      navigate('/cart')
+    } catch (err) {
+      setMsg(toErrorMessage(err, t('order.reorderFail')))
     }
   }
 
@@ -93,9 +107,52 @@ export function OrderDetail() {
         <div className="order__status">
           <span className={`order__badge order__badge--${order.status}`}>{statusText}</span>
           <span className="order__meta">
-            {order.currency} {Number(order.totalAmount).toFixed(2)} {t('common.total')}
+            {t('order.payment')}: {order.paymentStatus} · {order.currency}{' '}
+            {Number(order.totalAmount).toFixed(2)} {t('common.total')}
           </span>
         </div>
+        <section className="order__card">
+          <h2 className="order__card-title">{t('checkout.summaryTitle')}</h2>
+          <dl className="order__dl">
+            <div>
+              <dt>{t('order.goodsSubtotal')}</dt>
+              <dd>
+                {order.currency} {Number(order.subtotalAmount).toFixed(2)}
+              </dd>
+            </div>
+            {Number(order.discountMember) > 0 && (
+              <div>
+                <dt>{t('order.discMember')}</dt>
+                <dd>
+                  −{order.currency} {Number(order.discountMember).toFixed(2)}
+                </dd>
+              </div>
+            )}
+            {Number(order.discountPromo) > 0 && (
+              <div>
+                <dt>{t('order.discPromo')}</dt>
+                <dd>
+                  −{order.currency} {Number(order.discountPromo).toFixed(2)}
+                </dd>
+              </div>
+            )}
+            {Number(order.discountCoupon) > 0 && (
+              <div>
+                <dt>{t('order.discCoupon')}</dt>
+                <dd>
+                  −{order.currency} {Number(order.discountCoupon).toFixed(2)}
+                  {order.couponCodeSnapshot ? ` (${order.couponCodeSnapshot})` : ''}
+                </dd>
+              </div>
+            )}
+            <div>
+              <dt>{t('order.shippingLine')}</dt>
+              <dd>
+                {order.currency} {Number(order.shippingFee).toFixed(2)}
+              </dd>
+            </div>
+          </dl>
+        </section>
         {msg && <p className="order__text">{msg}</p>}
         <p className="order__text" style={{ opacity: 0.75, fontSize: 13 }}>
           {t('order.guestNoAdmin')}
@@ -106,6 +163,7 @@ export function OrderDetail() {
           <table className="order-table">
             <thead>
               <tr>
+                <th scope="col" className="order-table__col-thumb" />
                 <th scope="col">{t('order.colItem')}</th>
                 <th scope="col">{t('order.colSku')}</th>
                 <th scope="col">{t('order.colQty')}</th>
@@ -115,6 +173,20 @@ export function OrderDetail() {
             <tbody>
               {order.items.map((line) => (
                 <tr key={`${line.productId}-${line.titleSnapshot}`}>
+                  <td>
+                    {line.thumbUrl ? (
+                      <img
+                        src={resolveMediaUrl(line.thumbUrl)}
+                        alt=""
+                        width={48}
+                        height={48}
+                        style={{ objectFit: 'cover', borderRadius: 4 }}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span style={{ opacity: 0.35 }}>—</span>
+                    )}
+                  </td>
                   <td>{line.titleSnapshot}</td>
                   <td>{line.productId}</td>
                   <td>{line.quantity}</td>
@@ -158,6 +230,12 @@ export function OrderDetail() {
           <p className="order__text order__address">
             {order.addressLine}
             <br />
+            {[order.receiverCity, order.receiverProvince].filter(Boolean).length > 0 ? (
+              <>
+                {[order.receiverCity, order.receiverProvince].filter(Boolean).join(', ')}
+                <br />
+              </>
+            ) : null}
             {order.postalCode ?? ''}
             <br />
             {order.country}
@@ -178,6 +256,14 @@ export function OrderDetail() {
           </button>
           <button type="button" className="btn btn--ghost" onClick={onCreateAfterSale}>
             {t('order.afterSale')}
+          </button>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            disabled={reorderMut.isPending}
+            onClick={() => void onReorderToCart()}
+          >
+            {t('order.reorderToCart')}
           </button>
           <Link to="/catalog" className="btn btn--primary">
             {t('common.continueShopping')}

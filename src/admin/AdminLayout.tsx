@@ -5,10 +5,14 @@
 import { Space, Typography } from 'antd'
 import {
   AppstoreOutlined,
+  BarChartOutlined,
   BookOutlined,
   ClusterOutlined,
+  CrownOutlined,
   FileSearchOutlined,
   GlobalOutlined,
+  GiftOutlined,
+  IdcardOutlined,
   LogoutOutlined,
   ShoppingCartOutlined,
   ShoppingOutlined,
@@ -31,11 +35,15 @@ export function AdminLayout() {
   const { data: me } = useMe(true)
 
   const menuRoutes = [
+    { path: '/admin/stats', name: t('admin.menu.stats'), icon: <BarChartOutlined /> },
     { path: '/admin/orders', name: t('admin.menu.orders'), icon: <ShoppingCartOutlined /> },
+    { path: '/admin/customers', name: t('admin.menu.customers'), icon: <IdcardOutlined /> },
     { path: '/admin/products', name: t('admin.menu.products'), icon: <ShoppingOutlined /> },
     { path: '/admin/after-sales', name: t('admin.menu.afterSales'), icon: <TeamOutlined /> },
     { path: '/admin/categories', name: t('admin.menu.categories'), icon: <ClusterOutlined /> },
     { path: '/admin/tags', name: t('admin.menu.tags'), icon: <TagsOutlined /> },
+    { path: '/admin/marketing', name: t('admin.menu.marketing'), icon: <GiftOutlined /> },
+    { path: '/admin/membership-rules', name: t('admin.menu.membershipRules'), icon: <CrownOutlined /> },
     { path: '/admin/shipping', name: t('admin.menu.shipping'), icon: <AppstoreOutlined /> },
     { path: '/admin/dicts', name: t('admin.menu.dicts'), icon: <BookOutlined /> },
     { path: '/admin/site-contents', name: t('admin.menu.siteContents'), icon: <FileSearchOutlined /> },

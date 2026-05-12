@@ -1,9 +1,13 @@
 /**
  * 管理后台商品列表：分页、筛选、CSV 导入导出与快捷新建。
+ *
+ * 交互说明：
+ * - 缩略图列、标题列：点击后展开/收起当前行详情（非 Dialog），与左侧勾选框无强绑定。
+ * - 展开区底部可跳转前台商品页（新标签页），便于运营核对 C 端展示。
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type Key, type MouseEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { App, Button, Descriptions, Input, Popconfirm, Popover, Select, Space, Switch, Table, Tag, Typography, Upload } from 'antd'
+import { App, Button, Descriptions, Input, Popconfirm, Select, Space, Switch, Table, Tag, Typography, Upload } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { Link, useNavigate } from 'react-router-dom'
@@ -27,7 +31,7 @@ import {
   rowCellsToRecord,
 } from '../../lib/productCsv'
 
-/** 展开行内默认预览的图片张数 */
+/** 展开行内默认预览的图片张数（超出后出现「展开更多」）。 */
 const EXPAND_IMAGE_PREVIEW_COUNT = 6
 
 function formatMoneyAmount(v: number | null | undefined): string {
@@ -35,7 +39,21 @@ function formatMoneyAmount(v: number | null | undefined): string {
   return Number(v).toFixed(2)
 }
 
-function ProductExpandContent({ product, leadWithImages = false }: { product: ProductDto; leadWithImages?: boolean }) {
+/**
+ * 商品列表「行下展开」区域：展示字段摘要、图集与描述。
+ *
+ * @param leadWithImages 为 true 时先图后文（历史 Popover 预览布局）；列表行展开为 false（先摘要后图）。
+ * @param showStorefrontLink 为 true 时在底部追加「前台商品页」按钮（新标签页打开，避免离开后台路由栈）。
+ */
+function ProductExpandContent({
+  product,
+  leadWithImages = false,
+  showStorefrontLink = false,
+}: {
+  product: ProductDto
+  leadWithImages?: boolean
+  showStorefrontLink?: boolean
+}) {
   const { t } = useI18n()
   const [showAllImages, setShowAllImages] = useState(false)
   const imgs = product.images ?? []
@@ -175,6 +193,14 @@ function ProductExpandContent({ product, leadWithImages = false }: { product: Pr
       </Typography.Paragraph>
     ) : null
 
+  const storefrontFooter = showStorefrontLink ? (
+    <div style={{ marginTop: 12 }}>
+      <Button type="primary" href={`/products/${product.id}`} target="_blank" rel="noreferrer">
+        {t('admin.productsList.viewStorefront')}
+      </Button>
+    </div>
+  ) : null
+
   return (
     <div style={{ padding: leadWithImages ? 0 : '4px 0 12px', maxWidth: leadWithImages ? 480 : 960 }}>
       {leadWithImages ? (
@@ -190,6 +216,7 @@ function ProductExpandContent({ product, leadWithImages = false }: { product: Pr
           {descriptionBlock}
         </>
       )}
+      {storefrontFooter}
     </div>
   )
 }
@@ -213,6 +240,8 @@ export function AdminProductListPage() {
   const [importSummary, setImportSummary] = useState<{ ok: number; total: number } | null>(null)
   const [editProductId, setEditProductId] = useState<number | null>(null)
   const [switchBusyId, setSwitchBusyId] = useState<number | null>(null)
+  /** 当前展开详情的行（商品 ID）；与 ProTable `expandable.expandedRowKeys` 同步。 */
+  const [expandedRowKeys, setExpandedRowKeys] = useState<Key[]>([])
   const bulkStatusMut = useAdminBulkProductStatus()
 
   useEffect(() => {
@@ -256,6 +285,16 @@ export function AdminProductListPage() {
   const rows = data?.items ?? []
   const total = data?.total ?? 0
 
+  /**
+   * 展开/收起指定商品行。
+   * 需在交互元素上 `stopPropagation`，避免与行级「点选切换勾选」逻辑冲突。
+   */
+  const toggleRowExpanded = (productId: number, e?: MouseEvent) => {
+    e?.stopPropagation()
+    const key = productId as Key
+    setExpandedRowKeys((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]))
+  }
+
   const setProductActive = async (id: number, isActive: boolean) => {
     setSwitchBusyId(id)
     try {
@@ -278,40 +317,55 @@ export function AdminProductListPage() {
       render: (_, r) => {
         const src = productThumbUrl(r)
         return (
-          <Popover
-            placement="top"
-            trigger="click"
-            destroyOnHidden
-            arrow={{ pointAtCenter: true }}
-            styles={{
-              body: {
-                maxWidth: 520,
-                maxHeight: 'min(72vh, 620px)',
-                overflowY: 'auto',
-                padding: 12,
-              },
-            }}
-            content={<ProductExpandContent product={r} leadWithImages />}
+          <Button
+            type="text"
+            aria-label={t('admin.productsList.thumbPreviewAria')}
+            onClick={(e) => toggleRowExpanded(r.id, e)}
+            style={{ height: 'auto', padding: 0 }}
           >
-            <Button
-              type="text"
-              aria-label={t('admin.productsList.thumbPreviewAria')}
-              onClick={(e) => e.stopPropagation()}
-              style={{ height: 'auto', padding: 0 }}
-            >
-              {src ? (
-                <img src={src} alt="" width={48} height={48} style={{ objectFit: 'cover', borderRadius: 4, display: 'block' }} />
-              ) : (
-                <Typography.Text type="secondary" style={{ display: 'flex', width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: '1px solid #f0f0f0', background: '#fafafa' }}>
-                  —
-                </Typography.Text>
-              )}
-            </Button>
-          </Popover>
+            {src ? (
+              <img src={src} alt="" width={48} height={48} style={{ objectFit: 'cover', borderRadius: 4, display: 'block' }} />
+            ) : (
+              <Typography.Text
+                type="secondary"
+                style={{
+                  display: 'flex',
+                  width: 48,
+                  height: 48,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 4,
+                  border: '1px solid #f0f0f0',
+                  background: '#fafafa',
+                }}
+              >
+                —
+              </Typography.Text>
+            )}
+          </Button>
         )
       },
     },
-    { title: t('admin.productsList.colTitle'), dataIndex: 'title', ellipsis: true },
+    {
+      title: t('admin.productsList.colTitle'),
+      dataIndex: 'title',
+      ellipsis: true,
+      render: (_, r) => (
+        <Button
+          type="link"
+          onClick={(e) => toggleRowExpanded(r.id, e)}
+          style={{
+            padding: 0,
+            height: 'auto',
+            whiteSpace: 'normal',
+            textAlign: 'left',
+            fontWeight: 500,
+          }}
+        >
+          {r.title}
+        </Button>
+      ),
+    },
     { title: t('admin.productsList.colSku'), dataIndex: 'skuCode', width: 120, render: (v) => v ?? '?' },
     {
       title: t('admin.productsList.colPrice'),
@@ -593,6 +647,11 @@ export function AdminProductListPage() {
         tableAlertRender={false}
         columns={columns}
         dataSource={rows}
+        expandable={{
+          expandedRowRender: (record) => <ProductExpandContent product={record} showStorefrontLink />,
+          expandedRowKeys,
+          onExpandedRowsChange: setExpandedRowKeys,
+        }}
         rowSelection={{
           selectedRowKeys: selectedIds,
           onChange: (keys) => setSelectedIds(keys.map((x) => Number(x))),

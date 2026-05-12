@@ -106,6 +106,7 @@ export function AdminProductEditModal({ productId, onClose }: Props) {
           initialValues={{ currency: 'USD', moq: 1, isActive: true, images: [], tagIds: [] }}
         >
           <AdminProductUpsertFields
+            productId={productId ?? undefined}
             categories={categories}
             shippingTemplates={shippingTemplates}
             tags={tagList.map((tg) => ({ id: tg.id, name: tg.name, code: tg.code, isActive: tg.isActive }))}

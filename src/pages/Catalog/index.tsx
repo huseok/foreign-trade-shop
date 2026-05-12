@@ -1,3 +1,10 @@
+/**
+ * 前台商品目录页：`/catalog` 与 `/catalog/:categoryId`。
+ *
+ * - 左侧筛选：类目、标签、原产国（沿用既有 URL 参数）、关键词搜索、**主档售价区间**（Min/Max 表单提交后写入 URL）。
+ * - 右侧列表：`useStorefrontProducts` 将 URL 状态映射到 `GET /api/v1/products`（含 `minPrice`/`maxPrice`/`promo`）。
+ * - 样式：搜索区仅做宽度与布局微调，不改变全站主题变量（见 `Catalog.scss`）。
+ */
 import { Pagination } from 'antd'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ProductCard } from '../../components/ProductCard'
@@ -6,6 +13,16 @@ import { useI18n } from '../../i18n/I18nProvider'
 import { i18nTpl } from '../../lib/i18nTpl'
 import { storefrontCatalogHref } from '../../lib/catalogUrls'
 import './Catalog.scss'
+
+/**
+ * 将地址栏中的价格查询串解析为非负有限数；非法或缺失时返回 `undefined` 表示「不参与筛选」。
+ */
+function parsePriceParam(raw: string | null): number | undefined {
+  if (raw == null || raw.trim() === '') return undefined
+  const n = Number(raw)
+  if (!Number.isFinite(n) || n < 0) return undefined
+  return n
+}
 
 export function Catalog() {
   const { t } = useI18n()
@@ -20,6 +37,9 @@ export function Catalog() {
   const tagParam = params.get('tagId') ?? ''
   const tagNum =
     tagParam !== '' && /^\d+$/.test(tagParam) ? Number(tagParam) : undefined
+  const minPrice = parsePriceParam(params.get('minPrice'))
+  const maxPrice = parsePriceParam(params.get('maxPrice'))
+  const promoOnly = params.get('promo') === 'true'
 
   const { data: categories = [] } = useCategories()
   const { data: storefrontTags = [] } = useStorefrontTags()
@@ -33,6 +53,9 @@ export function Catalog() {
     q: q || undefined,
     categoryId: categoryNum,
     tagId: tagNum,
+    minPrice,
+    maxPrice,
+    promo: promoOnly ? true : undefined,
   })
 
   const items = data?.items ?? []
@@ -48,16 +71,26 @@ export function Catalog() {
     setParams(next, { replace: true })
   }
 
+  const filterBase = {
+    country: country || undefined,
+    q,
+    tagId: tagNum,
+    minPrice,
+    maxPrice,
+    promo: promoOnly ? true : undefined,
+  }
+
   let countLine = i18nTpl(t('catalog.showing'), { n: String(items.length), total: String(total) })
   if (country) countLine += i18nTpl(t('catalog.countrySuffix'), { c: country })
   if (q) countLine += i18nTpl(t('catalog.querySuffix'), { q })
   if (categoryName) countLine += i18nTpl(t('catalog.categorySuffix'), { name: categoryName })
   if (tagName) countLine += i18nTpl(t('catalog.tagSuffix'), { name: tagName })
-
-  const filterBase = {
-    country: country || undefined,
-    q,
-    tagId: tagNum,
+  if (promoOnly) countLine += t('catalog.promoSuffix')
+  if (minPrice != null || maxPrice != null) {
+    countLine += i18nTpl(t('catalog.priceRangeSuffix'), {
+      min: minPrice != null ? String(minPrice) : '—',
+      max: maxPrice != null ? String(maxPrice) : '—',
+    })
   }
 
   return (
@@ -96,7 +129,7 @@ export function Catalog() {
             <ul className="catalog__filter-list">
               <li>
                 <Link
-                  to={storefrontCatalogHref({ categoryId: categoryNum, country: country || undefined, q })}
+                  to={storefrontCatalogHref({ ...filterBase, categoryId: categoryNum, tagId: null })}
                   className={tagNum == null ? 'catalog__filter is-active' : 'catalog__filter'}
                 >
                   {t('catalog.allTags')}
@@ -143,7 +176,7 @@ export function Catalog() {
             </ul>
             <h2 className="catalog__filters-title">{t('catalog.filtersSearch')}</h2>
             <form
-              key={`${country}-${page1}-${size}-${q}-${categoryNum ?? ''}-${tagNum ?? ''}`}
+              key={`${country}-${page1}-${size}-${q}-${categoryNum ?? ''}-${tagNum ?? ''}-${minPrice ?? ''}-${maxPrice ?? ''}`}
               className="catalog__search"
               onSubmit={(e) => {
                 e.preventDefault()
@@ -157,20 +190,84 @@ export function Catalog() {
               }}
             >
               <input
-                className="input"
+                className="input catalog__search-input"
                 name="q"
                 defaultValue={q}
                 placeholder={t('catalog.searchSkuPlaceholder')}
               />
-              <button type="submit" className="btn btn--primary" style={{ marginTop: 8 }}>
+              <button type="submit" className="btn btn--primary catalog__search-submit">
                 {t('common.search')}
               </button>
             </form>
             <h2 className="catalog__filters-title">{t('catalog.filtersPrice')}</h2>
-            <div className="catalog__range">
-              <input type="range" min="0" max="100" defaultValue="50" disabled />
-              <span className="catalog__range-hint">{t('catalog.priceHint')}</span>
-            </div>
+            <form
+              className="catalog__price-form"
+              onSubmit={(e) => {
+                e.preventDefault()
+                const fd = new FormData(e.currentTarget)
+                const minV = String(fd.get('minPrice') ?? '').trim()
+                const maxV = String(fd.get('maxPrice') ?? '').trim()
+                const next = new URLSearchParams(params)
+                const minN = minV === '' ? undefined : Number(minV)
+                const maxN = maxV === '' ? undefined : Number(maxV)
+                if (minN !== undefined && (!Number.isFinite(minN) || minN < 0)) {
+                  return
+                }
+                if (maxN !== undefined && (!Number.isFinite(maxN) || maxN < 0)) {
+                  return
+                }
+                if (minN !== undefined && maxN !== undefined && minN > maxN) {
+                  return
+                }
+                if (minN !== undefined) next.set('minPrice', String(minN))
+                else next.delete('minPrice')
+                if (maxN !== undefined) next.set('maxPrice', String(maxN))
+                else next.delete('maxPrice')
+                next.delete('page')
+                setParams(next, { replace: true })
+              }}
+            >
+              <div className="catalog__price-row">
+                <label className="catalog__price-label">
+                  <span className="catalog__price-label-text">Min</span>
+                  <input
+                    className="input"
+                    name="minPrice"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    defaultValue={minPrice != null ? String(minPrice) : ''}
+                    placeholder={t('catalog.priceMinPlaceholder')}
+                  />
+                </label>
+                <label className="catalog__price-label">
+                  <span className="catalog__price-label-text">Max</span>
+                  <input
+                    className="input"
+                    name="maxPrice"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    defaultValue={maxPrice != null ? String(maxPrice) : ''}
+                    placeholder={t('catalog.priceMaxPlaceholder')}
+                  />
+                </label>
+              </div>
+              <div className="catalog__price-actions">
+                <button type="submit" className="btn btn--primary">
+                  {t('catalog.priceApply')}
+                </button>
+                {(minPrice != null || maxPrice != null) && (
+                  <Link
+                    to={storefrontCatalogHref({ ...filterBase, minPrice: null, maxPrice: null })}
+                    className="catalog__price-clear"
+                  >
+                    {t('catalog.priceClear')}
+                  </Link>
+                )}
+              </div>
+              <p className="catalog__range-hint">{t('catalog.priceHint')}</p>
+            </form>
           </aside>
 
           <div className="catalog__main">

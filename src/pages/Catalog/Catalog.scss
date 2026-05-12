@@ -1,3 +1,7 @@
+/**
+ * 商品目录页样式：侧栏筛选 + 主区网格。
+ * 搜索与价格区仅调整布局宽度，不修改全局色板与字体体系。
+ */
 .catalog {
   &__layout {
     display: grid;
@@ -64,6 +68,67 @@
     }
   }
 
+  &__search {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__search-input {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  &__search-submit {
+    width: 100%;
+    margin-top: 0;
+  }
+
+  &__price-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__price-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__price-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    color: var(--text);
+  }
+
+  &__price-label-text {
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  &__price-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__price-clear {
+    font-size: 0.875rem;
+    color: var(--primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
   &__range {
     display: flex;
     flex-direction: column;
@@ -77,6 +142,7 @@
     &-hint {
       font-size: 0.75rem;
       color: var(--muted);
+      margin: 0;
     }
   }
 

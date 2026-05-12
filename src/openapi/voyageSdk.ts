@@ -40,6 +40,10 @@ export const voyage = {
 
   /** 商品列表/详情；admin* 需 ADMIN */
   products: {
+    /**
+     * 前台分页商品列表（匿名可访问）。
+     * Query 与后端 `ProductController.list` 对齐；新增筛选条件时需同步 Kotlin 与本文本序列化。
+     */
     listPaged(params: {
       page?: number
       size?: number
@@ -48,6 +52,8 @@ export const voyage = {
       categoryId?: number
       tagId?: number
       promo?: boolean
+      minPrice?: number
+      maxPrice?: number
     }): Promise<S['PagedProducts']> {
       const sp = new URLSearchParams()
       if (params.page != null) sp.set('page', String(params.page))
@@ -57,6 +63,13 @@ export const voyage = {
       if (params.categoryId != null) sp.set('categoryId', String(params.categoryId))
       if (params.tagId != null) sp.set('tagId', String(params.tagId))
       if (params.promo === true) sp.set('promo', 'true')
+      /** 价格区间：0 为合法下限，故用 `>= 0` 与 `Number.isFinite` 双重校验。 */
+      if (params.minPrice != null && Number.isFinite(params.minPrice) && params.minPrice >= 0) {
+        sp.set('minPrice', String(params.minPrice))
+      }
+      if (params.maxPrice != null && Number.isFinite(params.maxPrice) && params.maxPrice >= 0) {
+        sp.set('maxPrice', String(params.maxPrice))
+      }
       const qs = sp.toString()
       return getData<S['PagedProducts']>(`/api/v1/products${qs ? `?${qs}` : ''}`)
     },
@@ -151,6 +164,18 @@ export const voyage = {
     },
     removeItem(itemId: number): Promise<string> {
       return deleteData<string>(`/api/v1/cart/items/${itemId}`)
+    },
+    updateSelection(body: S['UpdateCartSelectionRequest']): Promise<string> {
+      return patchData<string>('/api/v1/cart/selection', body)
+    },
+    bulkDelete(body: S['BulkDeleteCartRequest']): Promise<string> {
+      return postData<string>('/api/v1/cart/bulk-delete', body)
+    },
+    clear(): Promise<string> {
+      return deleteData<string>('/api/v1/cart/clear')
+    },
+    reorderFromOrder(body: S['ReorderToCartRequest']): Promise<string> {
+      return postData<string>('/api/v1/cart/reorder-from-order', body)
     },
   },
 
@@ -255,6 +280,68 @@ export const voyage = {
     },
     adminDelete(id: number): Promise<string> {
       return deleteData<string>(`/api/v1/admin/tags/${id}`)
+    },
+  },
+
+  /** 优惠券与满减活动（后台维护；结账试算见订单服务） */
+  marketing: {
+    adminListCoupons(): Promise<S['CouponAdminView'][]> {
+      return getData<S['CouponAdminView'][]>('/api/v1/admin/coupons')
+    },
+    adminCreateCoupon(body: S['CouponAdminUpsertRequest']): Promise<S['IdPayload']> {
+      return postData<S['IdPayload']>('/api/v1/admin/coupons', body)
+    },
+    adminUpdateCoupon(id: number, body: S['CouponAdminUpsertRequest']): Promise<string> {
+      return putData<string>(`/api/v1/admin/coupons/${id}`, body)
+    },
+    adminPatchCouponActive(id: number, body: S['CouponActivePatchRequest']): Promise<string> {
+      return patchData<string>(`/api/v1/admin/coupons/${id}/active`, body)
+    },
+    adminListPromotions(): Promise<S['PromotionAdminView'][]> {
+      return getData<S['PromotionAdminView'][]>('/api/v1/admin/promotions')
+    },
+    adminCreatePromotion(body: S['PromotionAdminUpsertRequest']): Promise<S['IdPayload']> {
+      return postData<S['IdPayload']>('/api/v1/admin/promotions', body)
+    },
+    adminUpdatePromotion(id: number, body: S['PromotionAdminUpsertRequest']): Promise<string> {
+      return putData<string>(`/api/v1/admin/promotions/${id}`, body)
+    },
+    adminPatchPromotionActive(id: number, body: S['PromotionActivePatchRequest']): Promise<string> {
+      return patchData<string>(`/api/v1/admin/promotions/${id}/active`, body)
+    },
+  },
+
+  /** 注册用户（客户）分页；含会员档位与累计消费 */
+  customers: {
+    adminListPaged(params: { page?: number; size?: number; q?: string }): Promise<S['PagedCustomers']> {
+      const sp = new URLSearchParams()
+      if (params.page != null) sp.set('page', String(params.page))
+      if (params.size != null) sp.set('size', String(params.size))
+      if (params.q != null && params.q !== '') sp.set('q', params.q)
+      const qs = sp.toString()
+      return getData<S['PagedCustomers']>(`/api/v1/admin/customers${qs ? `?${qs}` : ''}`)
+    },
+  },
+
+  /** 会员档位规则（门槛金额 + 折扣%），驱动结账会员立减与累计升级 */
+  membership: {
+    adminListTierRules(): Promise<S['MembershipTierRuleAdminView'][]> {
+      return getData<S['MembershipTierRuleAdminView'][]>('/api/v1/admin/membership/tier-rules')
+    },
+    adminCreateTierRule(body: S['MembershipTierRuleUpsertRequest']): Promise<S['IdPayload']> {
+      return postData<S['IdPayload']>('/api/v1/admin/membership/tier-rules', body)
+    },
+    adminUpdateTierRule(id: number, body: S['MembershipTierRuleUpsertRequest']): Promise<string> {
+      return putData<string>(`/api/v1/admin/membership/tier-rules/${id}`, body)
+    },
+    adminPatchTierRuleActive(id: number, body: S['MembershipTierRuleActivePatchRequest']): Promise<string> {
+      return patchData<string>(`/api/v1/admin/membership/tier-rules/${id}/active`, body)
+    },
+  },
+
+  stats: {
+    adminSummary(): Promise<S['AdminStatsSummaryView']> {
+      return getData<S['AdminStatsSummaryView']>('/api/v1/admin/stats/summary')
     },
   },
 
@@ -399,28 +486,20 @@ export const voyage = {
     },
   },
   userCenter: {
-    listAddresses(): Promise<
-      Array<{
-        id: number
-        receiverName: string
-        receiverPhone: string
-        country: string
-        addressLine: string
-        postalCode?: string
-        isDefault: boolean
-      }>
-    > {
+    listAddresses(): Promise<S['UserAddressView'][]> {
       return getData('/api/v1/user/addresses')
     },
-    createAddress(body: {
-      receiverName: string
-      receiverPhone: string
-      country: string
-      addressLine: string
-      postalCode?: string
-      isDefault?: boolean
-    }): Promise<{ id: number }> {
+    createAddress(body: S['UserAddressCreateRequest']): Promise<{ id: number }> {
       return postData('/api/v1/user/addresses', body)
+    },
+    updateAddress(id: number, body: S['UserAddressUpdateRequest']): Promise<string> {
+      return putData<string>(`/api/v1/user/addresses/${id}`, body)
+    },
+    deleteAddress(id: number): Promise<string> {
+      return deleteData<string>(`/api/v1/user/addresses/${id}`)
+    },
+    setDefaultAddress(id: number): Promise<string> {
+      return patchData<string>(`/api/v1/user/addresses/${id}/default`)
     },
     listBrowseHistories(): Promise<Array<{ id: number; productId: number; viewedAt: string }>> {
       return getData('/api/v1/user/browse-histories')

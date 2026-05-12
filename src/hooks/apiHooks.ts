@@ -18,6 +18,10 @@ import type {
 
 export type AddCartItemPayload = components['schemas']['AddCartItemRequest']
 export type UpdateCartItemPayload = components['schemas']['UpdateCartItemRequest']
+export type UpdateCartSelectionPayload = components['schemas']['UpdateCartSelectionRequest']
+export type BulkDeleteCartPayload = components['schemas']['BulkDeleteCartRequest']
+export type UserAddressCreatePayload = components['schemas']['UserAddressCreateRequest']
+export type UserAddressUpdatePayload = components['schemas']['UserAddressUpdateRequest']
 
 /** React Query 缓存键；修改结构时需全局搜索引用处 */
 export const queryKeys = {
@@ -32,6 +36,11 @@ export const queryKeys = {
   adminAfterSales: ['admin', 'after-sales'] as const,
   categories: ['categories'] as const,
   adminTags: ['admin', 'tags'] as const,
+  adminCoupons: ['admin', 'coupons'] as const,
+  adminPromotions: ['admin', 'promotions'] as const,
+  adminCustomers: ['admin', 'customers'] as const,
+  adminMembershipTierRules: ['admin', 'membership', 'tier-rules'] as const,
+  adminStatsSummary: ['admin', 'stats', 'summary'] as const,
   shippingTemplates: ['shipping', 'templates'] as const,
   dictTypes: ['dicts', 'types'] as const,
   dictItems: (dictCode: string) => ['dicts', 'items', dictCode] as const,
@@ -69,8 +78,12 @@ export type StorefrontProductsParams = {
   q?: string
   categoryId?: number
   tagId?: number
-  /** true：仅活动商品（划线价高于售价） */
+  /** 为 true 时请求 `promo=true`，仅返回划线价高于主档价的商品。 */
   promo?: boolean
+  /** 主档售价下限（含），映射到 Query `minPrice`；后端按 [ProductEntity.price] 过滤。 */
+  minPrice?: number
+  /** 主档售价上限（含），映射到 Query `maxPrice`。 */
+  maxPrice?: number
 }
 
 /** 前台启用标签（目录筛选，匿名可访问） */
@@ -90,7 +103,7 @@ export function useStorefrontSettings() {
   })
 }
 
-/** 前台商品分页列表（仅上架） */
+/** 前台商品分页列表（仅上架）；`queryKey` 须覆盖所有筛选维度以免缓存串单。 */
 export function useStorefrontProducts(params: StorefrontProductsParams, enabled = true) {
   return useQuery({
     queryKey: [
@@ -103,6 +116,8 @@ export function useStorefrontProducts(params: StorefrontProductsParams, enabled 
       params.categoryId ?? '',
       params.tagId ?? '',
       params.promo === true ? '1' : '',
+      params.minPrice ?? '',
+      params.maxPrice ?? '',
     ] as const,
     queryFn: () => voyage.products.listPaged(params),
     enabled,
@@ -248,6 +263,36 @@ export function useRemoveCartItem() {
   const qc = useQueryClient()
   return useGuardedMutation({
     mutationFn: (itemId: number) => voyage.cart.removeItem(itemId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.cart })
+    },
+  })
+}
+
+export function useUpdateCartSelection() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: UpdateCartSelectionPayload) => voyage.cart.updateSelection(payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.cart })
+    },
+  })
+}
+
+export function useBulkDeleteCartItems() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: BulkDeleteCartPayload) => voyage.cart.bulkDelete(payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.cart })
+    },
+  })
+}
+
+export function useClearCart() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: () => voyage.cart.clear(),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.cart })
     },
@@ -488,6 +533,130 @@ export function useAdminDeleteTag() {
   })
 }
 
+export function useAdminCoupons(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.adminCoupons,
+    queryFn: () => voyage.marketing.adminListCoupons(),
+    enabled: options?.enabled ?? true,
+  })
+}
+
+export function useAdminPromotions(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.adminPromotions,
+    queryFn: () => voyage.marketing.adminListPromotions(),
+    enabled: options?.enabled ?? true,
+  })
+}
+
+export function useAdminCreateCoupon() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (body: components['schemas']['CouponAdminUpsertRequest']) => voyage.marketing.adminCreateCoupon(body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminCoupons }),
+  })
+}
+
+export function useAdminUpdateCoupon() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { id: number; body: components['schemas']['CouponAdminUpsertRequest'] }) =>
+      voyage.marketing.adminUpdateCoupon(payload.id, payload.body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminCoupons }),
+  })
+}
+
+export function useAdminPatchCouponActive() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { id: number; isActive: boolean }) =>
+      voyage.marketing.adminPatchCouponActive(payload.id, { isActive: payload.isActive }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminCoupons }),
+  })
+}
+
+export function useAdminCreatePromotion() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (body: components['schemas']['PromotionAdminUpsertRequest']) =>
+      voyage.marketing.adminCreatePromotion(body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminPromotions }),
+  })
+}
+
+export function useAdminUpdatePromotion() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { id: number; body: components['schemas']['PromotionAdminUpsertRequest'] }) =>
+      voyage.marketing.adminUpdatePromotion(payload.id, payload.body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminPromotions }),
+  })
+}
+
+export function useAdminPatchPromotionActive() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { id: number; isActive: boolean }) =>
+      voyage.marketing.adminPatchPromotionActive(payload.id, { isActive: payload.isActive }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminPromotions }),
+  })
+}
+
+export type AdminCustomersListParams = {
+  page: number
+  size: number
+  q?: string
+}
+
+export function useAdminCustomersPage(params: AdminCustomersListParams) {
+  return useQuery({
+    queryKey: [...queryKeys.adminCustomers, params.page, params.size, params.q ?? ''] as const,
+    queryFn: () => voyage.customers.adminListPaged(params),
+  })
+}
+
+export function useAdminMembershipTierRules(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.adminMembershipTierRules,
+    queryFn: () => voyage.membership.adminListTierRules(),
+    enabled: options?.enabled ?? true,
+  })
+}
+
+export function useAdminCreateMembershipTierRule() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (body: components['schemas']['MembershipTierRuleUpsertRequest']) => voyage.membership.adminCreateTierRule(body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminMembershipTierRules }),
+  })
+}
+
+export function useAdminUpdateMembershipTierRule() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { id: number; body: components['schemas']['MembershipTierRuleUpsertRequest'] }) =>
+      voyage.membership.adminUpdateTierRule(payload.id, payload.body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminMembershipTierRules }),
+  })
+}
+
+export function useAdminPatchMembershipTierRuleActive() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { id: number; isActive: boolean }) =>
+      voyage.membership.adminPatchTierRuleActive(payload.id, { isActive: payload.isActive }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminMembershipTierRules }),
+  })
+}
+
+export function useAdminStatsSummary(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.adminStatsSummary,
+    queryFn: () => voyage.stats.adminSummary(),
+    enabled: options?.enabled ?? true,
+  })
+}
+
 export function useShippingTemplates() {
   return useQuery({
     queryKey: queryKeys.shippingTemplates,
@@ -511,7 +680,12 @@ export function useAdminCreateShippingTemplate() {
   })
 }
 
+/**
+ * 新增运费规则：成功后按模板 ID 精确失效 `useShippingTemplateRules` 的缓存，
+ * 解决「提交成功但下方规则表仍为空」的竞态（选中模板状态与查询键不一致）。
+ */
 export function useAdminCreateShippingRule() {
+  const qc = useQueryClient()
   return useGuardedMutation({
     mutationFn: (payload: {
       templateId: number
@@ -530,12 +704,22 @@ export function useAdminCreateShippingRule() {
         regionCode: payload.regionCode,
         sortNo: payload.sortNo,
       }),
+    onSuccess: (_d, variables) => {
+      void qc.invalidateQueries({ queryKey: ['shipping', 'rules', variables.templateId] })
+    },
   })
 }
 
+/**
+ * 删除规则：按前缀 `['shipping','rules']` 失效所有模板规则查询，因删除接口不返回 templateId。
+ */
 export function useAdminDeleteShippingRule() {
+  const qc = useQueryClient()
   return useGuardedMutation({
     mutationFn: (ruleId: number) => voyage.shipping.adminDeleteRule(ruleId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['shipping', 'rules'] })
+    },
   })
 }
 
@@ -627,15 +811,41 @@ export function useUserAddresses(enabled = true) {
 export function useCreateUserAddress() {
   const qc = useQueryClient()
   return useGuardedMutation({
-    mutationFn: (payload: {
-      receiverName: string
-      receiverPhone: string
-      country: string
-      addressLine: string
-      postalCode?: string
-      isDefault?: boolean
-    }) => voyage.userCenter.createAddress(payload),
+    mutationFn: (payload: UserAddressCreatePayload) => voyage.userCenter.createAddress(payload),
     onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.userAddresses }),
+  })
+}
+
+export function useUpdateUserAddress() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: UserAddressUpdatePayload }) =>
+      voyage.userCenter.updateAddress(id, payload),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.userAddresses }),
+  })
+}
+
+export function useDeleteUserAddress() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (id: number) => voyage.userCenter.deleteAddress(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.userAddresses }),
+  })
+}
+
+export function useSetDefaultUserAddress() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (id: number) => voyage.userCenter.setDefaultAddress(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.userAddresses }),
+  })
+}
+
+export function useReorderToCart() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (orderNo: string) => voyage.cart.reorderFromOrder({ orderNo }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.cart }),
   })
 }
 

@@ -1,3 +1,9 @@
+/**
+ * 商城首页：区块顺序与业务需求对齐。
+ *
+ * 自上而下：首屏 Hero → 按类目购物 → 活动/促销区块 → 精选商品 → 热销（活动商品数据源）→ 联系摘要 → **站点说明（置底）**。
+ * 不再展示原「网站优势」三卡，避免与「热销」信息重复；整体仍使用 `home--boutique` 既有样式类。
+ */
 import { Link } from 'react-router-dom'
 import { ProductCard } from '../../components/ProductCard'
 import { useCategories, useStorefrontProducts } from '../../hooks/apiHooks'
@@ -10,9 +16,11 @@ import './Home.scss'
 export function Home() {
   const { t } = useI18n()
   const { data } = useStorefrontProducts({ page: 0, size: 4 })
+  const { data: hotData } = useStorefrontProducts({ page: 0, size: 4, promo: true })
   const { data: categories = [] } = useCategories()
   const featured = data?.items ?? []
-  const sampleProductId = featured[0]?.id ?? 1
+  const hotItems = (hotData?.items?.length ? hotData.items : featured).slice(0, 4)
+  const sampleProductId = featured[0]?.id ?? hotItems[0]?.id ?? 1
   const homeCats = categories.slice(0, 6)
 
   return (
@@ -28,8 +36,8 @@ export function Home() {
               <Link to="/catalog" className="btn btn--primary">
                 {t('home.ctaCatalog')}
               </Link>
-              <a href="#trust" className="btn btn--ghost">
-                {t('home.ctaTrust')}
+              <a href="#home-hot" className="btn btn--ghost">
+                {t('home.ctaHot')}
               </a>
             </div>
           </div>
@@ -40,20 +48,6 @@ export function Home() {
               <span className="home-hero__panel-card home-hero__panel-card--c" />
             </div>
           </aside>
-        </div>
-      </section>
-
-      <section className="section home-intro">
-        <div className="container">
-          <h2 className="section-title">{t('home.siteIntroTitle')}</h2>
-          <p className="page-header__desc">{t('home.siteIntroDesc')}</p>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container">
-          <HomePromoProductsSection />
-          <HomePromoSection sampleProductId={sampleProductId} />
         </div>
       </section>
 
@@ -86,6 +80,13 @@ export function Home() {
         </div>
       </section>
 
+      <section className="section">
+        <div className="container">
+          <HomePromoProductsSection />
+          <HomePromoSection sampleProductId={sampleProductId} />
+        </div>
+      </section>
+
       <section className="section home-featured">
         <div className="container">
           <div className="section-head">
@@ -102,31 +103,18 @@ export function Home() {
         </div>
       </section>
 
-      <section id="trust" className="home-trust section">
+      <section id="home-hot" className="section home-featured">
         <div className="container">
-          <h2 className="section-title">{t('home.trustTitle')}</h2>
-          <div className="home-trust__grid">
-            <article className="trust-card">
-              <div className="trust-card__icon" aria-hidden={true}>
-                G
-              </div>
-              <h3 className="trust-card__title">{t('home.trust1Title')}</h3>
-              <p className="trust-card__text">{t('home.trust1Text')}</p>
-            </article>
-            <article className="trust-card">
-              <div className="trust-card__icon" aria-hidden={true}>
-                S
-              </div>
-              <h3 className="trust-card__title">{t('home.trust2Title')}</h3>
-              <p className="trust-card__text">{t('home.trust2Text')}</p>
-            </article>
-            <article className="trust-card">
-              <div className="trust-card__icon" aria-hidden={true}>
-                ✓
-              </div>
-              <h3 className="trust-card__title">{t('home.trust3Title')}</h3>
-              <p className="trust-card__text">{t('home.trust3Text')}</p>
-            </article>
+          <div className="section-head">
+            <h2 className="section-title">{t('home.hotTitle')}</h2>
+            <Link to={storefrontCatalogHref({ promo: true })} className="section-head__link">
+              {t('home.featuredAll')}
+            </Link>
+          </div>
+          <div className="product-grid product-grid--boutique">
+            {hotItems.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
           </div>
         </div>
       </section>
@@ -135,6 +123,13 @@ export function Home() {
         <div className="container">
           <h2 className="section-title">{t('home.contactTitle')}</h2>
           <p className="page-header__desc">{t('home.contactLine')}</p>
+        </div>
+      </section>
+
+      <section className="section home-intro">
+        <div className="container">
+          <h2 className="section-title">{t('home.siteIntroTitle')}</h2>
+          <p className="page-header__desc">{t('home.siteIntroDesc')}</p>
         </div>
       </section>
     </div>

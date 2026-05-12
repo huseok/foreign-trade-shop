@@ -4,7 +4,15 @@
 import { useQueries } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useMemo, useEffect, useState } from 'react'
-import { queryKeys, useCart, useRemoveCartItem, useUpdateCartItem } from '../../hooks/apiHooks'
+import {
+  queryKeys,
+  useBulkDeleteCartItems,
+  useCart,
+  useClearCart,
+  useRemoveCartItem,
+  useUpdateCartItem,
+  useUpdateCartSelection,
+} from '../../hooks/apiHooks'
 import { authStore } from '../../lib/auth/authStore'
 import {
   getLocalCartItems,
@@ -19,6 +27,20 @@ import './Cart.scss'
 
 const CART_PRODUCT_STALE_MS = 5 * 60 * 1000
 
+type ResolvedRow = {
+  itemId: number
+  productId: number
+  title: string
+  quantity: number
+  unitPrice: string
+  currency: string
+  lineAmount: string
+  moq: number
+  thumbUrl: string
+  selected: boolean
+  productActive: boolean
+}
+
 export function Cart() {
   const { t } = useI18n()
   const loggedIn = authStore.isLoggedIn()
@@ -27,6 +49,9 @@ export function Cart() {
   useEffect(() => onLocalCartUpdated(() => setLocalItems(getLocalCartItems())), [])
   const updateMutation = useUpdateCartItem()
   const removeMutation = useRemoveCartItem()
+  const selectionMutation = useUpdateCartSelection()
+  const bulkDeleteMutation = useBulkDeleteCartItems()
+  const clearMutation = useClearCart()
 
   const rows = useMemo(
     () =>
@@ -41,6 +66,8 @@ export function Cart() {
             currency: 'USD',
             lineAmount: '0',
             moq: 1,
+            selected: true,
+            productActive: true,
           })),
     [loggedIn, cart?.items, localItems, t],
   )
@@ -71,20 +98,44 @@ export function Cart() {
     return m
   }, [productIds, productQueries])
 
-  const rowsResolved = useMemo(
+  const rowsResolved: ResolvedRow[] = useMemo(
     () =>
       rows.map((row) => {
         const meta = metaByProductId.get(row.productId)
         const moq = Math.max(1, Number((row as { moq?: number }).moq ?? meta?.moq ?? 1))
         const title = meta?.title && !loggedIn ? meta.title : row.title
-        return { ...row, title, moq, thumbUrl: meta?.thumb ?? '' }
+        const serverThumb = (row as { thumbUrl?: string | null }).thumbUrl
+        const thumbUrl = (serverThumb && serverThumb.length > 0 ? serverThumb : null) ?? meta?.thumb ?? ''
+        const selected =
+          !loggedIn ? true : (row as { selected?: boolean }).selected !== false
+        const productActive =
+          !loggedIn ? true : (row as { productActive?: boolean }).productActive !== false
+        return { ...row, title, moq, thumbUrl, selected, productActive }
       }),
     [rows, metaByProductId, loggedIn],
   )
 
   const itemCount = rowsResolved.reduce((sum, item) => sum + item.quantity, 0)
-  const subtotal = Number(cart?.totalAmount ?? 0)
   const currency = cart?.currency ?? 'USD'
+  const subtotalAll = Number(cart?.totalAmount ?? 0)
+  const subtotalSelected = Number(cart?.selectedSubtotal ?? cart?.totalAmount ?? 0)
+  const summaryAmount = loggedIn ? subtotalSelected : subtotalAll
+
+  const activeRows = useMemo(
+    () => rowsResolved.filter((r) => r.productActive),
+    [rowsResolved],
+  )
+  const allActiveSelected =
+    loggedIn &&
+    activeRows.length > 0 &&
+    activeRows.every((r) => r.selected)
+
+  const selectedIds = useMemo(
+    () => rowsResolved.filter((r) => r.selected).map((r) => r.itemId),
+    [rowsResolved],
+  )
+
+  const selectionBusy = selectionMutation.isPending || bulkDeleteMutation.isPending || clearMutation.isPending
 
   const handleQtyChange = (itemId: number, qty: number) => {
     const row = rowsResolved.find((x) => x.itemId === itemId)
@@ -118,6 +169,34 @@ export function Cart() {
     void removeMutation.mutate(itemId)
   }
 
+  const toggleRowSelected = (item: ResolvedRow) => {
+    if (!loggedIn || !item.productActive || selectionBusy) return
+    void selectionMutation.mutate({
+      itemIds: [item.itemId],
+      selected: !item.selected,
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (!loggedIn || activeRows.length === 0 || selectionBusy) return
+    void selectionMutation.mutate({
+      itemIds: activeRows.map((r) => r.itemId),
+      selected: !allActiveSelected,
+    })
+  }
+
+  const deleteSelected = () => {
+    if (!loggedIn || selectedIds.length === 0 || selectionBusy) return
+    void bulkDeleteMutation.mutate({ itemIds: selectedIds })
+  }
+
+  const clearServerCart = () => {
+    if (!loggedIn || selectionBusy) return
+    void clearMutation.mutate()
+  }
+
+  const checkoutDisabled = loggedIn && subtotalSelected <= 0
+
   return (
     <div className="cart page-pad">
       <div className="container">
@@ -140,9 +219,38 @@ export function Cart() {
         ) : (
           <div className="cart__layout">
             <div className="cart__table-wrap">
+              {loggedIn && (
+                <div className="cart__toolbar" style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={allActiveSelected}
+                      disabled={selectionBusy || activeRows.length === 0}
+                      onChange={toggleSelectAll}
+                    />
+                    <span>{t('cart.selectAll')}</span>
+                  </label>
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    disabled={selectionBusy || selectedIds.length === 0}
+                    onClick={deleteSelected}
+                  >
+                    {t('cart.deleteSelected')}
+                  </button>
+                  <button type="button" className="btn btn--ghost" disabled={selectionBusy} onClick={clearServerCart}>
+                    {t('cart.clearCart')}
+                  </button>
+                </div>
+              )}
               <table className="cart-table">
                 <thead>
                   <tr>
+                    {loggedIn && (
+                      <th scope="col" className="cart-table__col-check">
+                        <span className="visually-hidden">{t('cart.colSelect')}</span>
+                      </th>
+                    )}
                     <th scope="col">{t('cart.colProduct')}</th>
                     <th scope="col">{t('cart.colPrice')}</th>
                     <th scope="col">{t('cart.colQty')}</th>
@@ -160,10 +268,21 @@ export function Cart() {
                     const rowRemoving =
                       removeMutation.isPending &&
                       removeMutation.variables === item.itemId
-                    const rowBusy = rowUpdating || rowRemoving
+                    const rowBusy = rowUpdating || rowRemoving || selectionBusy
                     const minQ = Math.max(1, Number(item.moq ?? 1))
                     return (
-                    <tr key={item.itemId}>
+                    <tr key={item.itemId} className={!item.productActive ? 'cart-table__row--inactive' : undefined}>
+                      {loggedIn && (
+                        <td data-label={t('cart.colSelect')}>
+                          <input
+                            type="checkbox"
+                            checked={item.selected}
+                            disabled={rowBusy || !item.productActive}
+                            onChange={() => toggleRowSelected(item)}
+                            aria-label={t('cart.colSelect')}
+                          />
+                        </td>
+                      )}
                       <td>
                         <div className="cart-table__product">
                           <div className="cart-table__thumb" role="img" aria-hidden={!item.thumbUrl}>
@@ -179,6 +298,9 @@ export function Cart() {
                               {item.title}
                             </Link>
                             <div className="cart-table__sku">ID: {item.productId}</div>
+                            {loggedIn && !item.productActive && (
+                              <div style={{ fontSize: 12, color: 'var(--danger, #c00)' }}>{t('cart.inactive')}</div>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -191,7 +313,7 @@ export function Cart() {
                           min={minQ}
                           className="input input--qty"
                           value={item.quantity}
-                          disabled={rowBusy}
+                          disabled={rowBusy || (loggedIn && !item.productActive)}
                           onChange={(e) =>
                             handleQtyChange(item.itemId, parseInt(e.target.value, 10) || 1)
                           }
@@ -223,10 +345,18 @@ export function Cart() {
 
             <aside className="cart__summary">
               <h2 className="cart__summary-title">{t('cart.summaryTitle')}</h2>
+              {loggedIn && (
+                <div className="cart__summary-row cart__summary-row--muted">
+                  <span>{t('cart.cartTotal')}</span>
+                  <span>
+                    {currency} {subtotalAll.toFixed(2)}
+                  </span>
+                </div>
+              )}
               <div className="cart__summary-row">
-                <span>{t('common.subtotal')}</span>
+                <span>{loggedIn ? t('cart.selectedSubtotal') : t('common.subtotal')}</span>
                 <span>
-                  {currency} {subtotal.toFixed(2)}
+                  {currency} {summaryAmount.toFixed(2)}
                 </span>
               </div>
               <div className="cart__summary-row cart__summary-row--muted">
@@ -236,10 +366,23 @@ export function Cart() {
               <div className="cart__summary-total">
                 <span>{t('common.estimated')}</span>
                 <span>
-                  {currency} {subtotal.toFixed(2)}
+                  {currency} {summaryAmount.toFixed(2)}
                 </span>
               </div>
-              <Link to="/checkout" className="btn btn--primary btn--block">
+              {checkoutDisabled ? (
+                <p className="cart__summary-hint" style={{ fontSize: 13, margin: '8px 0' }}>
+                  {t('cart.checkoutNeedSelection')}
+                </p>
+              ) : null}
+              <Link
+                to="/checkout"
+                className="btn btn--primary btn--block"
+                aria-disabled={checkoutDisabled}
+                onClick={(e) => {
+                  if (checkoutDisabled) e.preventDefault()
+                }}
+                style={checkoutDisabled ? { pointerEvents: 'none', opacity: 0.55 } : undefined}
+              >
                 {loggedIn ? t('cart.checkout') : t('cart.checkoutLogin')}
               </Link>
               {!loggedIn && (

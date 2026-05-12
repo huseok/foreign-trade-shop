@@ -1,3 +1,7 @@
+/**
+ * 商品详情页样式：主图 `contain`、数量步进与底部「热销」区块间距等。
+ * 仅使用现有 CSS 变量，避免引入新的全局主题色。
+ */
 .breadcrumb {
   font-size: 0.875rem;
   margin-bottom: 1.5rem;
@@ -47,10 +51,15 @@
     gap: 0.75rem;
   }
 
+  /**
+   * 主图：使用 contain 在方形容器内完整展示，避免 800×800 等素材被 cover 裁切。
+   * 缩略图仍用 cover 保持条带区域整齐。
+   */
   &__hero-img {
     width: 100%;
     aspect-ratio: 1;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
     background: var(--surface);
@@ -147,6 +156,14 @@
     color: var(--text);
   }
 
+  /** 运费说明：弱提示样式，不抢主购买区视觉权重。 */
+  &__shipping-note {
+    margin: 0 0 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
   &__specs {
     padding: 1.25rem;
     border-radius: var(--radius-md);
@@ -186,6 +203,40 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
+  }
+
+  /** 数量步进：与 `.btn--ghost` 组合，沿用站点圆角与间距变量。 */
+  &__qty-step {
+    min-width: 2.25rem;
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  &__qty-input {
+    text-align: center;
+  }
+
+  &__moq-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  /** 主操作区：横向排列，窄屏换行；不新增颜色 token。 */
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+    margin-top: 1rem;
+  }
+
+  /** 详情页底部「热销」区块：与首页栅格一致，仅用边框与留白分隔主内容。 */
+  &__below {
+    margin-top: 2.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
   }
 
   &__added {

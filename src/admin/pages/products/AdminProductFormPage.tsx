@@ -3,6 +3,7 @@
  */
 import { useEffect } from 'react'
 import { App, Button, Card, Form, Result, Space, Spin, Typography } from 'antd'
+import { useI18n } from '../../../i18n/I18nProvider'
 import { PageContainer } from '@ant-design/pro-components'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AdminProductUpsertFields } from '../../components/product/AdminProductUpsertFields'
@@ -27,6 +28,7 @@ type ProductFormOps = {
 }
 
 export function AdminProductFormPage() {
+  const { t } = useI18n()
   const { productId } = useParams<{ productId: string }>()
   const navigate = useNavigate()
   const { message } = App.useApp()
@@ -120,6 +122,14 @@ export function AdminProductFormPage() {
       }}
     >
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        {isEdit && (
+          <Card size="small" title={t('admin.products.skuMatrixCardTitle')}>
+            <Typography.Paragraph style={{ marginBottom: 8 }}>
+              {t('admin.products.skuMatrixCardDesc')}
+            </Typography.Paragraph>
+            <Link to={`/admin/products/${idNum}/sku-matrix`}>{t('admin.products.skuMatrixLink')} →</Link>
+          </Card>
+        )}
         <Card>
           <Form
             form={form}
@@ -143,6 +153,7 @@ export function AdminProductFormPage() {
             initialValues={{ currency: 'USD', moq: 1, isActive: true, images: [], tagIds: [] }}
           >
             <AdminProductUpsertFields
+              productId={isEdit ? idNum : undefined}
               categories={categories}
               shippingTemplates={shippingTemplates}
               tags={tagList.map((tg) => ({ id: tg.id, name: tg.name, code: tg.code, isActive: tg.isActive }))}

@@ -29,3 +29,5 @@ export type OrderDto = S['OrderView']
 
 export type CreateAfterSaleRequest = S['CreateAfterSaleRequest']
 export type AfterSaleDto = S['AfterSaleView']
+
+export type UserAddressView = S['UserAddressView']

@@ -24,7 +24,11 @@ type RuleRow = {
 }
 
 /**
- * 运费模板管理：模板创建 + 规则创建（按重量计费）。
+ * 运费模板管理页：维护「模板」与「模板下的计费规则」。
+ *
+ * 数据刷新策略：
+ * - 新增规则成功后由 `useAdminCreateShippingRule` 按 `templateId` 作废 React Query 缓存，避免「已创建但列表不刷新」。
+ * - 本页通过 `selectedTemplateId` 决定下方规则表请求哪一个模板；模板列表上的「查看规则」仅切换选中项。
  */
 export function AdminShippingPage() {
   const { t } = useI18n()
@@ -122,6 +126,7 @@ export function AdminShippingPage() {
               try {
                 await createRule.mutateAsync(v)
                 message.success(t('admin.shipping.ruleCreated'))
+                setSelectedTemplateId(Number(v.templateId))
               } catch {
                 message.error(t('admin.shipping.ruleCreateFail'))
               }
@@ -161,7 +166,26 @@ export function AdminShippingPage() {
             loading={isLoading}
             search={false}
             options={false}
-            columns={templateColumns}
+            columns={[
+              ...templateColumns,
+              {
+                title: t('admin.shipping.viewRules'),
+                key: 'pick',
+                width: 100,
+                search: false,
+                render: (_, row) => (
+                  <Button
+                    type="link"
+                    style={{ padding: 0 }}
+                    onClick={() => {
+                      setSelectedTemplateId(row.id)
+                    }}
+                  >
+                    {t('admin.shipping.viewRules')}
+                  </Button>
+                ),
+              },
+            ]}
             dataSource={data as TemplateRow[]}
             pagination={false}
           />
