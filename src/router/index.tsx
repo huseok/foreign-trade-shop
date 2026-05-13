@@ -27,7 +27,6 @@ import { Home } from '../pages/Home'
 import { OrderDetail } from '../pages/OrderDetail'
 import { ProductDetail } from '../pages/ProductDetail'
 import { UserAddressesPage } from '../pages/user-center/addresses/Addresses'
-import { UserHistoryPage } from '../pages/user-center/history/History'
 import { UserOrdersPage } from '../pages/user-center/orders/Orders'
 import { UserProfilePage } from '../pages/user-center/profile/Profile'
 import { Login, Register } from '../pages/Auth'
@@ -205,14 +204,6 @@ export const routes: RouteObject[] = [
         element: (
           <RequireAuth>
             <UserOrdersPage />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: 'user/history',
-        element: (
-          <RequireAuth>
-            <UserHistoryPage />
           </RequireAuth>
         ),
       },

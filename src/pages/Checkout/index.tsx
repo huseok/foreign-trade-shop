@@ -1,27 +1,50 @@
 /**
  * 结账页：
  * 支持「已保存地址」或手动填写；仅结算购物车中**已勾选**的在售行。
+ *
+ * - **联系人**：选择已保存地址时，姓名/电话从该地址回填，邮箱从账户 `me` 回填（均可改；下单仍以地址库快照为准）。
+ * - **手动地址**：提交时先调用「新增地址」写入地址管理，再使用返回的 `id` 作为 `savedAddressId` 创建订单。
+ *
+ * **目录「立即下单」**：若用户从商品卡写入 `sessionStorage`（见 `lib/cart/checkoutBuyNowSession.ts`），
+ * 本页在已登录首次渲染时会：把该商品数量对齐到会话值，并**取消勾选其它购物车行**，保证本页小计仅含当前商品。
  */
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useCart, useCreateOrder, useUserAddresses } from '../../hooks/apiHooks'
+import {
+  queryKeys,
+  useCart,
+  useCreateOrder,
+  useCreateUserAddress,
+  useMe,
+  useUserAddresses,
+} from '../../hooks/apiHooks'
 import { authStore } from '../../lib/auth/authStore'
+import { clearCheckoutBuyNowSession, readCheckoutBuyNowSession } from '../../lib/cart/checkoutBuyNowSession'
 import { useI18n } from '../../i18n/useI18n'
 import { toErrorMessage } from '../../lib/http/error'
+import { voyage } from '../../openapi/voyageSdk'
 import './Checkout.scss'
 
 export function Checkout() {
   const { t } = useI18n()
+  const qc = useQueryClient()
   const loggedIn = authStore.isLoggedIn()
   const { data: cart, isLoading } = useCart()
   const { data: addresses = [], isLoading: addrLoading } = useUserAddresses(loggedIn)
+  const { data: me, isLoading: meLoading } = useMe(loggedIn)
   const createOrderMutation = useCreateOrder()
+  const createAddressMutation = useCreateUserAddress()
   const navigate = useNavigate()
   const [couponCode, setCouponCode] = useState('')
   const [shipMode, setShipMode] = useState<'saved' | 'manual'>('manual')
   const [selectedAddrId, setSelectedAddrId] = useState<number | null>(null)
   const boot = useRef(false)
+
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -42,6 +65,64 @@ export function Checkout() {
       }
     })
   }, [addresses])
+
+  /**
+   * 联系人区与地址联动：
+   * - 已保存地址：姓名/电话来自所选地址，邮箱来自账户（地址库无邮箱字段）。
+   * - 手动填写：邮箱/姓名在无内容时用账户信息预填，便于首次结账。
+   */
+  useEffect(() => {
+    if (shipMode === 'saved' && selectedAddrId != null) {
+      const a = addresses.find((x) => x.id === selectedAddrId)
+      if (a) {
+        setContactName(a.receiverName)
+        setContactPhone(a.receiverPhone)
+        setContactEmail(me?.email ?? '')
+      }
+      return
+    }
+    if (shipMode === 'manual' && me) {
+      setContactEmail((e) => (e.trim() ? e : me.email ?? ''))
+      setContactName((n) => (n.trim() ? n : me.name ?? ''))
+    }
+  }, [shipMode, selectedAddrId, addresses, me])
+
+  /**
+   * 处理目录商品卡「下单」写入的一次性会话：对齐数量 + 仅勾选目标 `cartItemId`。
+   * 失败时静默（用户仍可按普通购物车结账）；成功后会触发 `useCart` 重新拉取。
+   */
+  useEffect(() => {
+    if (!loggedIn) return
+    const payload = readCheckoutBuyNowSession()
+    if (!payload) return
+    clearCheckoutBuyNowSession()
+    void (async () => {
+      try {
+        const { productId, quantity } = payload
+        const q = Math.max(1, Math.trunc(quantity))
+        let snapshot = await voyage.cart.get()
+        let line = snapshot.items.find((i) => String(i.productId) === String(productId))
+        if (line) {
+          await voyage.cart.updateItem(line.itemId, { quantity: q })
+        } else {
+          await voyage.cart.addItem({ productId, quantity: q })
+        }
+        await qc.invalidateQueries({ queryKey: queryKeys.cart })
+        await qc.refetchQueries({ queryKey: queryKeys.cart })
+        snapshot = await voyage.cart.get()
+        line = snapshot.items.find((i) => String(i.productId) === String(productId))
+        if (!line) return
+        const otherIds = snapshot.items.filter((i) => i.itemId !== line.itemId).map((i) => i.itemId)
+        if (otherIds.length > 0) {
+          await voyage.cart.updateSelection({ itemIds: otherIds, selected: false })
+        }
+        await voyage.cart.updateSelection({ itemIds: [line.itemId], selected: true })
+        await qc.invalidateQueries({ queryKey: queryKeys.cart })
+      } catch {
+        /* 静默失败：用户仍可按当前购物车勾选结账 */
+      }
+    })()
+  }, [loggedIn, qc])
 
   const rows =
     cart?.items.filter((it) => {
@@ -68,40 +149,47 @@ export function Checkout() {
 
     const useSaved = shipMode === 'saved' && addresses.length > 0 && selectedAddrId != null
 
-    const payload = useSaved
-      ? {
-          ...base,
-          savedAddressId: selectedAddrId!,
-        }
-      : (() => {
-          const city = String(fd.get('city') ?? '').trim()
-          const region = String(fd.get('region') ?? '').trim()
-          const address2 = String(fd.get('address2') ?? '').trim()
-          const lineMain = String(fd.get('address1') ?? '').trim()
-          const composedLine = [lineMain, city, region, address2].filter(Boolean).join(', ')
-          return {
-            ...base,
-            receiverName: String(fd.get('name') ?? '').trim(),
-            receiverPhone: String(fd.get('phone') ?? '').trim(),
-            country: String(fd.get('country') ?? '').trim(),
-            addressLine: composedLine || lineMain,
-            postalCode: String(fd.get('zip') ?? '').trim() || undefined,
-            receiverCompany: String(fd.get('company') ?? '').trim() || undefined,
-            receiverProvince: region || undefined,
-            receiverCity: city || undefined,
-          }
-        })()
-
     try {
       setSubmitMsg(null)
-      const resp = await createOrderMutation.mutateAsync(payload)
+      let savedAddressId: number
+      if (useSaved) {
+        savedAddressId = selectedAddrId!
+      } else {
+        const city = String(fd.get('city') ?? '').trim()
+        const region = String(fd.get('region') ?? '').trim()
+        const address2 = String(fd.get('address2') ?? '').trim()
+        const lineMain = String(fd.get('address1') ?? '').trim()
+        const country = String(fd.get('country') ?? '').trim()
+        const zip = String(fd.get('zip') ?? '').trim()
+        const company = String(fd.get('company') ?? '').trim()
+        const receiverName = String(fd.get('name') ?? '').trim()
+        const receiverPhone = String(fd.get('phone') ?? '').trim()
+        const addressLine = [lineMain, address2].filter(Boolean).join(' · ')
+        const created = await createAddressMutation.mutateAsync({
+          receiverName,
+          receiverPhone,
+          receiverCompany: company || undefined,
+          country,
+          province: region || undefined,
+          city: city || undefined,
+          addressLine,
+          postalCode: zip || undefined,
+          isDefault: addresses.length === 0,
+        })
+        savedAddressId = created.id
+      }
+
+      const resp = await createOrderMutation.mutateAsync({
+        ...base,
+        savedAddressId,
+      })
       navigate(`/orders/${encodeURIComponent(resp.orderNo)}`)
     } catch (err) {
       setSubmitMsg(toErrorMessage(err, t('checkout.failDefault')))
     }
   }
 
-  if (isLoading || (loggedIn && addrLoading)) {
+  if (isLoading || (loggedIn && addrLoading) || (loggedIn && meLoading)) {
     return (
       <div className="checkout page-pad">
         <div className="container narrow">
@@ -137,13 +225,18 @@ export function Checkout() {
           <div className="checkout__forms">
             <section className="checkout__card">
               <h2 className="checkout__card-title">{t('checkout.contactTitle')}</h2>
+              <p className="checkout__legal" style={{ marginBottom: 12 }}>
+                {t('checkout.contactSyncHint')}
+              </p>
               <div className="field-row">
                 <label className="field">
                   <span className="field__label">{t('checkout.fullName')}</span>
                   <input
                     className="input"
                     name="name"
-                    required={shipMode === 'manual'}
+                    value={contactName}
+                    onChange={(ev) => setContactName(ev.target.value)}
+                    required
                     autoComplete="name"
                     placeholder={t('checkout.fullNamePh')}
                   />
@@ -156,6 +249,8 @@ export function Checkout() {
                     className="input"
                     type="email"
                     name="email"
+                    value={contactEmail}
+                    onChange={(ev) => setContactEmail(ev.target.value)}
                     required
                     autoComplete="email"
                     placeholder="procurement@company.com"
@@ -167,7 +262,9 @@ export function Checkout() {
                     className="input"
                     type="tel"
                     name="phone"
-                    required={shipMode === 'manual'}
+                    value={contactPhone}
+                    onChange={(ev) => setContactPhone(ev.target.value)}
+                    required
                     autoComplete="tel"
                     placeholder="+1 ···"
                   />
@@ -233,6 +330,9 @@ export function Checkout() {
                 </div>
               ) : (
                 <>
+                  <p className="checkout__legal" style={{ marginBottom: 12 }}>
+                    {t('checkout.saveManualAddressHint')}
+                  </p>
                   {addresses.length === 0 && (
                     <p className="checkout__legal" style={{ marginBottom: 12 }}>
                       {t('checkout.noSavedAddresses')}{' '}
@@ -367,9 +467,11 @@ export function Checkout() {
               <button
                 type="submit"
                 className="btn btn--primary btn--block"
-                disabled={createOrderMutation.isPending}
+                disabled={createOrderMutation.isPending || createAddressMutation.isPending}
               >
-                {createOrderMutation.isPending ? t('checkout.placing') : t('checkout.placeOrder')}
+                {createOrderMutation.isPending || createAddressMutation.isPending
+                  ? t('checkout.placing')
+                  : t('checkout.placeOrder')}
               </button>
               {submitMsg && <p className="checkout__legal">{submitMsg}</p>}
               <p className="checkout__legal">{t('common.termsHint')}</p>

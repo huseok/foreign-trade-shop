@@ -1,7 +1,7 @@
 /**
- * 用户中心-地址管理：增删改、默认地址；字段与订单收货快照对齐（公司/省/市）。
+ * 用户中心-地址管理：列表展示；「新增地址」打开弹窗表单；支持编辑、默认、删除。
  */
-import { App, Button, Card, Form, Input, Modal, Popconfirm, Space, Switch, Table } from 'antd'
+import { App, Button, Form, Input, Modal, Popconfirm, Space, Switch, Table } from 'antd'
 import { useEffect, useState } from 'react'
 import { UserCenterShell } from '../../../components/UserCenterShell'
 import {
@@ -22,9 +22,10 @@ export function UserAddressesPage() {
   const updateMut = useUpdateUserAddress()
   const deleteMut = useDeleteUserAddress()
   const defaultMut = useSetDefaultUserAddress()
+  const [addOpen, setAddOpen] = useState(false)
+  const [addForm] = Form.useForm()
   const [editOpen, setEditOpen] = useState(false)
   const [editing, setEditing] = useState<UserAddressView | null>(null)
-  const [form] = Form.useForm()
   const [editForm] = Form.useForm()
 
   useEffect(() => {
@@ -43,10 +44,48 @@ export function UserAddressesPage() {
     })
   }, [editOpen, editing, editForm])
 
+  const openAddModal = () => {
+    addForm.resetFields()
+    addForm.setFieldsValue({ isDefault: data.length === 0 })
+    setAddOpen(true)
+  }
+
   const openEdit = (row: UserAddressView) => {
     setEditing(row)
     setEditOpen(true)
   }
+
+  const addressFormItems = (
+    <>
+      <Form.Item name="receiverName" label={t('user.addrReceiver')} rules={[{ required: true }]}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="receiverPhone" label={t('user.addrPhone')} rules={[{ required: true }]}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="receiverCompany" label={t('user.addrCompany')}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="country" label={t('user.addrCountry')} rules={[{ required: true }]}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="province" label={t('user.addrProvince')}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="city" label={t('user.addrCity')} rules={[{ required: true }]}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="addressLine" label={t('user.addrLine')} rules={[{ required: true }]}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="postalCode" label={t('user.addrPostal')}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="isDefault" valuePropName="checked">
+        <Switch checkedChildren={t('common.default')} unCheckedChildren={t('common.no')} />
+      </Form.Item>
+    </>
+  )
 
   return (
     <UserCenterShell>
@@ -54,65 +93,14 @@ export function UserAddressesPage() {
         {t('user.addressesTitle')}
       </h2>
       <p className="page-header__desc">{t('user.addressesDesc')}</p>
-      <Card style={{ marginTop: 16 }} title={t('user.addrAdd')}>
-        <Form
-          form={form}
-          layout="vertical"
-          style={{ maxWidth: 560 }}
-          onFinish={async (v) => {
-            try {
-              await createMut.mutateAsync({
-                receiverName: v.receiverName,
-                receiverPhone: v.receiverPhone,
-                country: v.country,
-                addressLine: v.addressLine,
-                receiverCompany: v.receiverCompany || undefined,
-                province: v.province || undefined,
-                city: v.city || undefined,
-                postalCode: v.postalCode || undefined,
-                isDefault: !!v.isDefault,
-              })
-              message.success(t('user.addrAddOk'))
-              form.resetFields()
-            } catch {
-              message.error(t('user.addrAddFail'))
-            }
-          }}
-        >
-          <Form.Item name="receiverName" label={t('user.addrReceiver')} rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="receiverPhone" label={t('user.addrPhone')} rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="receiverCompany" label={t('user.addrCompany')}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="country" label={t('user.addrCountry')} rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="province" label={t('user.addrProvince')}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="city" label={t('user.addrCity')} rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="addressLine" label={t('user.addrLine')} rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="postalCode" label={t('user.addrPostal')}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="isDefault" valuePropName="checked" initialValue={false}>
-            <Switch checkedChildren={t('common.default')} unCheckedChildren={t('common.no')} />
-          </Form.Item>
-          <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-            {t('user.addrAdd')}
-          </Button>
-        </Form>
-      </Card>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 8 }}>
+        <Button type="primary" onClick={openAddModal}>
+          {t('user.addrAdd')}
+        </Button>
+      </div>
+
       <Table<UserAddressView>
-        style={{ marginTop: 16 }}
         rowKey="id"
         loading={isLoading}
         dataSource={data}
@@ -179,6 +167,44 @@ export function UserAddressesPage() {
       />
 
       <Modal
+        title={t('user.addrAdd')}
+        open={addOpen}
+        onCancel={() => setAddOpen(false)}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          form={addForm}
+          layout="vertical"
+          onFinish={async (v) => {
+            try {
+              await createMut.mutateAsync({
+                receiverName: v.receiverName,
+                receiverPhone: v.receiverPhone,
+                country: v.country,
+                addressLine: v.addressLine,
+                receiverCompany: v.receiverCompany || undefined,
+                province: v.province || undefined,
+                city: v.city || undefined,
+                postalCode: v.postalCode || undefined,
+                isDefault: !!v.isDefault,
+              })
+              message.success(t('user.addrAddOk'))
+              setAddOpen(false)
+              addForm.resetFields()
+            } catch {
+              message.error(t('user.addrAddFail'))
+            }
+          }}
+        >
+          {addressFormItems}
+          <Button type="primary" htmlType="submit" loading={createMut.isPending}>
+            {t('user.addrAdd')}
+          </Button>
+        </Form>
+      </Modal>
+
+      <Modal
         title={t('user.addrEdit')}
         open={editOpen}
         onCancel={() => {
@@ -216,33 +242,7 @@ export function UserAddressesPage() {
             }
           }}
         >
-          <Form.Item name="receiverName" label={t('user.addrReceiver')} rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="receiverPhone" label={t('user.addrPhone')} rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="receiverCompany" label={t('user.addrCompany')}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="country" label={t('user.addrCountry')} rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="province" label={t('user.addrProvince')}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="city" label={t('user.addrCity')} rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="addressLine" label={t('user.addrLine')} rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="postalCode" label={t('user.addrPostal')}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="isDefault" valuePropName="checked">
-            <Switch checkedChildren={t('common.default')} unCheckedChildren={t('common.no')} />
-          </Form.Item>
+          {addressFormItems}
           <Button type="primary" htmlType="submit" loading={updateMut.isPending}>
             {t('user.addrEdit')}
           </Button>

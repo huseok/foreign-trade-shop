@@ -332,6 +332,8 @@ export type AdminOrdersListParams = {
    * 亦可传 PENDING_PAYMENT / PAID / SHIPPED / DELIVERED / COMPLETED / CANCELLED。
    */
   phase?: string
+  /** 仅该下单用户的订单 */
+  userId?: number
 }
 
 /** 管理端：分页订单列表 */
@@ -344,6 +346,7 @@ export function useAdminOrdersPage(params: AdminOrdersListParams) {
       params.q ?? '',
       params.status ?? '',
       params.phase ?? '',
+      params.userId ?? '',
     ] as const,
     queryFn: () => voyage.orders.adminListPaged(params),
   })
@@ -353,11 +356,17 @@ export function useAdminOrdersPage(params: AdminOrdersListParams) {
  * 管理端：订单数组（单次请求较大 size，供 `AdminOrdersPage` 等在客户端按 Tab/关键词筛选）。
  * 若订单量极大，应改为强制使用 {@link useAdminOrdersPage} 做服务端分页。
  */
-export function useAdminOrders() {
+export function useAdminOrders(options?: { userId?: number | null }) {
+  const uid = options?.userId
+  const userIdParam = uid != null && uid > 0 ? uid : undefined
   return useQuery({
-    queryKey: [...queryKeys.adminOrders, 'list-flat'] as const,
+    queryKey: [...queryKeys.adminOrders, 'list-flat', userIdParam ?? ''] as const,
     queryFn: async () => {
-      const res = await voyage.orders.adminListPaged({ page: 0, size: 500 })
+      const res = await voyage.orders.adminListPaged({
+        page: 0,
+        size: 500,
+        ...(userIdParam != null ? { userId: userIdParam } : {}),
+      })
       return res.items
     },
   })
@@ -641,8 +650,14 @@ export function useAdminPatchCustomer() {
 export function useAdminResetCustomerPassword() {
   const qc = useQueryClient()
   return useGuardedMutation({
-    mutationFn: (id: number) => voyage.customers.adminResetPassword(id),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminCustomers }),
+    mutationFn: (payload: {
+      id: number
+      body?: components['schemas']['AdminResetPasswordRequest'] | null
+    }) => voyage.customers.adminResetPassword(payload.id, payload.body ?? {}),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.adminCustomers })
+      void qc.invalidateQueries({ queryKey: queryKeys.adminOrders })
+    },
   })
 }
 

@@ -1,13 +1,20 @@
-/** Product card for catalog / home grids: link to detail, add to cart (server or local). */
-import { App } from 'antd'
-import { type MouseEvent, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+/**
+ * 商品卡片：用于首页网格、目录列表等。
+ *
+ * - **默认模式**：主图/标题链到详情页；「查看」「加入购物车」分开展示。
+ * - **目录紧凑模式**（`compactAddButton`）：运营要求整卡点击进入详情；`+` 为加购（按 MOQ 递增）；
+ *   数量用 `InputNumber` 与购物车同步；「下单」将本商品写入「仅勾选本行」的会话并进入 `/checkout`（未登录则先登录）。
+ */
+import { App, InputNumber } from 'antd'
+import { type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import type { ProductDto } from '../../types/api'
-import { useAddCartItem, useCart } from '../../hooks/apiHooks'
+import { useAddCartItem, useCart, useUpdateCartItem } from '../../hooks/apiHooks'
 import { useI18n } from '../../i18n/useI18n'
 import { i18nTpl } from '../../lib/i18nTpl'
 import { authStore } from '../../lib/auth/authStore'
-import { addLocalCartItem, getLocalCartItems, onLocalCartUpdated } from '../../lib/cart/localCart'
+import { addLocalCartItem, getLocalCartItems, onLocalCartUpdated, updateLocalCartItem } from '../../lib/cart/localCart'
+import { writeCheckoutBuyNowSession } from '../../lib/cart/checkoutBuyNowSession'
 import { toErrorMessage } from '../../lib/http/error'
 import { productThumbUrl } from '../../lib/media/resolveMediaUrl'
 import './ProductCard.scss'
@@ -15,18 +22,28 @@ import './ProductCard.scss'
 type Props = {
   product: ProductDto
   /**
-   * 目录列表用：加购为主按钮紧凑「+」圆钮，隐藏「查看」以省横向空间；仍可通过主图与标题进入详情。
+   * 目录列表用：紧凑操作区（整卡进详情、`+`、数量编辑、「下单」）；主图/标题不再单独包 `Link`，避免与整卡点击冲突。
    */
   compactAddButton?: boolean
+}
+
+/** 判断点击目标是否来自「不应触发整卡进详情」的交互子树（按钮、数字输入、加减手柄等）。 */
+function isInteractiveTarget(el: EventTarget | null): boolean {
+  if (el == null || !(el instanceof Element)) return false
+  return Boolean(el.closest('button, a, input, .ant-input-number, .ant-input-number-handler'))
 }
 
 export function ProductCard({ product, compactAddButton = false }: Props) {
   const { t } = useI18n()
   const { message } = App.useApp()
+  const navigate = useNavigate()
   const loggedIn = authStore.isLoggedIn()
   const { data: cart } = useCart(loggedIn)
   const addMutation = useAddCartItem()
+  const updateMutation = useUpdateCartItem()
   const [localBump, setLocalBump] = useState(0)
+  /** 数量输入防抖定时器（毫秒），避免拖动 InputNumber 时频繁打购物车接口 */
+  const qtyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => onLocalCartUpdated(() => setLocalBump((x) => x + 1)), [])
 
@@ -41,11 +58,77 @@ export function ProductCard({ product, compactAddButton = false }: Props) {
     const items = cart?.items
     if (!items?.length) return 0
     return items
-      .filter((i) => i.productId === product.id)
+      .filter((i) => String(i.productId) === String(product.id))
       .reduce((sum, i) => sum + i.quantity, 0)
   }, [cart, product.id])
 
   const inCartQty = loggedIn ? serverQty : localQty
+
+  /** 当前商品在服务端购物车中的行 id（用于改数量）；无则 undefined */
+  const serverLineItemId = useMemo(() => {
+    if (!loggedIn || !cart?.items?.length) return undefined
+    const hit = cart.items.find((i) => String(i.productId) === String(product.id))
+    return hit?.itemId
+  }, [loggedIn, cart?.items, product.id])
+
+  const [optimisticQty, setOptimisticQty] = useState<number | null>(null)
+  /** 购物车中的有效数量（未在架则为 0）；用于与 MOQ 合成展示值 */
+  const baseQty = Math.max(inCartQty > 0 ? inCartQty : moq, moq)
+  const displayQty = optimisticQty ?? baseQty
+
+  useEffect(() => {
+    setOptimisticQty(null)
+  }, [inCartQty, product.id])
+
+  const flushQtyToCart = useCallback(
+    (nextQty: number) => {
+      const q = Math.max(moq, Math.trunc(nextQty))
+      if (!loggedIn) {
+        if (inCartQty <= 0 && q > 0) {
+          addLocalCartItem(product.id, q)
+        } else {
+          updateLocalCartItem(product.id, q)
+        }
+        return
+      }
+      if (serverLineItemId != null) {
+        void updateMutation.mutate({ itemId: serverLineItemId, payload: { quantity: q } })
+        return
+      }
+      void addMutation.mutateAsync({ productId: product.id, quantity: q }).catch((err) => {
+        message.error(toErrorMessage(err, t('catalog.addCartFail')))
+      })
+    },
+    [
+      addMutation,
+      inCartQty,
+      loggedIn,
+      message,
+      moq,
+      product.id,
+      serverLineItemId,
+      t,
+      updateMutation,
+    ],
+  )
+
+  const scheduleQtyFlush = useCallback(
+    (nextQty: number) => {
+      if (qtyDebounceRef.current) clearTimeout(qtyDebounceRef.current)
+      qtyDebounceRef.current = setTimeout(() => {
+        qtyDebounceRef.current = null
+        flushQtyToCart(nextQty)
+      }, 320)
+    },
+    [flushQtyToCart],
+  )
+
+  useEffect(
+    () => () => {
+      if (qtyDebounceRef.current) clearTimeout(qtyDebounceRef.current)
+    },
+    [],
+  )
 
   const handleAdd = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -64,12 +147,106 @@ export function ProductCard({ product, compactAddButton = false }: Props) {
     }
   }
 
+  /**
+   * 「下单」：把当前商品与输入数量写入结账桥接 session，进入结账页。
+   * 结账页会只勾选这一行；未登录用户先走登录，登录成功后再进 `/checkout`。
+   */
+  const handleBuyNow = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!product.isActive) {
+      message.warning(t('catalog.buyNowInactive'))
+      return
+    }
+    const qty = Math.max(moq, displayQty)
+    writeCheckoutBuyNowSession({ productId: product.id, quantity: qty })
+    if (!loggedIn) {
+      navigate('/login', { state: { from: '/checkout' } })
+      return
+    }
+    navigate('/checkout')
+  }
+
+  const goDetail = () => {
+    navigate(`/products/${encodeURIComponent(product.id)}`)
+  }
+
+  const onCardClick = (e: MouseEvent<HTMLElement>) => {
+    if (isInteractiveTarget(e.target)) return
+    goDetail()
+  }
+
   const thumb = productThumbUrl(product)
   const addDisabled = !product.isActive || addMutation.isPending
+  const qtyInputMin = moq
+
+  if (!compactAddButton) {
+    return (
+      <article className="product-card">
+        <Link to={`/products/${product.id}`} className="product-card__media">
+          {thumb ? (
+            <img className="product-card__img product-card__img--photo" src={thumb} alt="" loading="lazy" />
+          ) : (
+            <div
+              className="product-card__img"
+              style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, var(--primary, #2563eb) 100%)' }}
+              role="img"
+              aria-label={product.title}
+            />
+          )}
+        </Link>
+        <div className="product-card__body">
+          <span className="product-card__cat">{product.originCountry ?? 'Global'}</span>
+          <h3 className="product-card__title">
+            <Link to={`/products/${product.id}`}>{product.title}</Link>
+          </h3>
+          {product.tags && product.tags.length > 0 && (
+            <div className="product-card__tags">
+              {product.tags.map((tg) => (
+                <span key={tg.id} className="product-card__tag">
+                  {tg.name}
+                </span>
+              ))}
+            </div>
+          )}
+          <p className="product-card__desc">{product.description ?? t('product.noDesc')}</p>
+          <div className="product-card__footer">
+            <span className="product-card__price">
+              {product.price == null ? '-' : `${product.currency ?? 'USD'} ${Number(product.price).toFixed(2)}`}
+            </span>
+            <div className="product-card__actions">
+              {inCartQty > 0 && (
+                <span className="product-card__in-cart" aria-live="polite">
+                  {i18nTpl(t('catalog.inCart'), { n: String(inCartQty) })}
+                </span>
+              )}
+              <Link to={`/products/${product.id}`} className="product-card__cta">
+                {t('product.view')}
+              </Link>
+              <button
+                type="button"
+                className="product-card__add"
+                disabled={addDisabled}
+                onClick={(e) => void handleAdd(e)}
+                aria-label={t('product.addCart')}
+              >
+                {addMutation.isPending ? '…' : t('product.addCart')}
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+    )
+  }
 
   return (
-    <article className={compactAddButton ? 'product-card product-card--compact-add' : 'product-card'}>
-      <Link to={`/products/${product.id}`} className="product-card__media">
+    <article
+      className="product-card product-card--compact-add"
+      onClick={onCardClick}
+      title={product.title}
+    >
+      {/* 紧凑模式：整块可点进详情，故此处不用 Link，避免嵌套交互与事件冒泡难控 */}
+      <div className="product-card__media product-card__media--clickable">
         {thumb ? (
           <img className="product-card__img product-card__img--photo" src={thumb} alt="" loading="lazy" />
         ) : (
@@ -80,11 +257,11 @@ export function ProductCard({ product, compactAddButton = false }: Props) {
             aria-label={product.title}
           />
         )}
-      </Link>
+      </div>
       <div className="product-card__body">
         <span className="product-card__cat">{product.originCountry ?? 'Global'}</span>
         <h3 className="product-card__title">
-          <Link to={`/products/${product.id}`}>{product.title}</Link>
+          <span className="product-card__title-text">{product.title}</span>
         </h3>
         {product.tags && product.tags.length > 0 && (
           <div className="product-card__tags">
@@ -100,26 +277,43 @@ export function ProductCard({ product, compactAddButton = false }: Props) {
           <span className="product-card__price">
             {product.price == null ? '-' : `${product.currency ?? 'USD'} ${Number(product.price).toFixed(2)}`}
           </span>
-          <div className="product-card__actions">
-            {inCartQty > 0 && (
-              <span className="product-card__in-cart" aria-live="polite">
-                {i18nTpl(t('catalog.inCart'), { n: String(inCartQty) })}
-              </span>
-            )}
-            {!compactAddButton ? (
-              <Link to={`/products/${product.id}`} className="product-card__cta">
-                {t('product.view')}
-              </Link>
-            ) : null}
-            <button
-              type="button"
-              className="product-card__add"
-              disabled={addDisabled}
-              onClick={(e) => void handleAdd(e)}
-              aria-label={t('product.addCart')}
-            >
-              {addMutation.isPending ? '…' : compactAddButton ? '+' : t('product.addCart')}
-            </button>
+          <div className="product-card__catalog-actions" onClick={(e) => e.stopPropagation()}>
+            <div className="product-card__qty-row">
+              <span className="product-card__qty-label">{t('catalog.qtyLabel')}</span>
+              <InputNumber
+                min={qtyInputMin}
+                max={999999}
+                size="small"
+                value={displayQty}
+                disabled={!product.isActive || updateMutation.isPending}
+                onChange={(v) => {
+                  const n = typeof v === 'number' && Number.isFinite(v) ? v : qtyInputMin
+                  const clamped = Math.max(qtyInputMin, n)
+                  setOptimisticQty(clamped)
+                  scheduleQtyFlush(clamped)
+                }}
+                aria-label={t('catalog.qtyLabel')}
+              />
+            </div>
+            <div className="product-card__btn-row">
+              <button
+                type="button"
+                className="product-card__add"
+                disabled={addDisabled}
+                onClick={(e) => void handleAdd(e)}
+                aria-label={t('product.addCart')}
+              >
+                {addMutation.isPending ? '…' : '+'}
+              </button>
+              <button
+                type="button"
+                className="product-card__buy-now"
+                disabled={!product.isActive}
+                onClick={handleBuyNow}
+              >
+                {t('catalog.buyNow')}
+              </button>
+            </div>
           </div>
         </div>
       </div>

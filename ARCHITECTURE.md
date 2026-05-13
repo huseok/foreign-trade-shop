@@ -50,7 +50,7 @@
   - `/catalog`、`/catalog/:categoryId` 分类与筛选
   - `/products/:id`、`/product/:id` 商品详情
   - `/cart`、`/checkout` 交易流程
-  - `/user/profile` `/user/orders` `/user/history` `/user/addresses` 用户中心
+  - `/user/profile` `/user/orders` `/user/addresses` 用户中心
   - `/contact` 联系人页面
 - 后台路由：
   - `/admin/login`

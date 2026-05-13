@@ -109,6 +109,30 @@
     border-bottom: none;
   }
 
+  &__row--selected td {
+    background: color-mix(in oklch, var(--primary, #2563eb) 9%, var(--surface));
+  }
+
+  &__row--inactive td {
+    background: color-mix(in oklch, var(--muted, #64748b) 6%, var(--surface));
+  }
+
+  &__row--inactive.cart-table__row--selected td {
+    background: color-mix(in oklch, var(--primary, #2563eb) 7%, var(--surface));
+    box-shadow: inset 3px 0 0 0 color-mix(in oklch, var(--danger, #c00) 55%, transparent);
+  }
+
+  &__thumb-link {
+    flex-shrink: 0;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    outline-offset: 2px;
+
+    &:focus-visible {
+      outline: 2px solid var(--primary);
+    }
+  }
+
   &__product {
     display: flex;
     align-items: center;

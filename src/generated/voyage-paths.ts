@@ -869,11 +869,17 @@ export interface components {
             adminNote?: string;
             preferences?: string;
         };
+        AdminResetPasswordRequest: {
+            /** @description 留空或不传时由服务端使用该客户邮箱作为新密码 */
+            newPassword?: string | null;
+        };
         AdminResetPasswordResponse: {
             temporaryPassword: string;
         };
         OrderView: {
             orderNo: string;
+            /** Format: int64 */
+            userId: number;
             status: string;
             paymentStatus: string;
             totalAmount: string;
@@ -1797,6 +1803,8 @@ export interface operations {
                 status?: string;
                 /** @description 阶段：ALL 或不传=全部；PENDING_PAYMENT/PAID/SHIPPED/DELIVERED/COMPLETED/CANCELLED；FULFILLING=待发货+配送中；DONE=已送达或已完成 */
                 phase?: string;
+                /** Format: int64 */
+                userId?: number;
             };
             header?: never;
             path?: never;
@@ -1975,7 +1983,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AdminResetPasswordRequest"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

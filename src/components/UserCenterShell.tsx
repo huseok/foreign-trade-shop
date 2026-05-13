@@ -11,7 +11,6 @@ import { cancelScheduledAccessTokenRefresh } from '../lib/http/apiClient'
 const links = [
   { to: '/user/profile', key: 'user.navProfile' },
   { to: '/user/orders', key: 'user.navOrders' },
-  { to: '/user/history', key: 'user.navHistory' },
   { to: '/user/addresses', key: 'user.navAddresses' },
 ] as const
 

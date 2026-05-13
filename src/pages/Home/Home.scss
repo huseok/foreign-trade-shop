@@ -1,3 +1,4 @@
+/* 首屏 Hero：区块结构与样式；是否在页面上渲染由 `Home/index.tsx` 中 `SHOW_HOME_HERO` 控制。 */
 .home-hero {
   position: relative;
   padding: clamp(3rem, 8vw, 5.5rem) 0 clamp(2.5rem, 6vw, 4rem);

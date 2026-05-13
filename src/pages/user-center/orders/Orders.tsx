@@ -1,9 +1,9 @@
 /**
  * 用户中心-订单列表：`GET /api/v1/orders`，Tab + 关键字筛选（与管理端订单页交互模式一致）。
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button, Descriptions, Input, Modal, Space, Spin, Table, Tabs, Tag } from 'antd'
+import { Button, Descriptions, Input, Modal, Select, Space, Spin, Table, Tabs, Tag } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useDictItems, useOrderDetail, useOrders } from '../../../hooks/apiHooks'
 import { UserCenterShell } from '../../../components/UserCenterShell'
@@ -52,11 +52,26 @@ export function UserOrdersPage() {
   const { data: orderStatusItems = [] } = useDictItems('ORDER_STATUS')
   const [orderTab, setOrderTab] = useState<OrderTab>('all')
   const [keyword, setKeyword] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [paymentFilter, setPaymentFilter] = useState('')
   const [detailOrderNo, setDetailOrderNo] = useState<string | null>(null)
   const { data: detail, isLoading: detailLoading } = useOrderDetail(detailOrderNo ?? undefined)
 
   const labelForStatus = (code: string) =>
     orderStatusItems.find((i) => i.itemCode === code)?.itemLabel ?? code
+
+  useEffect(() => {
+    if (orderTab !== 'all') setStatusFilter('')
+  }, [orderTab])
+
+  const paymentOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const o of orders) {
+      const p = o.paymentStatus?.trim()
+      if (p) set.add(p)
+    }
+    return [...set].sort()
+  }, [orders])
 
   const filteredOrders = useMemo(
     () =>
@@ -64,11 +79,18 @@ export function UserOrdersPage() {
         const tabOk = matchesOrderTab(o.status, orderTab)
         const key = keyword.trim().toLowerCase()
         const kwOk = !key || `${o.orderNo} ${o.receiverName}`.toLowerCase().includes(key)
-        return tabOk && kwOk
+        const statusOk =
+          orderTab !== 'all' || !statusFilter.trim() || o.status === statusFilter.trim()
+        const payOk = !paymentFilter.trim() || o.paymentStatus === paymentFilter.trim()
+        return tabOk && kwOk && statusOk && payOk
       }),
-    [orders, orderTab, keyword],
+    [orders, orderTab, keyword, statusFilter, paymentFilter],
   )
 
+  const fmtPlacedAt = (iso: string) => {
+    const d = new Date(iso)
+    return Number.isNaN(d.getTime()) ? iso : d.toLocaleString()
+  }
   const detailStatusLabel = useDictLabel(
     'ORDER_STATUS',
     detail?.status ?? '',
@@ -99,6 +121,12 @@ export function UserOrdersPage() {
       render: (v: string) => (
         <Link to={`/orders/${encodeURIComponent(v)}`}>{v}</Link>
       ),
+    },
+    {
+      title: t('user.ordersColPlacedAt'),
+      dataIndex: 'createdAt',
+      width: 168,
+      render: (v: string) => fmtPlacedAt(v),
     },
     {
       title: t('user.ordersColStatus'),
@@ -157,13 +185,36 @@ export function UserOrdersPage() {
         ]}
         style={{ marginTop: 16 }}
       />
-      <Input
-        allowClear
-        placeholder={t('user.ordersKeywordPh')}
-        style={{ maxWidth: 360, marginBottom: 12 }}
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
-      />
+      <Space wrap style={{ marginBottom: 12 }} align="center">
+        <Input
+          allowClear
+          placeholder={t('user.ordersKeywordPh')}
+          style={{ maxWidth: 360, minWidth: 200 }}
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+        />
+        {orderTab === 'all' && (
+          <Select
+            allowClear
+            placeholder={t('admin.orders.filterStatus')}
+            style={{ width: 200 }}
+            value={statusFilter || undefined}
+            onChange={(v) => setStatusFilter((v as string | null) ?? '')}
+            options={orderStatusItems.map((item) => ({
+              value: item.itemCode,
+              label: `${item.itemLabel} (${item.itemCode})`,
+            }))}
+          />
+        )}
+        <Select
+          allowClear
+          placeholder={t('admin.orders.filterPayment')}
+          style={{ width: 180 }}
+          value={paymentFilter || undefined}
+          onChange={(v) => setPaymentFilter((v as string | null) ?? '')}
+          options={paymentOptions.map((p) => ({ value: p, label: p }))}
+        />
+      </Space>
       <Table<OrderRow>
         rowKey="orderNo"
         loading={isLoading}

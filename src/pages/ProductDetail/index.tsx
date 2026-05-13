@@ -5,11 +5,11 @@
  * - 展示主图（方形容器内完整显示，避免 800×800 等素材被裁切丢失信息）、缩略图切换、标题与标签。
  * - SKU 矩阵：从 `attrJson` 解析规格维度，用户选满维度后匹配唯一 SKU，展示价、库存、重量。
  * - 购买区：数量步进（受 MOQ 约束）、加入购物车、咨询客服、直接结算（未登录则先入本地车并引导登录）。
- * - 底部「热销推荐」：与首页热销区一致，调用活动商品列表作为占位数据源（无活动商品时列表可能为空）。
+ * - 底部「热销推荐」：与首页热销区一致，调用活动商品列表作为占位数据源（无活动商品时列表可能为空）；点击其中卡片仅变更路由 `:id` 时，本页会将视口滚回顶部，避免仍停留在上一商品的滚动位置。
  *
  * 说明：`originCountry` 字段仍来自后端，界面文案使用「适合的市场」以符合业务表述；后续若后端拆分字段仅需改绑定数据源。
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ProductCard } from '../../components/ProductCard'
 import { useAddCartItem, useProductDetail, useStorefrontProducts } from '../../hooks/apiHooks'
@@ -35,6 +35,15 @@ export function ProductDetail() {
   const navigate = useNavigate()
   const { id: rawId } = useParams<{ id: string }>()
   const id = rawId?.trim() || undefined
+
+  /**
+   * 同一路由组件内仅 `id` 变化（如底部热销推荐点进另一商品）时，默认不会重置窗口滚动；
+   * 在布局阶段滚回顶部，避免用户仍停留在上一商品的页面底部。
+   */
+  useLayoutEffect(() => {
+    if (id == null) return
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [id])
 
   const { data: product, isLoading } = useProductDetail(id)
   const addItemMutation = useAddCartItem()

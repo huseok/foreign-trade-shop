@@ -178,6 +178,7 @@ export const voyage = {
       q?: string
       status?: string
       phase?: string
+      userId?: number
     }): Promise<S['PagedOrders']> {
       const sp = new URLSearchParams()
       if (params.page != null) sp.set('page', String(params.page))
@@ -185,6 +186,7 @@ export const voyage = {
       if (params.q != null && params.q !== '') sp.set('q', params.q)
       if (params.status != null && params.status !== '') sp.set('status', params.status)
       if (params.phase != null && params.phase !== '') sp.set('phase', params.phase)
+      if (params.userId != null && params.userId > 0) sp.set('userId', String(params.userId))
       const qs = sp.toString()
       return getData<S['PagedOrders']>(`/api/v1/admin/orders${qs ? `?${qs}` : ''}`)
     },
@@ -309,8 +311,14 @@ export const voyage = {
     adminPatchCustomer(id: number, body: S['CustomerAdminUpdateRequest']): Promise<string> {
       return patchData<string>(`/api/v1/admin/customers/${id}`, body)
     },
-    adminResetPassword(id: number): Promise<S['AdminResetPasswordResponse']> {
-      return postData<S['AdminResetPasswordResponse']>(`/api/v1/admin/customers/${id}/reset-password`)
+    adminResetPassword(
+      id: number,
+      body?: S['AdminResetPasswordRequest'] | null,
+    ): Promise<S['AdminResetPasswordResponse']> {
+      return postData<S['AdminResetPasswordResponse']>(
+        `/api/v1/admin/customers/${id}/reset-password`,
+        body ?? {},
+      )
     },
   },
 

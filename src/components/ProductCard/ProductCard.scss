@@ -142,6 +142,14 @@
   }
 
   &--compact-add {
+    cursor: pointer;
+
+    .product-card__footer {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.65rem;
+    }
+
     .product-card__actions {
       flex-wrap: nowrap;
       justify-content: flex-end;
@@ -156,6 +164,75 @@
       font-size: 1.2rem;
       line-height: 1;
       font-weight: 700;
+    }
+  }
+
+  &__media--clickable {
+    cursor: pointer;
+  }
+
+  &__title-text {
+    color: inherit;
+  }
+
+  &__catalog-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  &__qty-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+
+    .ant-input-number {
+      min-width: 5.5rem;
+    }
+  }
+
+  &__qty-label {
+    font-size: 0.8rem;
+    color: var(--muted, #64748b);
+    white-space: nowrap;
+  }
+
+  &__btn-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__buy-now {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    border: 1px solid color-mix(in oklch, var(--primary, #2563eb) 45%, var(--border));
+    background: transparent;
+    color: var(--primary);
+    transition:
+      filter 0.15s,
+      background 0.15s;
+
+    &:hover:not(:disabled) {
+      background: color-mix(in oklch, var(--primary, #2563eb) 8%, transparent);
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
     }
   }
 

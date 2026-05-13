@@ -1,9 +1,13 @@
 /**
- * Cart page: server cart when logged in; guest cart uses localStorage and fetches product details by id for thumbs/titles.
+ * 购物车页：登录态走服务端购物车；访客态为 localStorage，并按商品 id 拉详情补全缩略图与标题。
+ *
+ * 登录态：下架行仍可勾选；点击行（非链接/输入/按钮区域）切换勾选；行序按 `productId` 稳定排序；
+ * 勾选下架商品时「去结算」会弹窗提示，需取消勾选后方可进入结账。
  */
+import { App } from 'antd'
 import { useQueries } from '@tanstack/react-query'
+import { type MouseEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMemo, useEffect, useState } from 'react'
 import {
   queryKeys,
   useBulkDeleteCartItems,
@@ -27,6 +31,12 @@ import './Cart.scss'
 
 const CART_PRODUCT_STALE_MS = 5 * 60 * 1000
 
+/** 行点击切换勾选时，忽略来自可独立交互的子元素（避免与链接、数量框等冲突）。 */
+function isCartRowInteractiveTarget(el: EventTarget | null): boolean {
+  if (el == null || !(el instanceof Element)) return false
+  return Boolean(el.closest('button, a, input, label, textarea, select'))
+}
+
 type ResolvedRow = {
   /** 登录态为后端购物车行 id（数字）；访客态为商品 publicId 字符串（与本地车一致）。 */
   itemId: number | string
@@ -44,6 +54,7 @@ type ResolvedRow = {
 
 export function Cart() {
   const { t } = useI18n()
+  const { modal } = App.useApp()
   const loggedIn = authStore.isLoggedIn()
   const { data: cart, isLoading } = useCart(loggedIn)
   const [localItems, setLocalItems] = useState(() => getLocalCartItems())
@@ -61,18 +72,20 @@ export function Cart() {
             ...it,
             productId: String(it.productId),
           }))
-        : localItems.map((x) => ({
-            itemId: x.productId,
-            productId: x.productId,
-            title: `${t('common.product')} #${x.productId}`,
-            quantity: x.quantity,
-            unitPrice: '0',
-            currency: 'USD',
-            lineAmount: '0',
-            moq: 1,
-            selected: true,
-            productActive: true,
-          })),
+        : [...localItems]
+            .sort((a, b) => a.productId.localeCompare(b.productId, 'en', { numeric: true }))
+            .map((x) => ({
+              itemId: x.productId,
+              productId: x.productId,
+              title: `${t('common.product')} #${x.productId}`,
+              quantity: x.quantity,
+              unitPrice: '0',
+              currency: 'USD',
+              lineAmount: '0',
+              moq: 1,
+              selected: true,
+              productActive: true,
+            })),
     [loggedIn, cart?.items, localItems, t],
   )
 
@@ -119,20 +132,32 @@ export function Cart() {
     [rows, metaByProductId, loggedIn],
   )
 
+  /** 稳定展示顺序：先按商品 id，再按购物车行 id（避免接口顺序抖动）。 */
+  const rowsSorted: ResolvedRow[] = useMemo(() => {
+    const copy = [...rowsResolved]
+    copy.sort((a, b) => {
+      const pc = a.productId.localeCompare(b.productId, 'en', { numeric: true })
+      if (pc !== 0) return pc
+      const na = typeof a.itemId === 'number' ? a.itemId : Number(a.itemId) || 0
+      const nb = typeof b.itemId === 'number' ? b.itemId : Number(b.itemId) || 0
+      return na - nb
+    })
+    return copy
+  }, [rowsResolved])
+
   const itemCount = rowsResolved.reduce((sum, item) => sum + item.quantity, 0)
   const currency = cart?.currency ?? 'USD'
   const subtotalAll = Number(cart?.totalAmount ?? 0)
   const subtotalSelected = Number(cart?.selectedSubtotal ?? cart?.totalAmount ?? 0)
   const summaryAmount = loggedIn ? subtotalSelected : subtotalAll
 
-  const activeRows = useMemo(
-    () => rowsResolved.filter((r) => r.productActive),
-    [rowsResolved],
+  const allRowsSelected =
+    loggedIn && rowsSorted.length > 0 && rowsSorted.every((r) => r.selected)
+
+  const hasSelectedInactive = useMemo(
+    () => loggedIn && rowsResolved.some((r) => r.selected && !r.productActive),
+    [loggedIn, rowsResolved],
   )
-  const allActiveSelected =
-    loggedIn &&
-    activeRows.length > 0 &&
-    activeRows.every((r) => r.selected)
 
   const selectedIds = useMemo(
     () =>
@@ -178,22 +203,34 @@ export function Cart() {
     void removeMutation.mutate(itemId)
   }
 
-  const toggleRowSelected = (item: ResolvedRow) => {
-    if (!loggedIn || !item.productActive || selectionBusy) return
-    if (typeof item.itemId !== 'number') return
-    void selectionMutation.mutate({
-      itemIds: [item.itemId],
-      selected: !item.selected,
-    })
-  }
+  const toggleRowSelected = useCallback(
+    (item: ResolvedRow) => {
+      if (!loggedIn || selectionBusy) return
+      if (typeof item.itemId !== 'number') return
+      void selectionMutation.mutate({
+        itemIds: [item.itemId],
+        selected: !item.selected,
+      })
+    },
+    [loggedIn, selectionBusy, selectionMutation],
+  )
+
+  const onRowClick = useCallback(
+    (item: ResolvedRow, e: MouseEvent<HTMLTableRowElement>) => {
+      if (!loggedIn || selectionBusy) return
+      if (isCartRowInteractiveTarget(e.target)) return
+      toggleRowSelected(item)
+    },
+    [loggedIn, selectionBusy, toggleRowSelected],
+  )
 
   const toggleSelectAll = () => {
-    if (!loggedIn || activeRows.length === 0 || selectionBusy) return
-    const ids = activeRows.map((r) => r.itemId).filter((id): id is number => typeof id === 'number')
+    if (!loggedIn || rowsSorted.length === 0 || selectionBusy) return
+    const ids = rowsSorted.map((r) => r.itemId).filter((id): id is number => typeof id === 'number')
     if (ids.length === 0) return
     void selectionMutation.mutate({
       itemIds: ids,
-      selected: !allActiveSelected,
+      selected: !allRowsSelected,
     })
   }
 
@@ -207,7 +244,19 @@ export function Cart() {
     void clearMutation.mutate()
   }
 
-  const checkoutDisabled = loggedIn && subtotalSelected <= 0
+  /** 仅下架勾选时仍允许点击「去结算」以弹出说明；否则无在售勾选则禁用。 */
+  const checkoutDisabled = loggedIn && subtotalSelected <= 0 && !hasSelectedInactive
+
+  const handleCheckoutNavClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (!loggedIn) return
+    if (hasSelectedInactive) {
+      e.preventDefault()
+      modal.warning({
+        title: t('cart.checkoutInactiveTitle'),
+        content: t('cart.checkoutInactiveBody'),
+      })
+    }
+  }
 
   return (
     <div className="cart page-pad">
@@ -236,8 +285,8 @@ export function Cart() {
                   <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                     <input
                       type="checkbox"
-                      checked={allActiveSelected}
-                      disabled={selectionBusy || activeRows.length === 0}
+                      checked={allRowsSelected}
+                      disabled={selectionBusy || rowsSorted.length === 0}
                       onChange={toggleSelectAll}
                     />
                     <span>{t('cart.selectAll')}</span>
@@ -273,7 +322,7 @@ export function Cart() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rowsResolved.map((item) => {
+                  {rowsSorted.map((item) => {
                     const rowUpdating =
                       updateMutation.isPending &&
                       updateMutation.variables?.itemId === item.itemId
@@ -282,14 +331,25 @@ export function Cart() {
                       removeMutation.variables === item.itemId
                     const rowBusy = rowUpdating || rowRemoving || selectionBusy
                     const minQ = Math.max(1, Number(item.moq ?? 1))
+                    const rowClass = [
+                      !item.productActive ? 'cart-table__row--inactive' : '',
+                      loggedIn && item.selected ? 'cart-table__row--selected' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')
                     return (
-                    <tr key={String(item.itemId)} className={!item.productActive ? 'cart-table__row--inactive' : undefined}>
+                    <tr
+                      key={String(item.itemId)}
+                      className={rowClass || undefined}
+                      onClick={loggedIn ? (e) => onRowClick(item, e) : undefined}
+                      style={loggedIn ? { cursor: 'pointer' } : undefined}
+                    >
                       {loggedIn && (
                         <td data-label={t('cart.colSelect')}>
                           <input
                             type="checkbox"
                             checked={item.selected}
-                            disabled={rowBusy || !item.productActive}
+                            disabled={rowBusy}
                             onChange={() => toggleRowSelected(item)}
                             aria-label={t('cart.colSelect')}
                           />
@@ -297,14 +357,20 @@ export function Cart() {
                       )}
                       <td>
                         <div className="cart-table__product">
-                          <div className="cart-table__thumb" role="img" aria-hidden={!item.thumbUrl}>
-                            {item.thumbUrl ? (
-                              <img className="cart-table__thumb-img" src={item.thumbUrl} alt="" loading="lazy" />
-                            ) : null}
-                          </div>
+                          <Link
+                            to={`/products/${encodeURIComponent(item.productId)}`}
+                            className="cart-table__thumb-link"
+                            aria-label={t('product.view')}
+                          >
+                            <div className="cart-table__thumb" role="img" aria-hidden={!item.thumbUrl}>
+                              {item.thumbUrl ? (
+                                <img className="cart-table__thumb-img" src={item.thumbUrl} alt="" loading="lazy" />
+                              ) : null}
+                            </div>
+                          </Link>
                           <div>
                             <Link
-                              to={`/products/${item.productId}`}
+                              to={`/products/${encodeURIComponent(item.productId)}`}
                               className="cart-table__name"
                             >
                               {item.title}
@@ -392,6 +458,7 @@ export function Cart() {
                 aria-disabled={checkoutDisabled}
                 onClick={(e) => {
                   if (checkoutDisabled) e.preventDefault()
+                  else handleCheckoutNavClick(e)
                 }}
                 style={checkoutDisabled ? { pointerEvents: 'none', opacity: 0.55 } : undefined}
               >

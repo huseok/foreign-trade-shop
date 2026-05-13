@@ -9,7 +9,8 @@ import { voyage } from '../../openapi/voyageSdk'
 type SitePromoSlide = Awaited<ReturnType<typeof voyage.site.listPromos>>[number]
 
 type Props = {
-  sampleProductId: number
+  /** 用于示例「去商品页」链接的商品 publicId（雪花字符串）。 */
+  sampleProductId: string
 }
 
 function PromoCta({ href }: { href?: string | null }) {

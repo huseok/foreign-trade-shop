@@ -1,9 +1,10 @@
 /**
- * 管理后台商品列表：分页、筛选、CSV 导入导出与快捷新建。
+ * 管理后台「商品管理」列表：分页、筛选、CSV 导入导出与快捷新建。
  *
  * 交互说明：
- * - 缩略图列、标题列：点击后展开/收起当前行详情（非 Dialog），与左侧勾选框无强绑定。
- * - 展开区底部可跳转前台商品页（新标签页），便于运营核对 C 端展示。
+ * - 不展示表格最前侧的展开/折叠图标列；通过缩略图列、标题列点击展开行详情。
+ * - 任意时刻仅允许一行处于展开状态；再点其他行会先收起上一行。
+ * - 展开区顶部为商品图集与「前台商品页查看」，其下为字段摘要与描述。
  */
 import { useEffect, useState, type Key, type MouseEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -40,18 +41,15 @@ function formatMoneyAmount(v: number | null | undefined): string {
 }
 
 /**
- * 商品列表「行下展开」区域：展示字段摘要、图集与描述。
+ * 商品列表「行下展开」区域：在列表中优先展示图集与前台入口，再展示字段摘要与描述。
  *
- * @param leadWithImages 为 true 时先图后文（历史 Popover 预览布局）；列表行展开为 false（先摘要后图）。
- * @param showStorefrontLink 为 true 时在底部追加「前台商品页」按钮（新标签页打开，避免离开后台路由栈）。
+ * @param showStorefrontLink 为 true 时在顶部展示「前台商品页」按钮（新标签页打开，避免离开后台路由栈）。
  */
 function ProductExpandContent({
   product,
-  leadWithImages = false,
   showStorefrontLink = false,
 }: {
   product: ProductDto
-  leadWithImages?: boolean
   showStorefrontLink?: boolean
 }) {
   const { t } = useI18n()
@@ -82,7 +80,7 @@ function ProductExpandContent({
       : null
 
   const summaryBlock = (
-    <div style={{ marginBottom: leadWithImages ? 10 : 16 }}>
+    <div style={{ marginBottom: 16 }}>
       <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
         {t('admin.productsList.previewSummarySection')}
       </Typography.Text>
@@ -193,7 +191,7 @@ function ProductExpandContent({
 
   const descriptionBlock =
     product.description ? (
-      <Typography.Paragraph style={{ marginTop: leadWithImages ? 10 : 12, marginBottom: 0 }} type="secondary">
+      <Typography.Paragraph style={{ marginTop: 12, marginBottom: 0 }} type="secondary">
         <Typography.Text strong style={{ color: 'rgba(0,0,0,0.88)' }}>
           {t('admin.productsList.expandDescriptionLabel')}
         </Typography.Text>
@@ -201,8 +199,8 @@ function ProductExpandContent({
       </Typography.Paragraph>
     ) : null
 
-  const storefrontFooter = showStorefrontLink ? (
-    <div style={{ marginTop: 12 }}>
+  const storefrontTop = showStorefrontLink ? (
+    <div style={{ marginBottom: 16 }}>
       <Button type="primary" href={`/products/${encodeURIComponent(product.id)}`} target="_blank" rel="noreferrer">
         {t('admin.productsList.viewStorefront')}
       </Button>
@@ -210,10 +208,11 @@ function ProductExpandContent({
   ) : null
 
   return (
-    <div style={{ padding: leadWithImages ? 0 : '4px 0 12px', maxWidth: leadWithImages ? 480 : 960 }}>
-      {leadWithImages ? (
+    <div style={{ padding: '4px 0 12px', maxWidth: 960 }}>
+      {showStorefrontLink ? (
         <>
           {imagesBlock}
+          {storefrontTop}
           {summaryBlock}
           {descriptionBlock}
         </>
@@ -224,7 +223,6 @@ function ProductExpandContent({
           {descriptionBlock}
         </>
       )}
-      {storefrontFooter}
     </div>
   )
 }
@@ -248,7 +246,7 @@ export function AdminProductListPage() {
   const [importSummary, setImportSummary] = useState<{ ok: number; total: number } | null>(null)
   const [editProductId, setEditProductId] = useState<string | null>(null)
   const [switchBusyId, setSwitchBusyId] = useState<string | null>(null)
-  /** 当前展开详情的行（商品 ID）；与 ProTable `expandable.expandedRowKeys` 同步。 */
+  /** 当前展开详情的行（商品 ID，至多一行）；与 ProTable `expandable.expandedRowKeys` 同步。 */
   const [expandedRowKeys, setExpandedRowKeys] = useState<Key[]>([])
   const bulkStatusMut = useAdminBulkProductStatus()
 
@@ -294,13 +292,13 @@ export function AdminProductListPage() {
   const total = data?.total ?? 0
 
   /**
-   * 展开/收起指定商品行。
+   * 展开/收起指定商品行；同时只保留一行展开。
    * 需在交互元素上 `stopPropagation`，避免与行级「点选切换勾选」逻辑冲突。
    */
   const toggleRowExpanded = (productId: string, e?: MouseEvent) => {
     e?.stopPropagation()
     const key = productId as Key
-    setExpandedRowKeys((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]))
+    setExpandedRowKeys((prev) => (prev.includes(key) ? [] : [key]))
   }
 
   const setProductActive = async (id: string, isActive: boolean) => {
@@ -655,9 +653,13 @@ export function AdminProductListPage() {
         columns={columns}
         dataSource={rows}
         expandable={{
+          showExpandColumn: false,
           expandedRowRender: (record) => <ProductExpandContent product={record} showStorefrontLink />,
           expandedRowKeys,
-          onExpandedRowsChange: setExpandedRowKeys,
+          onExpandedRowsChange: (keys) => {
+            const ks = keys as Key[]
+            setExpandedRowKeys(ks.length <= 1 ? ks : [ks[ks.length - 1]!])
+          },
         }}
         rowSelection={{
           selectedRowKeys: selectedIds,
