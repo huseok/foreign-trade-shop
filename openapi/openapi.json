@@ -30,11 +30,12 @@
       },
       "RegisterRequest": {
         "type": "object",
-        "required": ["email", "password", "name", "captchaId", "captchaCode"],
+        "required": ["email", "password", "name", "salutation", "captchaId", "captchaCode"],
         "properties": {
           "email": { "type": "string", "format": "email" },
           "password": { "type": "string", "minLength": 6 },
           "name": { "type": "string" },
+          "salutation": { "type": "string", "description": "称呼，必填" },
           "phone": { "type": "string" },
           "country": { "type": "string" },
           "captchaId": { "type": "string" },
@@ -65,11 +66,12 @@
       },
       "MeResponse": {
         "type": "object",
-        "required": ["id", "email", "name", "role"],
+        "required": ["id", "email", "name", "salutation", "role"],
         "properties": {
           "id": { "type": "integer", "format": "int64" },
           "email": { "type": "string" },
           "name": { "type": "string" },
+          "salutation": { "type": "string" },
           "role": { "type": "string" }
         }
       },
@@ -110,11 +112,19 @@
       },
       "StorefrontSettings": {
         "type": "object",
-        "required": ["homePromoZoneTagCode"],
+        "required": ["homePromoZoneTagCode", "homeFeaturedTagCode", "homeHotTagCode"],
         "properties": {
           "homePromoZoneTagCode": {
             "type": "string",
             "description": "首页活动商品轮播绑定的标签编码（与标签管理 code 一致）"
+          },
+          "homeFeaturedTagCode": {
+            "type": "string",
+            "description": "首页精选区块标签编码；空字符串表示未配置"
+          },
+          "homeHotTagCode": {
+            "type": "string",
+            "description": "首页热销区块标签编码；空字符串表示未配置"
           }
         }
       },
@@ -162,7 +172,7 @@
         "type": "object",
         "required": ["id", "title", "moq", "isActive"],
         "properties": {
-          "id": { "type": "integer", "format": "int64" },
+          "id": { "type": "string", "description": "商品对外雪花 ID（十进制字符串）" },
           "title": { "type": "string" },
           "moq": { "type": "integer" },
           "description": { "type": "string", "nullable": true },
@@ -265,13 +275,65 @@
       "IdPayload": {
         "type": "object",
         "required": ["id"],
-        "properties": { "id": { "type": "integer", "format": "int64" } }
+        "properties": { "id": { "type": "string", "description": "商品为雪花字符串；标签等可能为数字字符串" } }
+      },
+      "ProductBulkStatusRequest": {
+        "type": "object",
+        "required": ["ids", "isActive"],
+        "properties": {
+          "ids": { "type": "array", "items": { "type": "string" }, "description": "商品 publicId 列表" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "ProductSkuMatrixView": {
+        "type": "object",
+        "required": ["productId", "options", "skus"],
+        "properties": {
+          "productId": { "type": "string" },
+          "options": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProductOptionView" }
+          },
+          "skus": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProductSkuView" }
+          }
+        }
+      },
+      "ProductOptionInput": {
+        "type": "object",
+        "required": ["optionName", "optionValue"],
+        "properties": {
+          "optionName": { "type": "string" },
+          "optionValue": { "type": "string" },
+          "sortNo": { "type": "integer", "default": 0 }
+        }
+      },
+      "ProductSkuInput": {
+        "type": "object",
+        "required": ["skuCode", "attrJson", "salePrice", "stockQty"],
+        "properties": {
+          "skuCode": { "type": "string" },
+          "attrJson": { "type": "string" },
+          "salePrice": { "type": "number" },
+          "stockQty": { "type": "integer" },
+          "weightKg": { "type": "number", "nullable": true },
+          "isActive": { "type": "boolean", "default": true }
+        }
+      },
+      "ProductSkuMatrixUpsertRequest": {
+        "type": "object",
+        "required": ["options", "skus"],
+        "properties": {
+          "options": { "type": "array", "items": { "$ref": "#/components/schemas/ProductOptionInput" } },
+          "skus": { "type": "array", "items": { "$ref": "#/components/schemas/ProductSkuInput" } }
+        }
       },
       "AddCartItemRequest": {
         "type": "object",
         "required": ["productId", "quantity"],
         "properties": {
-          "productId": { "type": "integer", "format": "int64" },
+          "productId": { "type": "string", "description": "商品 publicId（雪花字符串）" },
           "quantity": { "type": "integer", "minimum": 1 }
         }
       },
@@ -280,49 +342,86 @@
         "required": ["quantity"],
         "properties": { "quantity": { "type": "integer", "minimum": 1 } }
       },
+      "UpdateCartSelectionRequest": {
+        "type": "object",
+        "required": ["itemIds", "selected"],
+        "properties": {
+          "itemIds": { "type": "array", "items": { "type": "integer", "format": "int64" } },
+          "selected": { "type": "boolean" }
+        }
+      },
+      "BulkDeleteCartRequest": {
+        "type": "object",
+        "required": ["itemIds"],
+        "properties": {
+          "itemIds": { "type": "array", "items": { "type": "integer", "format": "int64" } }
+        }
+      },
+      "ReorderToCartRequest": {
+        "type": "object",
+        "required": ["orderNo"],
+        "properties": { "orderNo": { "type": "string" } }
+      },
       "CartItemView": {
         "type": "object",
         "required": [
           "itemId",
           "productId",
           "title",
+          "moq",
           "quantity",
           "unitPrice",
           "currency",
-          "lineAmount"
+          "lineAmount",
+          "selected",
+          "productActive"
         ],
         "properties": {
           "itemId": { "type": "integer", "format": "int64" },
-          "productId": { "type": "integer", "format": "int64" },
+          "productId": { "type": "string" },
           "title": { "type": "string" },
+          "moq": { "type": "integer" },
           "quantity": { "type": "integer" },
           "unitPrice": { "type": "string" },
           "currency": { "type": "string" },
-          "lineAmount": { "type": "string" }
+          "lineAmount": { "type": "string" },
+          "selected": { "type": "boolean" },
+          "productActive": { "type": "boolean" },
+          "listPrice": { "type": "string", "nullable": true },
+          "thumbUrl": { "type": "string", "nullable": true }
         }
       },
       "CartView": {
         "type": "object",
-        "required": ["items", "totalAmount", "currency"],
+        "required": ["items", "totalAmount", "selectedSubtotal", "currency"],
         "properties": {
           "items": { "type": "array", "items": { "$ref": "#/components/schemas/CartItemView" } },
           "totalAmount": { "type": "string" },
+          "selectedSubtotal": { "type": "string" },
           "currency": { "type": "string" }
         }
       },
       "CreateOrderRequest": {
         "type": "object",
-        "required": ["receiverName", "receiverPhone", "country", "addressLine"],
         "properties": {
-          "receiverName": { "type": "string" },
-          "receiverPhone": { "type": "string" },
-          "country": { "type": "string" },
-          "addressLine": { "type": "string" },
-          "postalCode": { "type": "string" },
-          "receiverCompany": { "type": "string" },
-          "taxNo": { "type": "string" },
-          "incoterm": { "type": "string" },
-          "shippingMethod": { "type": "string" }
+          "savedAddressId": { "type": "integer", "format": "int64", "nullable": true },
+          "receiverName": { "type": "string", "nullable": true },
+          "receiverPhone": { "type": "string", "nullable": true },
+          "country": { "type": "string", "nullable": true },
+          "addressLine": { "type": "string", "nullable": true },
+          "postalCode": { "type": "string", "nullable": true },
+          "receiverCompany": { "type": "string", "nullable": true },
+          "taxNo": { "type": "string", "nullable": true },
+          "incoterm": { "type": "string", "nullable": true },
+          "shippingMethod": { "type": "string", "nullable": true },
+          "receiverProvince": { "type": "string", "nullable": true },
+          "receiverCity": { "type": "string", "nullable": true },
+          "cartItemIds": {
+            "type": "array",
+            "items": { "type": "integer", "format": "int64" },
+            "nullable": true
+          },
+          "couponCode": { "type": "string", "nullable": true }
         }
       },
       "OrderNoPayload": {
@@ -334,29 +433,129 @@
         "type": "object",
         "required": ["productId", "titleSnapshot", "priceSnapshot", "quantity"],
         "properties": {
-          "productId": { "type": "integer", "format": "int64" },
+          "productId": { "type": "string" },
           "titleSnapshot": { "type": "string" },
           "priceSnapshot": { "type": "string" },
-          "quantity": { "type": "integer" }
+          "quantity": { "type": "integer" },
+          "thumbUrl": { "type": "string", "nullable": true }
         }
+      },
+      "OrderLogisticsView": {
+        "type": "object",
+        "required": ["id", "orderNo", "trackingNo", "createdAt"],
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "orderNo": { "type": "string" },
+          "carrier": { "type": "string", "nullable": true },
+          "trackingNo": { "type": "string" },
+          "remark": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "description": "ISO-8601 时间" }
+        }
+      },
+      "OrderLogisticsCreateRequest": {
+        "type": "object",
+        "required": ["trackingNo"],
+        "properties": {
+          "trackingNo": { "type": "string" },
+          "carrier": { "type": "string" },
+          "remark": { "type": "string" }
+        }
+      },
+      "PagedOrders": {
+        "type": "object",
+        "required": ["items", "total", "page", "size"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderView" } },
+          "total": { "type": "integer", "format": "int64" },
+          "page": { "type": "integer" },
+          "size": { "type": "integer" }
+        }
+      },
+      "CustomerAdminView": {
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "name",
+          "salutation",
+          "role",
+          "status",
+          "createdAt",
+          "tier",
+          "lifetimePaidUsd",
+          "memberDiscountPercent"
+        ],
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "email": { "type": "string" },
+          "name": { "type": "string" },
+          "salutation": { "type": "string" },
+          "phone": { "type": "string", "nullable": true },
+          "country": { "type": "string", "nullable": true },
+          "role": { "type": "string" },
+          "status": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "tier": { "type": "string" },
+          "lifetimePaidUsd": { "type": "string" },
+          "memberDiscountPercent": { "type": "integer" },
+          "adminNote": { "type": "string", "nullable": true },
+          "preferences": { "type": "string", "nullable": true }
+        }
+      },
+      "PagedCustomers": {
+        "type": "object",
+        "required": ["items", "total", "page", "size"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/CustomerAdminView" } },
+          "total": { "type": "integer", "format": "int64" },
+          "page": { "type": "integer" },
+          "size": { "type": "integer" }
+        }
+      },
+      "CustomerAdminUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "adminNote": { "type": "string" },
+          "preferences": { "type": "string" }
+        }
+      },
+      "AdminResetPasswordResponse": {
+        "type": "object",
+        "required": ["temporaryPassword"],
+        "properties": { "temporaryPassword": { "type": "string" } }
       },
       "OrderView": {
         "type": "object",
         "required": [
           "orderNo",
           "status",
+          "paymentStatus",
           "totalAmount",
+          "subtotalAmount",
+          "discountMember",
+          "discountPromo",
+          "discountCoupon",
+          "shippingFee",
           "currency",
           "receiverName",
           "receiverPhone",
           "country",
           "addressLine",
-          "items"
+          "items",
+          "createdAt"
         ],
         "properties": {
           "orderNo": { "type": "string" },
           "status": { "type": "string" },
+          "paymentStatus": { "type": "string" },
           "totalAmount": { "type": "string" },
+          "subtotalAmount": { "type": "string" },
+          "discountMember": { "type": "string" },
+          "discountPromo": { "type": "string" },
+          "discountCoupon": { "type": "string" },
+          "shippingFee": { "type": "string" },
+          "couponCodeSnapshot": { "type": "string", "nullable": true },
+          "paypalOrderId": { "type": "string", "nullable": true },
           "currency": { "type": "string" },
           "receiverName": { "type": "string" },
           "receiverPhone": { "type": "string" },
@@ -364,12 +563,19 @@
           "taxNo": { "type": "string", "nullable": true },
           "country": { "type": "string" },
           "addressLine": { "type": "string" },
+          "receiverProvince": { "type": "string", "nullable": true },
+          "receiverCity": { "type": "string", "nullable": true },
           "postalCode": { "type": "string", "nullable": true },
           "incoterm": { "type": "string", "nullable": true },
           "shippingMethod": { "type": "string", "nullable": true },
           "logisticsCompany": { "type": "string", "nullable": true },
           "trackingNo": { "type": "string", "nullable": true },
-          "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItemView" } }
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItemView" } },
+          "createdAt": { "type": "string", "description": "ISO-8601 下单时间" },
+          "logistics": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OrderLogisticsView" }
+          }
         }
       },
       "UpdateTrackingRequest": {
@@ -383,7 +589,11 @@
       "UpdateOrderStatusRequest": {
         "type": "object",
         "required": ["status"],
-        "properties": { "status": { "type": "string" } }
+        "properties": {
+          "status": { "type": "string" },
+          "remark": { "type": "string" },
+          "forceRepair": { "type": "boolean", "description": "为 true 时允许状态回退，须填写 remark" }
+        }
       },
       "CreateAfterSaleRequest": {
         "type": "object",
@@ -407,6 +617,194 @@
         "type": "object",
         "required": ["status"],
         "properties": { "status": { "type": "string" } }
+      },
+      "CouponAdminView": {
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "name",
+          "discountType",
+          "discountValue",
+          "minOrderAmount",
+          "validFrom",
+          "validTo",
+          "isActive"
+        ],
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "discountType": { "type": "string" },
+          "discountValue": { "type": "number" },
+          "minOrderAmount": { "type": "number" },
+          "tagFilter": { "type": "string", "nullable": true },
+          "validFrom": { "type": "string", "format": "date-time" },
+          "validTo": { "type": "string", "format": "date-time" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "CouponAdminUpsertRequest": {
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "discountType",
+          "discountValue",
+          "minOrderAmount",
+          "validFrom",
+          "validTo",
+          "isActive"
+        ],
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "discountType": { "type": "string" },
+          "discountValue": { "type": "number" },
+          "minOrderAmount": { "type": "number" },
+          "tagFilter": { "type": "string" },
+          "validFrom": { "type": "string", "format": "date-time" },
+          "validTo": { "type": "string", "format": "date-time" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "CouponActivePatchRequest": {
+        "type": "object",
+        "required": ["isActive"],
+        "properties": { "isActive": { "type": "boolean" } }
+      },
+      "PromotionAdminView": {
+        "type": "object",
+        "required": ["id", "name", "thresholdAmount", "amountOff", "validFrom", "validTo", "isActive"],
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "thresholdAmount": { "type": "number" },
+          "amountOff": { "type": "number" },
+          "tagFilter": { "type": "string", "nullable": true },
+          "validFrom": { "type": "string", "format": "date-time" },
+          "validTo": { "type": "string", "format": "date-time" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "PromotionAdminUpsertRequest": {
+        "type": "object",
+        "required": ["name", "thresholdAmount", "amountOff", "validFrom", "validTo", "isActive"],
+        "properties": {
+          "name": { "type": "string" },
+          "thresholdAmount": { "type": "number" },
+          "amountOff": { "type": "number" },
+          "tagFilter": { "type": "string" },
+          "validFrom": { "type": "string", "format": "date-time" },
+          "validTo": { "type": "string", "format": "date-time" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "PromotionActivePatchRequest": {
+        "type": "object",
+        "required": ["isActive"],
+        "properties": { "isActive": { "type": "boolean" } }
+      },
+      "MembershipTierRuleAdminView": {
+        "type": "object",
+        "required": ["id", "tierCode", "minLifetimePaidUsd", "discountPercent", "sortNo", "isActive"],
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "tierCode": { "type": "string" },
+          "minLifetimePaidUsd": { "type": "string" },
+          "discountPercent": { "type": "integer" },
+          "sortNo": { "type": "integer" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "MembershipTierRuleUpsertRequest": {
+        "type": "object",
+        "required": ["tierCode", "minLifetimePaidUsd", "discountPercent", "sortNo", "isActive"],
+        "properties": {
+          "tierCode": { "type": "string" },
+          "minLifetimePaidUsd": { "type": "number" },
+          "discountPercent": { "type": "integer" },
+          "sortNo": { "type": "integer" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "MembershipTierRuleActivePatchRequest": {
+        "type": "object",
+        "required": ["isActive"],
+        "properties": { "isActive": { "type": "boolean" } }
+      },
+      "AdminStatsSummaryView": {
+        "type": "object",
+        "required": [
+          "totalUsers",
+          "newUsersLast7Days",
+          "totalProducts",
+          "activeProducts",
+          "totalOrders",
+          "ordersLast7Days",
+          "pendingPaymentOrders",
+          "paidOrders",
+          "paidRevenueTotal",
+          "totalAfterSales"
+        ],
+        "properties": {
+          "totalUsers": { "type": "integer", "format": "int64" },
+          "newUsersLast7Days": { "type": "integer", "format": "int64" },
+          "totalProducts": { "type": "integer", "format": "int64" },
+          "activeProducts": { "type": "integer", "format": "int64" },
+          "totalOrders": { "type": "integer", "format": "int64" },
+          "ordersLast7Days": { "type": "integer", "format": "int64" },
+          "pendingPaymentOrders": { "type": "integer", "format": "int64" },
+          "paidOrders": { "type": "integer", "format": "int64" },
+          "paidRevenueTotal": { "type": "string" },
+          "totalAfterSales": { "type": "integer", "format": "int64" }
+        }
+      },
+      "UserAddressView": {
+        "type": "object",
+        "required": ["id", "receiverName", "receiverPhone", "country", "addressLine", "isDefault"],
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "receiverName": { "type": "string" },
+          "receiverPhone": { "type": "string" },
+          "receiverCompany": { "type": "string", "nullable": true },
+          "country": { "type": "string" },
+          "province": { "type": "string", "nullable": true },
+          "city": { "type": "string", "nullable": true },
+          "addressLine": { "type": "string" },
+          "postalCode": { "type": "string", "nullable": true },
+          "isDefault": { "type": "boolean" }
+        }
+      },
+      "UserAddressCreateRequest": {
+        "type": "object",
+        "required": ["receiverName", "receiverPhone", "country", "addressLine", "isDefault"],
+        "properties": {
+          "receiverName": { "type": "string" },
+          "receiverPhone": { "type": "string" },
+          "receiverCompany": { "type": "string" },
+          "country": { "type": "string" },
+          "province": { "type": "string" },
+          "city": { "type": "string" },
+          "addressLine": { "type": "string" },
+          "postalCode": { "type": "string" },
+          "isDefault": { "type": "boolean" }
+        }
+      },
+      "UserAddressUpdateRequest": {
+        "type": "object",
+        "required": ["receiverName", "receiverPhone", "country", "addressLine", "isDefault"],
+        "properties": {
+          "receiverName": { "type": "string" },
+          "receiverPhone": { "type": "string" },
+          "receiverCompany": { "type": "string" },
+          "country": { "type": "string" },
+          "province": { "type": "string" },
+          "city": { "type": "string" },
+          "addressLine": { "type": "string" },
+          "postalCode": { "type": "string" },
+          "isDefault": { "type": "boolean" }
+        }
       }
     }
   },
@@ -560,14 +958,32 @@
           {
             "name": "tagId",
             "in": "query",
-            "description": "按标签 ID 筛选（商品须关联该标签）",
+            "description": "按标签数字 ID 筛选（已废弃，优先 tagCode）",
             "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "tagCode",
+            "in": "query",
+            "description": "按标签编码筛选（与标签管理 code 一致）",
+            "schema": { "type": "string" }
           },
           {
             "name": "promo",
             "in": "query",
             "description": "true 时仅返回活动商品（已设划线价且高于售价）",
             "schema": { "type": "boolean" }
+          },
+          {
+            "name": "minPrice",
+            "in": "query",
+            "description": "主档售价下限（含）",
+            "schema": { "type": "number" }
+          },
+          {
+            "name": "maxPrice",
+            "in": "query",
+            "description": "主档售价上限（含）",
+            "schema": { "type": "number" }
           }
         ],
         "responses": {
@@ -628,7 +1044,7 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "format": "int64" }
+            "schema": { "type": "string", "description": "商品对外雪花 ID" }
           }
         ],
         "responses": {
@@ -668,6 +1084,28 @@
             "in": "query",
             "description": "true=仅上架，false=仅下架；不传=全部",
             "schema": { "type": "string", "enum": ["true", "false"] }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "tagId",
+            "in": "query",
+            "description": "按标签数字 ID（已废弃，优先 tagCode）",
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "tagCode",
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "description": "主档币种精确筛选",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -713,7 +1151,7 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "format": "int64" }
+            "schema": { "type": "string", "description": "商品 publicId（雪花字符串）" }
           }
         ],
         "responses": {
@@ -734,7 +1172,7 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "format": "int64" }
+            "schema": { "type": "string", "description": "商品 publicId（雪花字符串）" }
           }
         ],
         "requestBody": {
@@ -743,6 +1181,81 @@
             "application/json": {
               "schema": { "$ref": "#/components/schemas/ProductAdminUpsertRequest" }
             }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products/bulk-status": {
+      "patch": {
+        "tags": ["Admin"],
+        "operationId": "adminProductsBulkStatus",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ProductBulkStatusRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["updated"],
+                  "properties": { "updated": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/products/{id}/sku-matrix": {
+      "get": {
+        "tags": ["Admin"],
+        "operationId": "adminProductsSkuMatrixGet",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "description": "商品 publicId" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProductSkuMatrixView" } }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Admin"],
+        "operationId": "adminProductsSkuMatrixPut",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "description": "商品 publicId" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ProductSkuMatrixUpsertRequest" } }
           }
         },
         "responses": {
@@ -1033,12 +1546,34 @@
         "tags": ["Admin"],
         "operationId": "adminOrdersList",
         "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "订单号等模糊查询",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "若传则按精确状态筛选（覆盖 phase 语义）",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "phase",
+            "in": "query",
+            "description": "阶段：ALL 或不传=全部；PENDING_PAYMENT/PAID/SHIPPED/DELIVERED/COMPLETED/CANCELLED；FULFILLING=待发货+配送中；DONE=已送达或已完成",
+            "schema": { "type": "string" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
-                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/OrderView" } }
+                "schema": { "$ref": "#/components/schemas/PagedOrders" }
               }
             }
           }
@@ -1097,6 +1632,124 @@
           "200": {
             "description": "OK",
             "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders/{orderNo}/logistics": {
+      "post": {
+        "tags": ["Admin"],
+        "operationId": "adminOrdersAppendLogistics",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/OrderLogisticsCreateRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders/{orderNo}": {
+      "delete": {
+        "tags": ["Admin"],
+        "operationId": "adminOrdersDelete",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/customers": {
+      "get": {
+        "tags": ["Admin"],
+        "operationId": "adminCustomersList",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "q", "in": "query", "description": "邮箱/姓名等", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/PagedCustomers" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/customers/{id}": {
+      "patch": {
+        "tags": ["Admin"],
+        "operationId": "adminCustomersPatch",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CustomerAdminUpdateRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/customers/{id}/reset-password": {
+      "post": {
+        "tags": ["Admin"],
+        "operationId": "adminCustomersResetPassword",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/AdminResetPasswordResponse" } }
+            }
           }
         }
       }

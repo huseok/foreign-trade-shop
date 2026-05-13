@@ -23,7 +23,7 @@ import {
 import { ProLayout } from '@ant-design/pro-components'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useMe } from '../hooks/apiHooks'
-import { useI18n } from '../i18n/I18nProvider'
+import { useI18n } from '../i18n/useI18n'
 import { authStore } from '../lib/auth/authStore'
 import { ADMIN_MODAL_ROOT_ID } from './adminModalRoot'
 import '../styles/admin-shell.css'

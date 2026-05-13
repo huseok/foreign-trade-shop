@@ -20,7 +20,7 @@ import {
   removeLocalCartItem,
   updateLocalCartItem,
 } from '../../lib/cart/localCart'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useI18n } from '../../i18n/useI18n'
 import { productThumbUrl } from '../../lib/media/resolveMediaUrl'
 import { voyage } from '../../openapi/voyageSdk'
 import './Cart.scss'
@@ -28,8 +28,9 @@ import './Cart.scss'
 const CART_PRODUCT_STALE_MS = 5 * 60 * 1000
 
 type ResolvedRow = {
-  itemId: number
-  productId: number
+  /** 登录态为后端购物车行 id（数字）；访客态为商品 publicId 字符串（与本地车一致）。 */
+  itemId: number | string
+  productId: string
   title: string
   quantity: number
   unitPrice: string
@@ -56,7 +57,10 @@ export function Cart() {
   const rows = useMemo(
     () =>
       loggedIn
-        ? cart?.items ?? []
+        ? (cart?.items ?? []).map((it) => ({
+            ...it,
+            productId: String(it.productId),
+          }))
         : localItems.map((x) => ({
             itemId: x.productId,
             productId: x.productId,
@@ -85,7 +89,7 @@ export function Cart() {
   })
 
   const metaByProductId = useMemo(() => {
-    const m = new Map<number, { thumb: string; title?: string; moq: number }>()
+    const m = new Map<string, { thumb: string; title?: string; moq: number }>()
     productIds.forEach((id, i) => {
       const p = productQueries[i]?.data
       const moq = Math.max(1, p?.moq ?? 1)
@@ -131,19 +135,23 @@ export function Cart() {
     activeRows.every((r) => r.selected)
 
   const selectedIds = useMemo(
-    () => rowsResolved.filter((r) => r.selected).map((r) => r.itemId),
+    () =>
+      rowsResolved
+        .filter((r) => r.selected && typeof r.itemId === 'number')
+        .map((r) => r.itemId as number),
     [rowsResolved],
   )
 
   const selectionBusy = selectionMutation.isPending || bulkDeleteMutation.isPending || clearMutation.isPending
 
-  const handleQtyChange = (itemId: number, qty: number) => {
+  const handleQtyChange = (itemId: number | string, qty: number) => {
     const row = rowsResolved.find((x) => x.itemId === itemId)
     const minQty = Math.max(1, Number(row?.moq ?? 1))
     if (!loggedIn) {
-      updateLocalCartItem(itemId, Math.max(minQty, qty))
+      updateLocalCartItem(String(itemId), Math.max(minQty, qty))
       return
     }
+    if (typeof itemId !== 'number') return
     if (
       updateMutation.isPending &&
       updateMutation.variables?.itemId === itemId
@@ -154,11 +162,12 @@ export function Cart() {
     void updateMutation.mutate({ itemId, payload: { quantity: Math.max(minQty, qty) } })
   }
 
-  const handleRemove = (itemId: number) => {
+  const handleRemove = (itemId: number | string) => {
     if (!loggedIn) {
-      removeLocalCartItem(itemId)
+      removeLocalCartItem(String(itemId))
       return
     }
+    if (typeof itemId !== 'number') return
     if (removeMutation.isPending && removeMutation.variables === itemId) return
     if (
       updateMutation.isPending &&
@@ -171,6 +180,7 @@ export function Cart() {
 
   const toggleRowSelected = (item: ResolvedRow) => {
     if (!loggedIn || !item.productActive || selectionBusy) return
+    if (typeof item.itemId !== 'number') return
     void selectionMutation.mutate({
       itemIds: [item.itemId],
       selected: !item.selected,
@@ -179,8 +189,10 @@ export function Cart() {
 
   const toggleSelectAll = () => {
     if (!loggedIn || activeRows.length === 0 || selectionBusy) return
+    const ids = activeRows.map((r) => r.itemId).filter((id): id is number => typeof id === 'number')
+    if (ids.length === 0) return
     void selectionMutation.mutate({
-      itemIds: activeRows.map((r) => r.itemId),
+      itemIds: ids,
       selected: !allActiveSelected,
     })
   }
@@ -271,7 +283,7 @@ export function Cart() {
                     const rowBusy = rowUpdating || rowRemoving || selectionBusy
                     const minQ = Math.max(1, Number(item.moq ?? 1))
                     return (
-                    <tr key={item.itemId} className={!item.productActive ? 'cart-table__row--inactive' : undefined}>
+                    <tr key={String(item.itemId)} className={!item.productActive ? 'cart-table__row--inactive' : undefined}>
                       {loggedIn && (
                         <td data-label={t('cart.colSelect')}>
                           <input

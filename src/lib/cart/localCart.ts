@@ -1,23 +1,39 @@
 /**
  * 本地购物车（未登录态）：
- * - 未登录时加购写入 localStorage
- * - 登录成功后将本地购物车同步到后端，再清空本地
+ * 未登录时加购写入 localStorage；登录成功后将本地购物车同步到后端，再清空本地。
+ *
+ * `productId` 与后端一致：商品 **publicId**（雪花十进制字符串）；兼容旧版 localStorage 中存数字 id 的条目。
  */
 
 const LOCAL_CART_KEY = 'chzfobkey_local_cart_v1'
 const LOCAL_CART_UPDATED_EVENT = 'chzfobkey:local-cart-updated'
 
 export type LocalCartItem = {
-  productId: number
+  productId: string
   quantity: number
+}
+
+function normalizeStoredProductId(raw: unknown): string | null {
+  if (raw == null) return null
+  const s = String(raw).trim()
+  if (s === '' || s === 'NaN') return null
+  return s
 }
 
 export function getLocalCartItems(): LocalCartItem[] {
   try {
     const raw = localStorage.getItem(LOCAL_CART_KEY)
     if (!raw) return []
-    const parsed = JSON.parse(raw) as LocalCartItem[]
-    return Array.isArray(parsed) ? parsed.filter((x) => Number.isFinite(x.productId) && x.quantity > 0) : []
+    const parsed = JSON.parse(raw) as Array<{ productId?: unknown; quantity?: unknown }>
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .map((x) => {
+        const productId = normalizeStoredProductId(x.productId)
+        const quantity = typeof x.quantity === 'number' ? x.quantity : Number(x.quantity)
+        if (productId == null || !Number.isFinite(quantity) || quantity <= 0) return null
+        return { productId, quantity: Math.trunc(quantity) }
+      })
+      .filter((x): x is LocalCartItem => x != null)
   } catch {
     return []
   }
@@ -28,28 +44,34 @@ function saveLocalCartItems(items: LocalCartItem[]) {
   window.dispatchEvent(new Event(LOCAL_CART_UPDATED_EVENT))
 }
 
-export function addLocalCartItem(productId: number, quantity: number) {
+export function addLocalCartItem(productId: string, quantity: number) {
+  const key = productId.trim()
+  if (!key) return
   const nextQty = Math.max(1, Math.trunc(quantity))
   const rows = getLocalCartItems()
-  const existed = rows.find((x) => x.productId === productId)
+  const existed = rows.find((x) => x.productId === key)
   if (existed) {
     existed.quantity += nextQty
   } else {
-    rows.push({ productId, quantity: nextQty })
+    rows.push({ productId: key, quantity: nextQty })
   }
   saveLocalCartItems(rows)
 }
 
-export function updateLocalCartItem(productId: number, quantity: number) {
+export function updateLocalCartItem(productId: string, quantity: number) {
+  const key = productId.trim()
+  if (!key) return
   const rows = getLocalCartItems()
-  const existed = rows.find((x) => x.productId === productId)
+  const existed = rows.find((x) => x.productId === key)
   if (!existed) return
   existed.quantity = Math.max(1, Math.trunc(quantity))
   saveLocalCartItems(rows)
 }
 
-export function removeLocalCartItem(productId: number) {
-  const rows = getLocalCartItems().filter((x) => x.productId !== productId)
+export function removeLocalCartItem(productId: string) {
+  const key = productId.trim()
+  if (!key) return
+  const rows = getLocalCartItems().filter((x) => x.productId !== key)
   saveLocalCartItems(rows)
 }
 
@@ -68,7 +90,7 @@ export function onLocalCartUpdated(listener: () => void): () => void {
 }
 
 export async function syncLocalCartToServer(
-  addCartItem: (payload: { productId: number; quantity: number }) => Promise<unknown>
+  addCartItem: (payload: { productId: string; quantity: number }) => Promise<unknown>,
 ) {
   const rows = getLocalCartItems()
   if (rows.length === 0) {

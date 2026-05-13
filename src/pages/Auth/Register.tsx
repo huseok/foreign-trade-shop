@@ -1,11 +1,12 @@
 /**
- * 用户注册页：图形验证码 + `useRegister`；成功后跳转 `/login`。
+ * 用户注册页：图形验证码 + `useRegister`；须填写称呼（与后端 [RegisterRequest.salutation] 一致）；成功后跳转 `/login`。
  */
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useRegister } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useI18n } from '../../i18n/useI18n'
+import type { RegisterRequest } from '../../types/api'
 import { toErrorMessage } from '../../lib/http/error'
 import { voyage } from '../../openapi/voyageSdk'
 import './Auth.scss'
@@ -39,7 +40,7 @@ export function Register() {
   }, [t])
 
   useEffect(() => {
-    void loadCaptcha()
+    queueMicrotask(() => void loadCaptcha())
   }, [loadCaptcha])
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -50,10 +51,16 @@ export function Register() {
       setMsg(t('auth.captchaRequired'))
       return
     }
-    const payload = {
+    const salutation = String(fd.get('salutation') ?? '').trim()
+    if (!salutation) {
+      setMsg(t('auth.salutationRequired'))
+      return
+    }
+    const payload: RegisterRequest = {
       name: String(fd.get('name') ?? '').trim(),
       email: String(fd.get('email') ?? '').trim(),
       password: String(fd.get('password') ?? ''),
+      salutation,
       phone: String(fd.get('phone') ?? '').trim() || undefined,
       country: String(fd.get('country') ?? '').trim() || undefined,
       captchaId,
@@ -79,6 +86,13 @@ export function Register() {
             <label className="field">
               <span className="field__label">{t('auth.fullName')}</span>
               <input className="input" name="name" required autoComplete="name" />
+            </label>
+            <label className="field">
+              <span className="field__label">{t('auth.salutation')}</span>
+              <input className="input" name="salutation" required autoComplete="honorific-prefix" maxLength={64} />
+              <p className="auth__captcha-hint" style={{ marginTop: 4 }}>
+                {t('auth.salutationHint')}
+              </p>
             </label>
             <label className="field">
               <span className="field__label">{t('auth.email')}</span>

@@ -2,7 +2,7 @@
  * 商城页脚导航与版权条。
  */
 import { Link } from 'react-router-dom'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useI18n } from '../../i18n/useI18n'
 import { i18nTpl } from '../../lib/i18nTpl'
 import './Footer.scss'
 

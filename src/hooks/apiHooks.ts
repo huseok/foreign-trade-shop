@@ -28,7 +28,7 @@ export const queryKeys = {
   me: ['me'] as const,
   /** 作废所有商品相关查询（列表分页键均以 `products` 为前缀） */
   productsRoot: ['products'] as const,
-  product: (id: number) => ['products', 'detail', id] as const,
+  product: (id: string) => ['products', 'detail', id] as const,
   cart: ['cart'] as const,
   orders: ['orders'] as const,
   order: (orderNo: string) => ['orders', orderNo] as const,
@@ -78,6 +78,8 @@ export type StorefrontProductsParams = {
   q?: string
   categoryId?: number
   tagId?: number
+  /** 与标签管理 `code` 一致；优先于 `tagId`。 */
+  tagCode?: string
   /** 为 true 时请求 `promo=true`，仅返回划线价高于主档价的商品。 */
   promo?: boolean
   /** 主档售价下限（含），映射到 Query `minPrice`；后端按 [ProductEntity.price] 过滤。 */
@@ -115,6 +117,7 @@ export function useStorefrontProducts(params: StorefrontProductsParams, enabled 
       params.q ?? '',
       params.categoryId ?? '',
       params.tagId ?? '',
+      params.tagCode ?? '',
       params.promo === true ? '1' : '',
       params.minPrice ?? '',
       params.maxPrice ?? '',
@@ -132,6 +135,7 @@ export type AdminProductsListParams = {
   active?: boolean
   categoryId?: number
   tagId?: number
+  tagCode?: string
   currency?: string
 }
 
@@ -147,26 +151,27 @@ export function useAdminProductsPage(params: AdminProductsListParams) {
       params.active === true ? '1' : params.active === false ? '0' : '',
       params.categoryId ?? '',
       params.tagId ?? '',
+      params.tagCode ?? '',
       params.currency ?? '',
     ] as const,
     queryFn: () => voyage.products.adminListPaged(params),
   })
 }
 
-export function useProductDetail(id?: number) {
+export function useProductDetail(id?: string) {
   return useQuery({
-    queryKey: queryKeys.product(id ?? 0),
+    queryKey: queryKeys.product(id ?? ''),
     queryFn: () => voyage.products.getById(id!),
-    enabled: typeof id === 'number' && Number.isFinite(id),
+    enabled: Boolean(id && id.trim() !== ''),
   })
 }
 
 /** 管理端商品详情（含下架），用于编辑页 */
-export function useAdminProductDetail(id?: number) {
+export function useAdminProductDetail(id?: string) {
   return useQuery({
-    queryKey: ['products', 'admin-detail', id ?? 0] as const,
+    queryKey: ['products', 'admin-detail', id ?? ''] as const,
     queryFn: () => voyage.products.adminGetById(id!),
-    enabled: typeof id === 'number' && Number.isFinite(id),
+    enabled: Boolean(id && id.trim() !== ''),
   })
 }
 
@@ -185,7 +190,7 @@ export function useCreateAdminProduct() {
 export function useUpdateAdminProduct() {
   const qc = useQueryClient()
   return useGuardedMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: AdminProductUpsertRequest }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: AdminProductUpsertRequest }) =>
       voyage.products.adminUpdate(id, payload),
     onSuccess: (_data, vars) => {
       void qc.invalidateQueries({ queryKey: queryKeys.productsRoot })
@@ -195,37 +200,25 @@ export function useUpdateAdminProduct() {
   })
 }
 
-export function useAdminProductSkuMatrix(id?: number) {
+export function useAdminProductSkuMatrix(id?: string) {
   return useQuery({
-    queryKey: ['products', 'sku-matrix', id ?? 0] as const,
+    queryKey: ['products', 'sku-matrix', id ?? ''] as const,
     queryFn: () => voyage.products.adminGetSkuMatrix(id!),
-    enabled: typeof id === 'number',
+    enabled: Boolean(id && id.trim() !== ''),
   })
 }
 
 export function useAdminUpsertProductSkuMatrix() {
   return useGuardedMutation({
-    mutationFn: (payload: {
-      id: number
-      body: {
-        options: Array<{ optionName: string; optionValue: string; sortNo: number }>
-        skus: Array<{
-          skuCode: string
-          attrJson: string
-          salePrice: number
-          stockQty: number
-          weightKg?: number
-          isActive: boolean
-        }>
-      }
-    }) => voyage.products.adminUpsertSkuMatrix(payload.id, payload.body),
+    mutationFn: (payload: { id: string; body: components['schemas']['ProductSkuMatrixUpsertRequest'] }) =>
+      voyage.products.adminUpsertSkuMatrix(payload.id, payload.body),
   })
 }
 
 export function useAdminBulkProductStatus() {
   const qc = useQueryClient()
   return useGuardedMutation({
-    mutationFn: (payload: { ids: number[]; isActive: boolean }) => voyage.products.adminBulkStatus(payload),
+    mutationFn: (payload: components['schemas']['ProductBulkStatusRequest']) => voyage.products.adminBulkStatus(payload),
     onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.productsRoot }),
   })
 }
@@ -405,7 +398,7 @@ export function useAdminUpdateOrderStatus() {
       body,
     }: {
       orderNo: string
-      body: { status: string; remark?: string }
+      body: components['schemas']['UpdateOrderStatusRequest']
     }) => voyage.orders.adminUpdateStatus(orderNo, body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.adminOrders })
@@ -414,12 +407,29 @@ export function useAdminUpdateOrderStatus() {
   })
 }
 
-/** 管理端：按字典流转到下一状态 */
-export function useAdminFlowNextOrderStatus() {
+/** 管理端：追加一条物流轨迹（写入订单物流子表） */
+export function useAdminAppendOrderLogistics() {
   const qc = useQueryClient()
   return useGuardedMutation({
-    mutationFn: ({ orderNo, remark }: { orderNo: string; remark?: string }) =>
-      voyage.orders.adminFlowNextStatus(orderNo, { remark }),
+    mutationFn: ({
+      orderNo,
+      body,
+    }: {
+      orderNo: string
+      body: components['schemas']['OrderLogisticsCreateRequest']
+    }) => voyage.orders.adminAppendLogistics(orderNo, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.adminOrders })
+      void qc.invalidateQueries({ queryKey: queryKeys.orders })
+    },
+  })
+}
+
+/** 管理端：逻辑删除订单 */
+export function useAdminDeleteOrder() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (orderNo: string) => voyage.orders.adminDelete(orderNo),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.adminOrders })
       void qc.invalidateQueries({ queryKey: queryKeys.orders })
@@ -612,6 +622,27 @@ export function useAdminCustomersPage(params: AdminCustomersListParams) {
   return useQuery({
     queryKey: [...queryKeys.adminCustomers, params.page, params.size, params.q ?? ''] as const,
     queryFn: () => voyage.customers.adminListPaged(params),
+  })
+}
+
+/** 后台：更新客户运营备注与偏好文本 */
+export function useAdminPatchCustomer() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (payload: { id: number; body: components['schemas']['CustomerAdminUpdateRequest'] }) =>
+      voyage.customers.adminPatchCustomer(payload.id, payload.body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminCustomers }),
+  })
+}
+
+/**
+ * 后台：重置客户登录密码；成功后接口返回一次性明文临时密码（由 UI 展示，勿写入前端日志）。
+ */
+export function useAdminResetCustomerPassword() {
+  const qc = useQueryClient()
+  return useGuardedMutation({
+    mutationFn: (id: number) => voyage.customers.adminResetPassword(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminCustomers }),
   })
 }
 

@@ -4,7 +4,7 @@ import { type MouseEvent, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { ProductDto } from '../../types/api'
 import { useAddCartItem, useCart } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useI18n } from '../../i18n/useI18n'
 import { i18nTpl } from '../../lib/i18nTpl'
 import { authStore } from '../../lib/auth/authStore'
 import { addLocalCartItem, getLocalCartItems, onLocalCartUpdated } from '../../lib/cart/localCart'
@@ -14,9 +14,13 @@ import './ProductCard.scss'
 
 type Props = {
   product: ProductDto
+  /**
+   * 目录列表用：加购为主按钮紧凑「+」圆钮，隐藏「查看」以省横向空间；仍可通过主图与标题进入详情。
+   */
+  compactAddButton?: boolean
 }
 
-export function ProductCard({ product }: Props) {
+export function ProductCard({ product, compactAddButton = false }: Props) {
   const { t } = useI18n()
   const { message } = App.useApp()
   const loggedIn = authStore.isLoggedIn()
@@ -64,7 +68,7 @@ export function ProductCard({ product }: Props) {
   const addDisabled = !product.isActive || addMutation.isPending
 
   return (
-    <article className="product-card">
+    <article className={compactAddButton ? 'product-card product-card--compact-add' : 'product-card'}>
       <Link to={`/products/${product.id}`} className="product-card__media">
         {thumb ? (
           <img className="product-card__img product-card__img--photo" src={thumb} alt="" loading="lazy" />
@@ -102,9 +106,11 @@ export function ProductCard({ product }: Props) {
                 {i18nTpl(t('catalog.inCart'), { n: String(inCartQty) })}
               </span>
             )}
-            <Link to={`/products/${product.id}`} className="product-card__cta">
-              {t('product.view')}
-            </Link>
+            {!compactAddButton ? (
+              <Link to={`/products/${product.id}`} className="product-card__cta">
+                {t('product.view')}
+              </Link>
+            ) : null}
             <button
               type="button"
               className="product-card__add"
@@ -112,7 +118,7 @@ export function ProductCard({ product }: Props) {
               onClick={(e) => void handleAdd(e)}
               aria-label={t('product.addCart')}
             >
-              {addMutation.isPending ? '...' : t('product.addCart')}
+              {addMutation.isPending ? '…' : compactAddButton ? '+' : t('product.addCart')}
             </button>
           </div>
         </div>

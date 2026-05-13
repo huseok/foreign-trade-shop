@@ -12,7 +12,7 @@ import { authStore } from '../../../lib/auth/authStore'
 import { scheduleAccessTokenRefresh } from '../../../lib/http/apiClient'
 import { voyage } from '../../../openapi/voyageSdk'
 import { toErrorMessage } from '../../../lib/http/error'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 
 type FormValues = { email: string; password: string }
 

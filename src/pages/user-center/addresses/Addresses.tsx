@@ -12,7 +12,7 @@ import {
   useUserAddresses,
 } from '../../../hooks/apiHooks'
 import type { UserAddressView } from '../../../types/api'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 
 export function UserAddressesPage() {
   const { t } = useI18n()

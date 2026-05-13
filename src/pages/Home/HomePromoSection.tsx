@@ -2,7 +2,7 @@ import { Carousel } from 'antd'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSitePromos } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useI18n } from '../../i18n/useI18n'
 import { resolveMediaUrl } from '../../lib/media/resolveMediaUrl'
 import { voyage } from '../../openapi/voyageSdk'
 

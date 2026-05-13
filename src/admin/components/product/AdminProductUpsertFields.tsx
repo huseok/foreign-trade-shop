@@ -4,7 +4,7 @@
  */
 import { Alert, Checkbox, Collapse, Form, Input, InputNumber, Select, Space, Typography } from 'antd'
 import { Link } from 'react-router-dom'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 import { AdminProductImagesField } from './AdminProductImagesField'
 
 type Option = { id: number; name: string }
@@ -15,8 +15,8 @@ type Props = {
   categories?: Option[]
   shippingTemplates?: Template[]
   tags?: TagOption[]
-  /** 已存在商品 id 时展示「规格矩阵」入口 */
-  productId?: number
+  /** 已存在商品 publicId 时展示「规格矩阵」入口 */
+  productId?: string
 }
 
 export function AdminProductUpsertFields({
@@ -140,7 +140,7 @@ export function AdminProductUpsertFields({
             />
           </Form.Item>
         </Space>
-        {productId != null && Number.isFinite(productId) && productId > 0 && (
+        {productId != null && productId.trim() !== '' && (
           <Alert
             type="info"
             showIcon
@@ -148,7 +148,9 @@ export function AdminProductUpsertFields({
             message={
               <span>
                 {t('admin.products.skuMatrixHint')}{' '}
-                <Link to={`/admin/products/${productId}/sku-matrix`}>{t('admin.products.skuMatrixLink')}</Link>
+                <Link to={`/admin/products/${encodeURIComponent(productId)}/sku-matrix`}>
+                  {t('admin.products.skuMatrixLink')}
+                </Link>
               </span>
             }
           />

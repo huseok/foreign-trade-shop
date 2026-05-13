@@ -15,6 +15,11 @@ export function storefrontCatalogPath(categoryId?: number | null): string {
 export function storefrontCatalogHref(opts: {
   categoryId?: number | null
   tagId?: number | null
+  /**
+   * 标签编码（与标签管理 `code` 一致）。非空时写入 `tagCode` 并移除 `tagId`，与后端 `ProductController.list` 优先策略一致。
+   * 传 `null` 表示从链接中移除 `tagCode`（与 `tagId: null` 一并用于「全部标签」）。
+   */
+  tagCode?: string | null
   country?: string
   page?: number
   size?: number
@@ -29,7 +34,19 @@ export function storefrontCatalogHref(opts: {
   const path = storefrontCatalogPath(opts.categoryId ?? undefined)
   const sp = new URLSearchParams()
   if (opts.country) sp.set('country', opts.country)
-  if (opts.tagId != null && opts.tagId > 0 && Number.isFinite(opts.tagId)) sp.set('tagId', String(opts.tagId))
+  const codeRaw = opts.tagCode != null && opts.tagCode !== '' ? String(opts.tagCode).trim() : ''
+  if (opts.tagCode === null) {
+    sp.delete('tagCode')
+  } else if (codeRaw !== '') {
+    sp.set('tagCode', codeRaw)
+    sp.delete('tagId')
+  } else if (opts.tagId != null && opts.tagId > 0 && Number.isFinite(opts.tagId)) {
+    sp.set('tagId', String(opts.tagId))
+    sp.delete('tagCode')
+  }
+  if (opts.tagId === null) {
+    sp.delete('tagId')
+  }
   if (opts.page != null && opts.page > 1) sp.set('page', String(opts.page))
   if (opts.size != null && opts.size !== 12) sp.set('size', String(opts.size))
   if (opts.q) sp.set('q', opts.q)

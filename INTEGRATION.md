@@ -52,7 +52,7 @@ VITE_API_BASE_URL=http://localhost:8080
 ### 4.1 国际化文案
 
 - 默认语言：**中文（zh-CN）**；可选 **en-US**。
-- 文案文件：`src/i18n/locales/zh-CN.json`、`en-US.json`；运行时上下文见 `src/i18n/I18nProvider.tsx`（`t()` / `useDictLabel()`）。
+- 文案文件：`src/i18n/locales/zh-CN.json`、`en-US.json`；运行时 `I18nProvider`（`src/i18n/I18nProvider.tsx`）与 `useI18n` / `useDictLabel`（`src/i18n/useI18n.ts`）。
 - 订单等待支付等状态：优先匹配 `dict.ORDER_STATUS.{CODE}`，缺省回退运营字典接口返回的 `itemLabel`。
 
 ## 5. 已对接接口清单

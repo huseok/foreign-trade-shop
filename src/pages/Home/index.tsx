@@ -1,13 +1,14 @@
 /**
  * 商城首页：区块顺序与业务需求对齐。
  *
- * 自上而下：首屏 Hero → 按类目购物 → 活动/促销区块 → 精选商品 → 热销（活动商品数据源）→ 联系摘要 → **站点说明（置底）**。
+ * 自上而下：首屏 Hero → 按类目购物 → 活动/促销区块 → 精选商品 → 热销 → 联系摘要 → **站点说明（置底）**。
+ * 精选 / 热销数据源由 `GET /api/v1/storefront/settings` 的 `homeFeaturedTagCode`、`homeHotTagCode` 驱动（缺省时精选为全站前 4 条，热销仍为 `promo=true` 活动商品）。
  * 不再展示原「网站优势」三卡，避免与「热销」信息重复；整体仍使用 `home--boutique` 既有样式类。
  */
 import { Link } from 'react-router-dom'
 import { ProductCard } from '../../components/ProductCard'
-import { useCategories, useStorefrontProducts } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useCategories, useStorefrontProducts, useStorefrontSettings } from '../../hooks/apiHooks'
+import { useI18n } from '../../i18n/useI18n'
 import { storefrontCatalogHref } from '../../lib/catalogUrls'
 import { HomePromoProductsSection } from './HomePromoProductsSection'
 import { HomePromoSection } from './HomePromoSection'
@@ -15,8 +16,15 @@ import './Home.scss'
 
 export function Home() {
   const { t } = useI18n()
-  const { data } = useStorefrontProducts({ page: 0, size: 4 })
-  const { data: hotData } = useStorefrontProducts({ page: 0, size: 4, promo: true })
+  const { data: settings } = useStorefrontSettings()
+  const featuredCode = settings?.homeFeaturedTagCode?.trim()
+  const { data } = useStorefrontProducts(
+    featuredCode ? { page: 0, size: 4, tagCode: featuredCode } : { page: 0, size: 4 },
+  )
+  const hotCode = settings?.homeHotTagCode?.trim()
+  const { data: hotData } = useStorefrontProducts(
+    hotCode ? { page: 0, size: 4, tagCode: hotCode } : { page: 0, size: 4, promo: true },
+  )
   const { data: categories = [] } = useCategories()
   const featured = data?.items ?? []
   const hotItems = (hotData?.items?.length ? hotData.items : featured).slice(0, 4)
@@ -91,7 +99,10 @@ export function Home() {
         <div className="container">
           <div className="section-head">
             <h2 className="section-title">{t('home.featuredTitle')}</h2>
-            <Link to="/catalog" className="section-head__link">
+            <Link
+              to={featuredCode ? storefrontCatalogHref({ tagCode: featuredCode }) : '/catalog'}
+              className="section-head__link"
+            >
               {t('home.featuredAll')}
             </Link>
           </div>
@@ -107,7 +118,12 @@ export function Home() {
         <div className="container">
           <div className="section-head">
             <h2 className="section-title">{t('home.hotTitle')}</h2>
-            <Link to={storefrontCatalogHref({ promo: true })} className="section-head__link">
+            <Link
+              to={
+                hotCode ? storefrontCatalogHref({ tagCode: hotCode }) : storefrontCatalogHref({ promo: true })
+              }
+              className="section-head__link"
+            >
               {t('home.featuredAll')}
             </Link>
           </div>

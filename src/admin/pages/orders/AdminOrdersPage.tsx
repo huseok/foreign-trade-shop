@@ -10,13 +10,12 @@ import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import type { ChangeEvent } from 'react'
 import {
-  useAdminFlowNextOrderStatus,
   useAdminOrders,
   useAdminUpdateOrderStatus,
   useAdminUpdateOrderTracking,
   useDictItems,
 } from '../../../hooks/apiHooks'
-import { useDictLabel, useI18n } from '../../../i18n/I18nProvider'
+import { useDictLabel, useI18n } from '../../../i18n/useI18n'
 import { i18nTpl } from '../../../lib/i18nTpl'
 import type { components } from '../../../generated/voyage-paths'
 import { voyage } from '../../../openapi/voyageSdk'
@@ -88,7 +87,6 @@ export function AdminOrdersPage() {
   const { data: orderStatusItems = [] } = useDictItems('ORDER_STATUS')
   const trackingMut = useAdminUpdateOrderTracking()
   const statusMut = useAdminUpdateOrderStatus()
-  const flowNextMut = useAdminFlowNextOrderStatus()
   const [orderTab, setOrderTab] = useState<OrderTab>('pending')
   const [trackingModal, setTrackingModal] = useState<OrderRow | null>(null)
   const [trackingNo, setTrackingNo] = useState('')
@@ -127,6 +125,18 @@ export function AdminOrdersPage() {
       title: t('admin.orders.colStatus'),
       dataIndex: 'status',
       render: (_, r) => <OrderStatusTag status={r.status} apiLabel={labelForStatus(r.status)} />,
+    },
+    {
+      title: t('admin.orders.colPayment'),
+      dataIndex: 'paymentStatus',
+      search: false,
+      width: 120,
+      render: (_, r) =>
+        r.paymentStatus?.trim() ? (
+          <Tag>{r.paymentStatus}</Tag>
+        ) : (
+          <Typography.Text type="secondary">{t('admin.orders.emptyMark')}</Typography.Text>
+        ),
     },
     {
       title: t('admin.orders.colAmount'),
@@ -223,10 +233,23 @@ export function AdminOrdersPage() {
       message.warning(t('admin.orders.warnStatusRequired'))
       return
     }
+    const cur = statusModal.status
+    const next = nextStatus.trim().toUpperCase()
+    const curR = statusProgressRank(cur, orderStatusItems)
+    const nextR = statusProgressRank(next, orderStatusItems)
+    const backward = nextR < curR
+    if (backward && !statusRemark.trim()) {
+      message.warning(t('admin.orders.forceRepairRemarkRequired'))
+      return
+    }
     try {
       await statusMut.mutateAsync({
         orderNo: statusModal.orderNo,
-        body: { status: nextStatus.trim().toUpperCase(), remark: statusRemark.trim() || undefined },
+        body: {
+          status: next,
+          remark: statusRemark.trim() || undefined,
+          forceRepair: backward,
+        },
       })
       message.success(t('admin.orders.statusOk'))
       setStatusModal(null)
@@ -248,6 +271,10 @@ export function AdminOrdersPage() {
     const curR = statusProgressRank(cur, orderStatusItems)
     const nextR = statusProgressRank(next, orderStatusItems)
     const backward = nextR < curR
+    if (backward && !statusRemark.trim()) {
+      message.warning(t('admin.orders.forceRepairRemarkRequired'))
+      return
+    }
     if (backward) {
       Modal.confirm({
         title: t('admin.orders.statusRevertTitle'),
@@ -266,10 +293,20 @@ export function AdminOrdersPage() {
 
   const submitFlowNext = async () => {
     if (!statusModal) return
+    const sorted = [...orderStatusItems].sort((a, b) => a.sortNo - b.sortNo)
+    const curIdx = sorted.findIndex((i) => i.itemCode === statusModal.status)
+    const nextItem = curIdx >= 0 && curIdx + 1 < sorted.length ? sorted[curIdx + 1] : undefined
+    if (!nextItem) {
+      message.warning(t('admin.orders.flowNextNoNext'))
+      return
+    }
     try {
-      await flowNextMut.mutateAsync({
+      await statusMut.mutateAsync({
         orderNo: statusModal.orderNo,
-        remark: statusRemark.trim() || undefined,
+        body: {
+          status: nextItem.itemCode,
+          remark: statusRemark.trim() || undefined,
+        },
       })
       message.success(t('admin.orders.flowNextOk'))
       setStatusModal(null)
@@ -408,12 +445,12 @@ export function AdminOrdersPage() {
           setNextStatus('')
           setStatusRemark('')
         }}
-        confirmLoading={statusMut.isPending || flowNextMut.isPending}
-        okButtonProps={{ disabled: statusMut.isPending || flowNextMut.isPending }}
-        cancelButtonProps={{ disabled: statusMut.isPending || flowNextMut.isPending }}
+        confirmLoading={statusMut.isPending}
+        okButtonProps={{ disabled: statusMut.isPending }}
+        cancelButtonProps={{ disabled: statusMut.isPending }}
         footer={(_, { OkBtn, CancelBtn }) => (
           <Flex justify="flex-end" gap="small" wrap="wrap" align="center">
-            <Button type="default" onClick={() => void submitFlowNext()} loading={flowNextMut.isPending}>
+            <Button type="default" onClick={() => void submitFlowNext()} loading={statusMut.isPending}>
               {t('admin.orders.flowNext')}
             </Button>
             <CancelBtn />

@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ProductCard } from '../../components/ProductCard'
 import { useAddCartItem, useProductDetail, useStorefrontProducts } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useI18n } from '../../i18n/useI18n'
 import { authStore } from '../../lib/auth/authStore'
 import { addLocalCartItem } from '../../lib/cart/localCart'
 import { resolveMediaUrl } from '../../lib/media/resolveMediaUrl'
@@ -34,7 +34,7 @@ export function ProductDetail() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const { id: rawId } = useParams<{ id: string }>()
-  const id = rawId ? Number(rawId) : undefined
+  const id = rawId?.trim() || undefined
 
   const { data: product, isLoading } = useProductDetail(id)
   const addItemMutation = useAddCartItem()
@@ -46,24 +46,20 @@ export function ProductDetail() {
   /** 当前主图在 gallery 中的下标。 */
   const [mainImgIdx, setMainImgIdx] = useState(0)
 
-  /** 从详情 payload 读取 SKU 矩阵（若未返回矩阵则为空数组）。 */
-  const skus =
-    ((product as unknown as { skus?: SkuRow[] })?.skus)?.filter(Boolean) ?? []
-
-  /** 每个 SKU 附带解析后的属性键值，供维度下拉联动。 */
-  const skuAttrMaps = useMemo(
-    () =>
-      skus.map((s) => {
-        let attrs: Record<string, string> = {}
-        try {
-          attrs = JSON.parse(s.attrJson) as Record<string, string>
-        } catch {
-          attrs = {}
-        }
-        return { ...s, attrs }
-      }),
-    [skus],
-  )
+  /** 每个 SKU 附带解析后的属性键值，供维度下拉联动（依赖整份 `product` 避免数组引用抖动）。 */
+  const skuAttrMaps = useMemo(() => {
+    const skus =
+      ((product as unknown as { skus?: SkuRow[] })?.skus)?.filter(Boolean) ?? []
+    return skus.map((s) => {
+      let attrs: Record<string, string> = {}
+      try {
+        attrs = JSON.parse(s.attrJson) as Record<string, string>
+      } catch {
+        attrs = {}
+      }
+      return { ...s, attrs }
+    })
+  }, [product])
 
   /** 所有 SKU 上出现过的属性名（作为规格维度）。 */
   const attrNames = useMemo(
@@ -88,11 +84,15 @@ export function ProductDetail() {
   const minQty = Math.max(1, product?.moq ?? 1)
 
   useEffect(() => {
-    setQty((prev) => Math.max(prev, minQty))
+    queueMicrotask(() => {
+      setQty((prev) => Math.max(prev, minQty))
+    })
   }, [minQty])
 
   useEffect(() => {
-    setMainImgIdx(0)
+    queueMicrotask(() => {
+      setMainImgIdx(0)
+    })
   }, [product?.id])
 
   /** 底部热销区：优先拉「活动商品」分页；若为空则不再发第二个请求，由 UI 显示空状态即可。 */

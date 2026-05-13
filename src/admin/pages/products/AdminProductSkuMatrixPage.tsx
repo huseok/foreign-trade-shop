@@ -4,7 +4,7 @@ import type { ProColumns } from '@ant-design/pro-components'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAdminProductSkuMatrix, useAdminUpsertProductSkuMatrix } from '../../../hooks/apiHooks'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 
 type AttrInput = { name: string; values: string }
 type MatrixRow = {
@@ -60,8 +60,8 @@ export function AdminProductSkuMatrixPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const { productId } = useParams<{ productId: string }>()
-  const id = Number(productId)
-  const { data, isLoading } = useAdminProductSkuMatrix(Number.isFinite(id) ? id : undefined)
+  const clientKey = productId?.trim() ?? ''
+  const { data, isLoading } = useAdminProductSkuMatrix(clientKey || undefined)
   const upsertMut = useAdminUpsertProductSkuMatrix()
   const [attrs, setAttrs] = useState<AttrInput[]>([
     { name: 'Color', values: 'Black,White' },
@@ -100,30 +100,32 @@ export function AdminProductSkuMatrixPage() {
 
   useEffect(() => {
     if (!data) return
-    const grouped = new Map<string, Set<string>>()
-    for (const opt of data.options) {
-      if (!grouped.has(opt.optionName)) grouped.set(opt.optionName, new Set())
-      grouped.get(opt.optionName)!.add(opt.optionValue)
-    }
-    if (grouped.size > 0) {
-      setAttrs(
-        Array.from(grouped.entries()).map(([name, values]) => ({
-          name,
-          values: Array.from(values).join(','),
-        }))
+    queueMicrotask(() => {
+      const grouped = new Map<string, Set<string>>()
+      for (const opt of data.options) {
+        if (!grouped.has(opt.optionName)) grouped.set(opt.optionName, new Set())
+        grouped.get(opt.optionName)!.add(opt.optionValue)
+      }
+      if (grouped.size > 0) {
+        setAttrs(
+          Array.from(grouped.entries()).map(([name, values]) => ({
+            name,
+            values: Array.from(values).join(','),
+          })),
+        )
+      }
+      setRows(
+        data.skus.map((x) => ({
+          key: String(x.id),
+          attrs: JSON.parse(x.attrJson) as Record<string, string>,
+          skuCode: x.skuCode,
+          salePrice: Number(x.salePrice),
+          stockQty: x.stockQty,
+          weightKg: x.weightKg ? Number(x.weightKg) : undefined,
+          isActive: x.isActive,
+        })),
       )
-    }
-    setRows(
-      data.skus.map((x) => ({
-        key: String(x.id),
-        attrs: JSON.parse(x.attrJson) as Record<string, string>,
-        skuCode: x.skuCode,
-        salePrice: Number(x.salePrice),
-        stockQty: x.stockQty,
-        weightKg: x.weightKg ? Number(x.weightKg) : undefined,
-        isActive: x.isActive,
-      }))
-    )
+    })
   }, [data])
 
   const generateRows = () => {
@@ -139,7 +141,7 @@ export function AdminProductSkuMatrixPage() {
         existed ?? {
           key: `new-${idx}-${Date.now()}`,
           attrs: combo,
-          skuCode: `SKU-${id}-${idx + 1}`,
+          skuCode: `SKU-${clientKey}-${idx + 1}`,
           salePrice: 0,
           stockQty: 0,
           weightKg: undefined,
@@ -165,7 +167,7 @@ export function AdminProductSkuMatrixPage() {
   }
 
   const save = async () => {
-    if (!Number.isFinite(id) || id <= 0) return
+    if (!clientKey) return
     if (validAttrCount < 3) {
       message.warning('至少配置 3 个属性维度')
       return
@@ -184,7 +186,7 @@ export function AdminProductSkuMatrixPage() {
     }
     try {
       await upsertMut.mutateAsync({
-        id,
+        id: clientKey,
         body: {
           options: attrs.flatMap((a, i) =>
             a.values
@@ -280,7 +282,7 @@ export function AdminProductSkuMatrixPage() {
   ]
 
   return (
-    <PageContainer title={`SKU 规格矩阵（商品 #${id}）`} subTitle="至少 3 个属性维度，生成笛卡尔积后维护价格/库存/重量">
+    <PageContainer title={`SKU 规格矩阵（商品 ${clientKey}）`} subTitle="至少 3 个属性维度，生成笛卡尔积后维护价格/库存/重量">
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
       {validAttrCount < 3 && (
         <Alert type="warning" showIcon message={t('admin.products.attrDimensionsWarning')} />

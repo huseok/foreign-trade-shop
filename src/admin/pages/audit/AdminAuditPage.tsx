@@ -3,7 +3,7 @@ import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { useState } from 'react'
 import { useAdminAuditLogs } from '../../../hooks/apiHooks'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 
 type AuditRow = {
   id: number

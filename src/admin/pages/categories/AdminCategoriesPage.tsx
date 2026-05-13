@@ -8,7 +8,7 @@ import {
   useAdminUpdateCategory,
   useCategories,
 } from '../../../hooks/apiHooks'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 import { i18nTpl } from '../../../lib/i18nTpl'
 import { StandardModal } from '../../components/shared/StandardModal'
 

@@ -10,7 +10,7 @@ import {
   useShippingTemplates,
   useUpdateAdminProduct,
 } from '../../../hooks/apiHooks'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 import { i18nTpl } from '../../../lib/i18nTpl'
 import { asRcFormInstance } from '../../../lib/formAntdCompat'
 import { toErrorMessage } from '../../../lib/http/error'
@@ -24,7 +24,7 @@ import { AdminProductUpsertFields } from './AdminProductUpsertFields'
 import { StandardModal } from '../shared/StandardModal'
 
 type Props = {
-  productId: number | null
+  productId: string | null
   onClose: () => void
 }
 
@@ -35,7 +35,7 @@ export function AdminProductEditModal({ productId, onClose }: Props) {
   const [form] = Form.useForm<AdminProductFormValues>()
   const rfForm = asRcFormInstance(form)
 
-  const detailId = open && productId != null ? productId : undefined
+  const detailId = open && productId != null && productId.trim() !== '' ? productId : undefined
   const { data: product, isLoading, isError } = useAdminProductDetail(detailId)
   const updateMutation = useUpdateAdminProduct()
   const { data: categories = [] } = useCategories()
@@ -53,12 +53,12 @@ export function AdminProductEditModal({ productId, onClose }: Props) {
   }, [open, product, rfForm])
 
   const submit = async () => {
-    const id = product?.id ?? productId
-    if (id == null) return
     try {
       const v = await rfForm.validateFields()
+      const id = product?.id ?? productId
+      if (id == null || String(id).trim() === '') return
       await updateMutation.mutateAsync({
-        id,
+        id: String(id),
         payload: adminProductFormValuesToPayload(v),
       })
       message.success(t('admin.productsList.editSaved'))

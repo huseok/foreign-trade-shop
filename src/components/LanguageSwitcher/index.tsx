@@ -3,7 +3,7 @@
  * 文案标签固定为英文 “Language”，不随界面语言切换。
  */
 import { Select } from 'antd'
-import { useI18n, type LocaleId } from '../../i18n/I18nProvider'
+import { useI18n, type LocaleId } from '../../i18n/useI18n'
 import './LanguageSwitcher.scss'
 
 const OPTIONS: Array<{ value: LocaleId; label: string }> = [

@@ -199,6 +199,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/products/bulk-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adminProductsBulkStatus"];
+        trace?: never;
+    };
+    "/api/v1/admin/products/{id}/sku-matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminProductsSkuMatrixGet"];
+        put: operations["adminProductsSkuMatrixPut"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/media/upload": {
         parameters: {
             query?: never;
@@ -242,198 +274,6 @@ export interface paths {
         put: operations["adminTagsUpdate"];
         post?: never;
         delete: operations["adminTagsDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/coupons": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["adminCouponsList"];
-        put?: never;
-        post: operations["adminCouponsCreate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/coupons/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["adminCouponsUpdate"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/coupons/{id}/active": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["adminCouponsPatchActive"];
-        trace?: never;
-    };
-    "/api/v1/admin/promotions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["adminPromotionsList"];
-        put?: never;
-        post: operations["adminPromotionsCreate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/promotions/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["adminPromotionsUpdate"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/promotions/{id}/active": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["adminPromotionsPatchActive"];
-        trace?: never;
-    };
-    "/api/v1/admin/customers": {
-        parameters: {
-            query: {
-                page?: number;
-                size?: number;
-                q?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["adminCustomersList"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/membership/tier-rules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["adminMembershipTierRulesList"];
-        put?: never;
-        post: operations["adminMembershipTierRulesCreate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/membership/tier-rules/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["adminMembershipTierRulesUpdate"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/membership/tier-rules/{id}/active": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["adminMembershipTierRulesPatchActive"];
-        trace?: never;
-    };
-    "/api/v1/admin/stats/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["adminStatsSummary"];
-        put?: never;
-        post?: never;
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -485,106 +325,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["cartUpdateItem"];
-        trace?: never;
-    };
-    "/api/v1/cart/selection": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["cartUpdateSelection"];
-        trace?: never;
-    };
-    "/api/v1/cart/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["cartBulkDelete"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cart/clear": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["cartClear"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/cart/reorder-from-order": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["cartReorderFromOrder"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/user/addresses/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["userAddressUpdate"];
-        post?: never;
-        delete: operations["userAddressDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/user/addresses/{id}/default": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["userAddressSetDefault"];
         trace?: never;
     };
     "/api/v1/orders": {
@@ -683,6 +423,86 @@ export interface paths {
         patch: operations["adminOrdersUpdateStatus"];
         trace?: never;
     };
+    "/api/v1/admin/orders/{orderNo}/logistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminOrdersAppendLogistics"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/orders/{orderNo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["adminOrdersDelete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminCustomersList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adminCustomersPatch"];
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{id}/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminCustomersResetPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/after-sales": {
         parameters: {
             query?: never;
@@ -746,6 +566,8 @@ export interface components {
             email: string;
             password: string;
             name: string;
+            /** @description 称呼，必填 */
+            salutation: string;
             phone?: string;
             country?: string;
             captchaId: string;
@@ -774,6 +596,7 @@ export interface components {
             id: number;
             email: string;
             name: string;
+            salutation: string;
             role: string;
         };
         MediaUploadView: {
@@ -801,6 +624,10 @@ export interface components {
         StorefrontSettings: {
             /** @description 首页活动商品轮播绑定的标签编码（与标签管理 code 一致） */
             homePromoZoneTagCode: string;
+            /** @description 首页精选区块标签编码；空字符串表示未配置 */
+            homeFeaturedTagCode: string;
+            /** @description 首页热销区块标签编码；空字符串表示未配置 */
+            homeHotTagCode: string;
         };
         TagUpsertRequest: {
             code: string;
@@ -828,8 +655,8 @@ export interface components {
             newPassword: string;
         };
         ProductView: {
-            /** Format: int64 */
-            id: number;
+            /** @description 商品对外雪花 ID（十进制字符串） */
+            id: string;
             title: string;
             moq: number;
             description?: string | null;
@@ -893,136 +720,41 @@ export interface components {
             tagIds?: number[];
         };
         IdPayload: {
-            /** Format: int64 */
-            id: number;
+            /** @description 商品为雪花字符串；标签等可能为数字字符串 */
+            id: string;
         };
-        CouponAdminView: {
-            /** Format: int64 */
-            id: number;
-            code: string;
-            name: string;
-            discountType: string;
-            discountValue: string;
-            minOrderAmount: string;
-            tagFilter?: string | null;
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo: string;
+        ProductBulkStatusRequest: {
+            /** @description 商品 publicId 列表 */
+            ids: string[];
             isActive: boolean;
         };
-        CouponAdminUpsertRequest: {
-            code: string;
-            name: string;
-            discountType: string;
-            discountValue: number;
-            minOrderAmount?: number;
-            tagFilter?: string | null;
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo: string;
-            isActive?: boolean;
+        ProductSkuMatrixView: {
+            productId: string;
+            options: components["schemas"]["ProductOptionView"][];
+            skus: components["schemas"]["ProductSkuView"][];
         };
-        CouponActivePatchRequest: {
-            isActive: boolean;
-        };
-        PromotionAdminView: {
-            /** Format: int64 */
-            id: number;
-            name: string;
-            thresholdAmount: string;
-            amountOff: string;
-            tagFilter?: string | null;
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo: string;
-            isActive: boolean;
-        };
-        PromotionAdminUpsertRequest: {
-            name: string;
-            thresholdAmount: number;
-            amountOff: number;
-            tagFilter?: string | null;
-            /** Format: date-time */
-            validFrom: string;
-            /** Format: date-time */
-            validTo: string;
-            isActive?: boolean;
-        };
-        PromotionActivePatchRequest: {
-            isActive: boolean;
-        };
-        CustomerAdminView: {
-            /** Format: int64 */
-            id: number;
-            email: string;
-            name: string;
-            phone?: string | null;
-            country?: string | null;
-            role: string;
-            status: string;
-            /** Format: date-time */
-            createdAt: string;
-            tier: string;
-            lifetimePaidUsd: string;
-            memberDiscountPercent: number;
-        };
-        PagedCustomers: {
-            items: components["schemas"]["CustomerAdminView"][];
-            /** Format: int64 */
-            total: number;
-            page: number;
-            size: number;
-        };
-        MembershipTierRuleAdminView: {
-            /** Format: int64 */
-            id: number;
-            tierCode: string;
-            minLifetimePaidUsd: string;
-            discountPercent: number;
+        ProductOptionInput: {
+            optionName: string;
+            optionValue: string;
+            /** @default 0 */
             sortNo: number;
-            isActive: boolean;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
         };
-        MembershipTierRuleUpsertRequest: {
-            tierCode: string;
-            minLifetimePaidUsd: number;
-            discountPercent: number;
-            sortNo?: number;
-            isActive?: boolean;
-        };
-        MembershipTierRuleActivePatchRequest: {
+        ProductSkuInput: {
+            skuCode: string;
+            attrJson: string;
+            salePrice: number;
+            stockQty: number;
+            weightKg?: number | null;
+            /** @default true */
             isActive: boolean;
         };
-        AdminStatsSummaryView: {
-            /** Format: int64 */
-            totalUsers: number;
-            /** Format: int64 */
-            newUsersLast7Days: number;
-            /** Format: int64 */
-            totalProducts: number;
-            /** Format: int64 */
-            activeProducts: number;
-            /** Format: int64 */
-            totalOrders: number;
-            /** Format: int64 */
-            ordersLast7Days: number;
-            /** Format: int64 */
-            pendingPaymentOrders: number;
-            /** Format: int64 */
-            paidOrders: number;
-            paidRevenueTotal: string;
-            /** Format: int64 */
-            totalAfterSales: number;
+        ProductSkuMatrixUpsertRequest: {
+            options: components["schemas"]["ProductOptionInput"][];
+            skus: components["schemas"]["ProductSkuInput"][];
         };
         AddCartItemRequest: {
-            /** Format: int64 */
-            productId: number;
+            /** @description 商品 publicId（雪花字符串） */
+            productId: string;
             quantity: number;
         };
         UpdateCartItemRequest: {
@@ -1035,11 +767,13 @@ export interface components {
         BulkDeleteCartRequest: {
             itemIds: number[];
         };
+        ReorderToCartRequest: {
+            orderNo: string;
+        };
         CartItemView: {
             /** Format: int64 */
             itemId: number;
-            /** Format: int64 */
-            productId: number;
+            productId: string;
             title: string;
             moq: number;
             quantity: number;
@@ -1057,55 +791,18 @@ export interface components {
             selectedSubtotal: string;
             currency: string;
         };
-        ReorderToCartRequest: {
-            orderNo: string;
-        };
-        UserAddressView: {
-            /** Format: int64 */
-            id: number;
-            receiverName: string;
-            receiverPhone: string;
-            receiverCompany?: string | null;
-            country: string;
-            addressLine: string;
-            province?: string | null;
-            city?: string | null;
-            postalCode?: string | null;
-            isDefault: boolean;
-        };
-        UserAddressCreateRequest: {
-            receiverName: string;
-            receiverPhone: string;
-            country: string;
-            addressLine: string;
-            receiverCompany?: string | null;
-            province?: string | null;
-            city?: string | null;
-            postalCode?: string | null;
-            isDefault?: boolean;
-        };
-        UserAddressUpdateRequest: {
-            receiverName: string;
-            receiverPhone: string;
-            country: string;
-            addressLine: string;
-            receiverCompany?: string | null;
-            province?: string | null;
-            city?: string | null;
-            postalCode?: string | null;
-            isDefault?: boolean;
-        };
         CreateOrderRequest: {
+            /** Format: int64 */
             savedAddressId?: number | null;
             receiverName?: string | null;
             receiverPhone?: string | null;
             country?: string | null;
             addressLine?: string | null;
-            postalCode?: string;
-            receiverCompany?: string;
-            taxNo?: string;
-            incoterm?: string;
-            shippingMethod?: string;
+            postalCode?: string | null;
+            receiverCompany?: string | null;
+            taxNo?: string | null;
+            incoterm?: string | null;
+            shippingMethod?: string | null;
             receiverProvince?: string | null;
             receiverCity?: string | null;
             cartItemIds?: number[] | null;
@@ -1115,12 +812,65 @@ export interface components {
             orderNo: string;
         };
         OrderItemView: {
-            /** Format: int64 */
-            productId: number;
+            productId: string;
             titleSnapshot: string;
             priceSnapshot: string;
             quantity: number;
             thumbUrl?: string | null;
+        };
+        OrderLogisticsView: {
+            /** Format: int64 */
+            id: number;
+            orderNo: string;
+            carrier?: string | null;
+            trackingNo: string;
+            remark?: string | null;
+            /** @description ISO-8601 时间 */
+            createdAt: string;
+        };
+        OrderLogisticsCreateRequest: {
+            trackingNo: string;
+            carrier?: string;
+            remark?: string;
+        };
+        PagedOrders: {
+            items: components["schemas"]["OrderView"][];
+            /** Format: int64 */
+            total: number;
+            page: number;
+            size: number;
+        };
+        CustomerAdminView: {
+            /** Format: int64 */
+            id: number;
+            email: string;
+            name: string;
+            salutation: string;
+            phone?: string | null;
+            country?: string | null;
+            role: string;
+            status: string;
+            /** Format: date-time */
+            createdAt: string;
+            tier: string;
+            lifetimePaidUsd: string;
+            memberDiscountPercent: number;
+            adminNote?: string | null;
+            preferences?: string | null;
+        };
+        PagedCustomers: {
+            items: components["schemas"]["CustomerAdminView"][];
+            /** Format: int64 */
+            total: number;
+            page: number;
+            size: number;
+        };
+        CustomerAdminUpdateRequest: {
+            adminNote?: string;
+            preferences?: string;
+        };
+        AdminResetPasswordResponse: {
+            temporaryPassword: string;
         };
         OrderView: {
             orderNo: string;
@@ -1149,6 +899,9 @@ export interface components {
             logisticsCompany?: string | null;
             trackingNo?: string | null;
             items: components["schemas"]["OrderItemView"][];
+            /** @description ISO-8601 下单时间 */
+            createdAt: string;
+            logistics?: components["schemas"]["OrderLogisticsView"][];
         };
         UpdateTrackingRequest: {
             trackingNo: string;
@@ -1156,6 +909,9 @@ export interface components {
         };
         UpdateOrderStatusRequest: {
             status: string;
+            remark?: string;
+            /** @description 为 true 时允许状态回退，须填写 remark */
+            forceRepair?: boolean;
         };
         CreateAfterSaleRequest: {
             orderNo: string;
@@ -1170,6 +926,139 @@ export interface components {
         };
         UpdateAfterSaleStatusRequest: {
             status: string;
+        };
+        CouponAdminView: {
+            /** Format: int64 */
+            id: number;
+            code: string;
+            name: string;
+            discountType: string;
+            discountValue: number;
+            minOrderAmount: number;
+            tagFilter?: string | null;
+            /** Format: date-time */
+            validFrom: string;
+            /** Format: date-time */
+            validTo: string;
+            isActive: boolean;
+        };
+        CouponAdminUpsertRequest: {
+            code: string;
+            name: string;
+            discountType: string;
+            discountValue: number;
+            minOrderAmount: number;
+            tagFilter?: string;
+            /** Format: date-time */
+            validFrom: string;
+            /** Format: date-time */
+            validTo: string;
+            isActive: boolean;
+        };
+        CouponActivePatchRequest: {
+            isActive: boolean;
+        };
+        PromotionAdminView: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            thresholdAmount: number;
+            amountOff: number;
+            tagFilter?: string | null;
+            /** Format: date-time */
+            validFrom: string;
+            /** Format: date-time */
+            validTo: string;
+            isActive: boolean;
+        };
+        PromotionAdminUpsertRequest: {
+            name: string;
+            thresholdAmount: number;
+            amountOff: number;
+            tagFilter?: string;
+            /** Format: date-time */
+            validFrom: string;
+            /** Format: date-time */
+            validTo: string;
+            isActive: boolean;
+        };
+        PromotionActivePatchRequest: {
+            isActive: boolean;
+        };
+        MembershipTierRuleAdminView: {
+            /** Format: int64 */
+            id: number;
+            tierCode: string;
+            minLifetimePaidUsd: string;
+            discountPercent: number;
+            sortNo: number;
+            isActive: boolean;
+        };
+        MembershipTierRuleUpsertRequest: {
+            tierCode: string;
+            minLifetimePaidUsd: number;
+            discountPercent: number;
+            sortNo: number;
+            isActive: boolean;
+        };
+        MembershipTierRuleActivePatchRequest: {
+            isActive: boolean;
+        };
+        AdminStatsSummaryView: {
+            /** Format: int64 */
+            totalUsers: number;
+            /** Format: int64 */
+            newUsersLast7Days: number;
+            /** Format: int64 */
+            totalProducts: number;
+            /** Format: int64 */
+            activeProducts: number;
+            /** Format: int64 */
+            totalOrders: number;
+            /** Format: int64 */
+            ordersLast7Days: number;
+            /** Format: int64 */
+            pendingPaymentOrders: number;
+            /** Format: int64 */
+            paidOrders: number;
+            paidRevenueTotal: string;
+            /** Format: int64 */
+            totalAfterSales: number;
+        };
+        UserAddressView: {
+            /** Format: int64 */
+            id: number;
+            receiverName: string;
+            receiverPhone: string;
+            receiverCompany?: string | null;
+            country: string;
+            province?: string | null;
+            city?: string | null;
+            addressLine: string;
+            postalCode?: string | null;
+            isDefault: boolean;
+        };
+        UserAddressCreateRequest: {
+            receiverName: string;
+            receiverPhone: string;
+            receiverCompany?: string;
+            country: string;
+            province?: string;
+            city?: string;
+            addressLine: string;
+            postalCode?: string;
+            isDefault: boolean;
+        };
+        UserAddressUpdateRequest: {
+            receiverName: string;
+            receiverPhone: string;
+            receiverCompany?: string;
+            country: string;
+            province?: string;
+            city?: string;
+            addressLine: string;
+            postalCode?: string;
+            isDefault: boolean;
         };
     };
     responses: never;
@@ -1329,10 +1218,16 @@ export interface operations {
                 q?: string;
                 /** @description 按分类 ID 精确筛选（与类目导航联动） */
                 categoryId?: number;
-                /** @description 按标签 ID 筛选（商品须关联该标签） */
+                /** @description 按标签数字 ID 筛选（已废弃，优先 tagCode） */
                 tagId?: number;
+                /** @description 按标签编码筛选（与标签管理 code 一致） */
+                tagCode?: string;
                 /** @description true 时仅返回活动商品（已设划线价且高于售价） */
                 promo?: boolean;
+                /** @description 主档售价下限（含） */
+                minPrice?: number;
+                /** @description 主档售价上限（含） */
+                maxPrice?: number;
             };
             header?: never;
             path?: never;
@@ -1396,7 +1291,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: never;
         };
@@ -1422,6 +1317,12 @@ export interface operations {
                 q?: string;
                 /** @description true=仅上架，false=仅下架；不传=全部 */
                 active?: "true" | "false";
+                categoryId?: number;
+                /** @description 按标签数字 ID（已废弃，优先 tagCode） */
+                tagId?: number;
+                tagCode?: string;
+                /** @description 主档币种精确筛选 */
+                currency?: string;
             };
             header?: never;
             path?: never;
@@ -1469,7 +1370,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: never;
         };
@@ -1491,13 +1392,87 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ProductAdminUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    adminProductsBulkStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductBulkStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        updated: number;
+                    };
+                };
+            };
+        };
+    };
+    adminProductsSkuMatrixGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductSkuMatrixView"];
+                };
+            };
+        };
+    };
+    adminProductsSkuMatrixPut: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductSkuMatrixUpsertRequest"];
             };
         };
         responses: {
@@ -1631,338 +1606,6 @@ export interface operations {
             };
         };
     };
-    adminCouponsList: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CouponAdminView"][];
-                };
-            };
-        };
-    };
-    adminCouponsCreate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CouponAdminUpsertRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IdPayload"];
-                };
-            };
-        };
-    };
-    adminCouponsUpdate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CouponAdminUpsertRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    adminCouponsPatchActive: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CouponActivePatchRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    adminPromotionsList: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromotionAdminView"][];
-                };
-            };
-        };
-    };
-    adminPromotionsCreate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PromotionAdminUpsertRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IdPayload"];
-                };
-            };
-        };
-    };
-    adminPromotionsUpdate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PromotionAdminUpsertRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    adminPromotionsPatchActive: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PromotionActivePatchRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    adminCustomersList: {
-        parameters: {
-            query: {
-                page?: number;
-                size?: number;
-                q?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PagedCustomers"];
-                };
-            };
-        };
-    };
-    adminMembershipTierRulesList: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MembershipTierRuleAdminView"][];
-                };
-            };
-        };
-    };
-    adminMembershipTierRulesCreate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MembershipTierRuleUpsertRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IdPayload"];
-                };
-            };
-        };
-    };
-    adminMembershipTierRulesUpdate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MembershipTierRuleUpsertRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    adminMembershipTierRulesPatchActive: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MembershipTierRuleActivePatchRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    adminStatsSummary: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminStatsSummaryView"];
-                };
-            };
-        };
-    };
     cartGet: {
         parameters: {
             query?: never;
@@ -2045,165 +1688,6 @@ export interface operations {
         };
         responses: {
             /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    cartUpdateSelection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateCartSelectionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    cartBulkDelete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkDeleteCartRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    cartClear: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    cartReorderFromOrder: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReorderToCartRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    userAddressUpdate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserAddressUpdateRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    userAddressDelete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    userAddressSetDefault: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2304,7 +1788,16 @@ export interface operations {
     };
     adminOrdersList: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                size?: number;
+                /** @description 订单号等模糊查询 */
+                q?: string;
+                /** @description 若传则按精确状态筛选（覆盖 phase 语义） */
+                status?: string;
+                /** @description 阶段：ALL 或不传=全部；PENDING_PAYMENT/PAID/SHIPPED/DELIVERED/COMPLETED/CANCELLED；FULFILLING=待发货+配送中；DONE=已送达或已完成 */
+                phase?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2317,7 +1810,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OrderView"][];
+                    "application/json": components["schemas"]["PagedOrders"];
                 };
             };
         };
@@ -2370,6 +1863,127 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+        };
+    };
+    adminOrdersAppendLogistics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderNo: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrderLogisticsCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    adminOrdersDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderNo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    adminCustomersList: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                /** @description 邮箱/姓名等 */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedCustomers"];
+                };
+            };
+        };
+    };
+    adminCustomersPatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerAdminUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    adminCustomersResetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminResetPasswordResponse"];
                 };
             };
         };

@@ -9,7 +9,7 @@ import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { useAdminAfterSales, useAdminUpdateAfterSaleStatus } from '../../../hooks/apiHooks'
 import type { components } from '../../../generated/voyage-paths'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 import { i18nTpl } from '../../../lib/i18nTpl'
 import { StandardModal } from '../../components/shared/StandardModal'
 

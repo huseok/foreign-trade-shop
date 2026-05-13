@@ -7,7 +7,7 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart, useCreateOrder, useUserAddresses } from '../../hooks/apiHooks'
 import { authStore } from '../../lib/auth/authStore'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useI18n } from '../../i18n/useI18n'
 import { toErrorMessage } from '../../lib/http/error'
 import './Checkout.scss'
 
@@ -24,21 +24,23 @@ export function Checkout() {
   const boot = useRef(false)
 
   useEffect(() => {
-    if (addresses.length === 0) {
-      setShipMode('manual')
-      setSelectedAddrId(null)
-      boot.current = false
-      return
-    }
-    setSelectedAddrId((prev) => {
-      if (prev != null && addresses.some((a) => a.id === prev)) return prev
-      const pick = addresses.find((a) => a.isDefault) ?? addresses[0]
-      return pick.id
+    queueMicrotask(() => {
+      if (addresses.length === 0) {
+        setShipMode('manual')
+        setSelectedAddrId(null)
+        boot.current = false
+        return
+      }
+      setSelectedAddrId((prev) => {
+        if (prev != null && addresses.some((a) => a.id === prev)) return prev
+        const pick = addresses.find((a) => a.isDefault) ?? addresses[0]
+        return pick.id
+      })
+      if (!boot.current) {
+        boot.current = true
+        setShipMode('saved')
+      }
     })
-    if (!boot.current) {
-      boot.current = true
-      setShipMode('saved')
-    }
   }, [addresses])
 
   const rows =
@@ -225,6 +227,9 @@ export function Checkout() {
                       </li>
                     ))}
                   </ul>
+                  <p className="checkout__legal" style={{ marginTop: 12 }}>
+                    {t('checkout.savedAddressHint')}
+                  </p>
                 </div>
               ) : (
                 <>

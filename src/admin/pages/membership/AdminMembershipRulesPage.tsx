@@ -1,7 +1,7 @@
 /**
  * 会员档位规则：累计已支付金额门槛 + 商品小计折扣百分比（与后端 [MembershipService] 一致）。
  */
-import { App, Button, Card, Form, Input, InputNumber, Space, Switch, Typography } from 'antd'
+import { App, Button, Card, Form, Input, InputNumber, Switch, Typography } from 'antd'
 import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { useMemo, useState } from 'react'
@@ -11,7 +11,7 @@ import {
   useAdminPatchMembershipTierRuleActive,
   useAdminUpdateMembershipTierRule,
 } from '../../../hooks/apiHooks'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 import { i18nTpl } from '../../../lib/i18nTpl'
 import type { components } from '../../../generated/voyage-paths'
 import { StandardModal } from '../../components/shared/StandardModal'

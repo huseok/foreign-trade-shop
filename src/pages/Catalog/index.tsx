@@ -9,7 +9,7 @@ import { Pagination } from 'antd'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ProductCard } from '../../components/ProductCard'
 import { useCategories, useStorefrontProducts, useStorefrontTags } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useI18n } from '../../i18n/useI18n'
 import { i18nTpl } from '../../lib/i18nTpl'
 import { storefrontCatalogHref } from '../../lib/catalogUrls'
 import './Catalog.scss'
@@ -34,9 +34,12 @@ export function Catalog() {
   const page1 = Math.max(1, Number(params.get('page') ?? 1) || 1)
   const size = Math.min(100, Math.max(1, Number(params.get('size') ?? 12) || 12))
   const q = (params.get('q') ?? '').trim()
+  /** 优先使用标签编码（与后台标签 `code` 一致）；无则回退到历史 `tagId` 数字参数。 */
+  const tagCodeParam = (params.get('tagCode') ?? '').trim()
+  const tagCode = tagCodeParam !== '' ? tagCodeParam : undefined
   const tagParam = params.get('tagId') ?? ''
   const tagNum =
-    tagParam !== '' && /^\d+$/.test(tagParam) ? Number(tagParam) : undefined
+    !tagCode && tagParam !== '' && /^\d+$/.test(tagParam) ? Number(tagParam) : undefined
   const minPrice = parsePriceParam(params.get('minPrice'))
   const maxPrice = parsePriceParam(params.get('maxPrice'))
   const promoOnly = params.get('promo') === 'true'
@@ -44,7 +47,10 @@ export function Catalog() {
   const { data: categories = [] } = useCategories()
   const { data: storefrontTags = [] } = useStorefrontTags()
   const categoryName = categories.find((c) => c.id === categoryNum)?.name
-  const tagName = storefrontTags.find((tg) => tg.id === tagNum)?.name
+  const tagName =
+    tagCode != null
+      ? storefrontTags.find((tg) => tg.code.toUpperCase() === tagCode.toUpperCase())?.name
+      : storefrontTags.find((tg) => tg.id === tagNum)?.name
 
   const { data, isLoading } = useStorefrontProducts({
     page: page1 - 1,
@@ -53,6 +59,7 @@ export function Catalog() {
     q: q || undefined,
     categoryId: categoryNum,
     tagId: tagNum,
+    tagCode: tagCode || undefined,
     minPrice,
     maxPrice,
     promo: promoOnly ? true : undefined,
@@ -75,6 +82,7 @@ export function Catalog() {
     country: country || undefined,
     q,
     tagId: tagNum,
+    tagCode: tagCode || undefined,
     minPrice,
     maxPrice,
     promo: promoOnly ? true : undefined,
@@ -85,6 +93,7 @@ export function Catalog() {
   if (q) countLine += i18nTpl(t('catalog.querySuffix'), { q })
   if (categoryName) countLine += i18nTpl(t('catalog.categorySuffix'), { name: categoryName })
   if (tagName) countLine += i18nTpl(t('catalog.tagSuffix'), { name: tagName })
+  if (tagCode && !tagName) countLine += i18nTpl(t('catalog.tagCodeSuffix'), { code: tagCode })
   if (promoOnly) countLine += t('catalog.promoSuffix')
   if (minPrice != null || maxPrice != null) {
     countLine += i18nTpl(t('catalog.priceRangeSuffix'), {
@@ -129,8 +138,8 @@ export function Catalog() {
             <ul className="catalog__filter-list">
               <li>
                 <Link
-                  to={storefrontCatalogHref({ ...filterBase, categoryId: categoryNum, tagId: null })}
-                  className={tagNum == null ? 'catalog__filter is-active' : 'catalog__filter'}
+                  to={storefrontCatalogHref({ ...filterBase, categoryId: categoryNum, tagId: null, tagCode: null })}
+                  className={tagNum == null && tagCode == null ? 'catalog__filter is-active' : 'catalog__filter'}
                 >
                   {t('catalog.allTags')}
                 </Link>
@@ -138,8 +147,18 @@ export function Catalog() {
               {storefrontTags.slice(0, 48).map((tg) => (
                 <li key={tg.id}>
                   <Link
-                    to={storefrontCatalogHref({ ...filterBase, categoryId: categoryNum, tagId: tg.id })}
-                    className={tagNum === tg.id ? 'catalog__filter is-active' : 'catalog__filter'}
+                    to={storefrontCatalogHref({
+                      ...filterBase,
+                      categoryId: categoryNum,
+                      tagId: null,
+                      tagCode: tg.code,
+                    })}
+                    className={
+                      (tagCode != null && tg.code.toUpperCase() === tagCode.toUpperCase()) ||
+                      (tagCode == null && tagNum === tg.id)
+                        ? 'catalog__filter is-active'
+                        : 'catalog__filter'
+                    }
                   >
                     {tg.name}
                   </Link>
@@ -176,7 +195,7 @@ export function Catalog() {
             </ul>
             <h2 className="catalog__filters-title">{t('catalog.filtersSearch')}</h2>
             <form
-              key={`${country}-${page1}-${size}-${q}-${categoryNum ?? ''}-${tagNum ?? ''}-${minPrice ?? ''}-${maxPrice ?? ''}`}
+              key={`${country}-${page1}-${size}-${q}-${categoryNum ?? ''}-${tagNum ?? ''}-${tagCode ?? ''}-${minPrice ?? ''}-${maxPrice ?? ''}`}
               className="catalog__search"
               onSubmit={(e) => {
                 e.preventDefault()
@@ -275,7 +294,7 @@ export function Catalog() {
             {!isLoading && <p className="catalog__count">{countLine}</p>}
             <div className="product-grid product-grid--catalog">
               {items.map((p) => (
-                <ProductCard key={p.id} product={p} />
+                <ProductCard key={p.id} product={p} compactAddButton />
               ))}
             </div>
             {!isLoading && total > 0 && (

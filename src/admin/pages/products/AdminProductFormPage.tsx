@@ -3,7 +3,7 @@
  */
 import { useEffect } from 'react'
 import { App, Button, Card, Form, Result, Space, Spin, Typography } from 'antd'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 import { PageContainer } from '@ant-design/pro-components'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AdminProductUpsertFields } from '../../components/product/AdminProductUpsertFields'
@@ -33,10 +33,9 @@ export function AdminProductFormPage() {
   const navigate = useNavigate()
   const { message } = App.useApp()
   const [form] = Form.useForm<AdminProductFormValues>()
-
-  const idNum = productId ? Number(productId) : NaN
-  const isEdit = productId != null && productId !== 'new' && Number.isFinite(idNum)
-  const productQueryId = isEdit ? idNum : undefined
+  const clientKey = productId && productId !== 'new' ? productId.trim() : ''
+  const isEdit = Boolean(clientKey)
+  const productQueryId = isEdit ? clientKey : undefined
 
   const { data: me, isLoading: meLoading } = useMe(true)
   const { data: product, isLoading: productLoading, isError } = useAdminProductDetail(productQueryId)
@@ -71,7 +70,7 @@ export function AdminProductFormPage() {
     )
   }
 
-  if (isEdit && (Number.isNaN(idNum) || idNum <= 0)) {
+  if (isEdit && !clientKey) {
     return (
       <Result
         status="404"
@@ -113,11 +112,11 @@ export function AdminProductFormPage() {
     <PageContainer
       style={{ maxWidth: 920, margin: '0 auto' }}
       title={isEdit ? `编辑商品：${product?.title ?? ''}` : '新建商品'}
-      subTitle={isEdit ? `商品 ID #${idNum}` : '填写基础信息与分类、运费模板等'}
+      subTitle={isEdit ? `商品 ID ${clientKey}` : '填写基础信息与分类、运费模板等'}
       breadcrumb={{
         items: [
           { title: <Link to="/admin/products">商品列表</Link> },
-          { title: isEdit ? `编辑 #${idNum}` : '新建商品' },
+          { title: isEdit ? `编辑 ${clientKey}` : '新建商品' },
         ],
       }}
     >
@@ -127,7 +126,7 @@ export function AdminProductFormPage() {
             <Typography.Paragraph style={{ marginBottom: 8 }}>
               {t('admin.products.skuMatrixCardDesc')}
             </Typography.Paragraph>
-            <Link to={`/admin/products/${idNum}/sku-matrix`}>{t('admin.products.skuMatrixLink')} →</Link>
+            <Link to={`/admin/products/${encodeURIComponent(clientKey)}/sku-matrix`}>{t('admin.products.skuMatrixLink')} →</Link>
           </Card>
         )}
         <Card>
@@ -153,7 +152,7 @@ export function AdminProductFormPage() {
             initialValues={{ currency: 'USD', moq: 1, isActive: true, images: [], tagIds: [] }}
           >
             <AdminProductUpsertFields
-              productId={isEdit ? idNum : undefined}
+              productId={isEdit ? clientKey : undefined}
               categories={categories}
               shippingTemplates={shippingTemplates}
               tags={tagList.map((tg) => ({ id: tg.id, name: tg.name, code: tg.code, isActive: tg.isActive }))}

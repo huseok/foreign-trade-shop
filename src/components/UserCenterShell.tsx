@@ -4,7 +4,7 @@
 import { Button } from 'antd'
 import { useQueryClient } from '@tanstack/react-query'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useI18n } from '../i18n/I18nProvider'
+import { useI18n } from '../i18n/useI18n'
 import { authStore } from '../lib/auth/authStore'
 import { cancelScheduledAccessTokenRefresh } from '../lib/http/apiClient'
 

@@ -1,8 +1,8 @@
 import { Carousel } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useStorefrontProducts, useStorefrontSettings, useStorefrontTags } from '../../hooks/apiHooks'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useStorefrontProducts, useStorefrontSettings } from '../../hooks/apiHooks'
+import { useI18n } from '../../i18n/useI18n'
 import { HOME_PROMO_ZONE_TAG_CODE } from '../../lib/homePromoZone'
 import { productThumbUrl } from '../../lib/media/resolveMediaUrl'
 import type { ProductDto } from '../../types/api'
@@ -126,7 +126,7 @@ function HomePromoProductsCarousel({
   )
 }
 
-/** 热门活动上方：标签编码由 GET /api/v1/storefront/settings 配置；划线价可选用于原价/现价对比 */
+/** 热门活动上方：轮播商品按 `homePromoZoneTagCode`（或常量兜底）以 **tagCode** 请求列表，与商品接口标签筛选一致。 */
 export function HomePromoProductsSection() {
   const { t } = useI18n()
   const { data: settings, isLoading: settingsLoading } = useStorefrontSettings()
@@ -136,14 +136,7 @@ export function HomePromoProductsSection() {
     return HOME_PROMO_ZONE_TAG_CODE
   }, [settings])
 
-  const { data: tags = [] } = useStorefrontTags()
-  const zoneTag = tags.find((tg) => tg.code === tagCode)
-  const tagId = zoneTag?.id
-
-  const { data, isLoading: productsLoading } = useStorefrontProducts(
-    { page: 0, size: 24, tagId },
-    tagId != null,
-  )
+  const { data, isLoading: productsLoading } = useStorefrontProducts({ page: 0, size: 24, tagCode }, true)
 
   const items = useMemo(() => data?.items ?? [], [data])
   const chunkSize = usePromoProductsChunkSize()
@@ -154,9 +147,8 @@ export function HomePromoProductsSection() {
     [chunkSize, slides],
   )
 
-  const loading = settingsLoading || (tagId != null && productsLoading)
+  const loading = settingsLoading || productsLoading
 
-  if (!settingsLoading && tagId == null) return null
   if (!loading && items.length === 0) return null
 
   if (loading) {

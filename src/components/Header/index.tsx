@@ -8,7 +8,7 @@ import { storefrontCatalogHref } from '../../lib/catalogUrls'
 import { useCart, useCategories, useMe } from '../../hooks/apiHooks'
 import { authStore } from '../../lib/auth/authStore'
 import { getLocalCartCount, onLocalCartUpdated } from '../../lib/cart/localCart'
-import { useI18n } from '../../i18n/I18nProvider'
+import { useI18n } from '../../i18n/useI18n'
 import { LanguageSwitcher } from '../LanguageSwitcher'
 import './Header.scss'
 

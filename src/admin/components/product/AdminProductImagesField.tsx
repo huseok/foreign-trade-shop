@@ -11,7 +11,7 @@ import type { AdminProductUpsertRequest } from '../../../types/api'
 import { compressImageForUpload } from '../../../lib/media/compressImageForUpload'
 import { resolveMediaUrl } from '../../../lib/media/resolveMediaUrl'
 import { voyage } from '../../../openapi/voyageSdk'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 
 type Img = NonNullable<AdminProductUpsertRequest['images']>[number]
 

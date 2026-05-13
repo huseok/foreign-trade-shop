@@ -51,6 +51,7 @@ export const voyage = {
       q?: string
       categoryId?: number
       tagId?: number
+      tagCode?: string
       promo?: boolean
       minPrice?: number
       maxPrice?: number
@@ -62,6 +63,7 @@ export const voyage = {
       if (params.q != null && params.q !== '') sp.set('q', params.q)
       if (params.categoryId != null) sp.set('categoryId', String(params.categoryId))
       if (params.tagId != null) sp.set('tagId', String(params.tagId))
+      if (params.tagCode != null && params.tagCode !== '') sp.set('tagCode', params.tagCode)
       if (params.promo === true) sp.set('promo', 'true')
       /** 价格区间：0 为合法下限，故用 `>= 0` 与 `Number.isFinite` 双重校验。 */
       if (params.minPrice != null && Number.isFinite(params.minPrice) && params.minPrice >= 0) {
@@ -73,8 +75,8 @@ export const voyage = {
       const qs = sp.toString()
       return getData<S['PagedProducts']>(`/api/v1/products${qs ? `?${qs}` : ''}`)
     },
-    getById(id: number): Promise<S['ProductView']> {
-      return getData<S['ProductView']>(`/api/v1/products/${id}`)
+    getById(id: string): Promise<S['ProductView']> {
+      return getData<S['ProductView']>(`/api/v1/products/${encodeURIComponent(id)}`)
     },
     adminListPaged(params: {
       page?: number
@@ -83,6 +85,7 @@ export const voyage = {
       active?: boolean
       categoryId?: number
       tagId?: number
+      tagCode?: string
       currency?: string
     }): Promise<S['PagedProducts']> {
       const sp = new URLSearchParams()
@@ -93,52 +96,28 @@ export const voyage = {
       if (params.active === false) sp.set('active', 'false')
       if (params.categoryId != null) sp.set('categoryId', String(params.categoryId))
       if (params.tagId != null) sp.set('tagId', String(params.tagId))
+      if (params.tagCode != null && params.tagCode !== '') sp.set('tagCode', params.tagCode)
       if (params.currency != null && params.currency !== '') sp.set('currency', params.currency)
       const qs = sp.toString()
       return getData<S['PagedProducts']>(`/api/v1/admin/products${qs ? `?${qs}` : ''}`)
     },
-    adminGetById(id: number): Promise<S['ProductView']> {
-      return getData<S['ProductView']>(`/api/v1/admin/products/${id}`)
+    adminGetById(id: string): Promise<S['ProductView']> {
+      return getData<S['ProductView']>(`/api/v1/admin/products/${encodeURIComponent(id)}`)
     },
     adminCreate(body: S['ProductAdminUpsertRequest']): Promise<S['IdPayload']> {
       return postData<S['IdPayload']>('/api/v1/admin/products', body)
     },
-    adminUpdate(id: number, body: S['ProductAdminUpsertRequest']): Promise<string> {
-      return putData<string>(`/api/v1/admin/products/${id}`, body)
+    adminUpdate(id: string, body: S['ProductAdminUpsertRequest']): Promise<string> {
+      return putData<string>(`/api/v1/admin/products/${encodeURIComponent(id)}`, body)
     },
-    adminGetSkuMatrix(id: number): Promise<{
-      productId: number
-      options: Array<{ optionName: string; optionValue: string; sortNo: number }>
-      skus: Array<{
-        id: number
-        skuCode: string
-        attrJson: string
-        salePrice: number
-        stockQty: number
-        weightKg?: number
-        isActive: boolean
-      }>
-    }> {
-      return getData(`/api/v1/admin/products/${id}/sku-matrix`)
+    adminGetSkuMatrix(id: string): Promise<S['ProductSkuMatrixView']> {
+      return getData<S['ProductSkuMatrixView']>(`/api/v1/admin/products/${encodeURIComponent(id)}/sku-matrix`)
     },
-    adminUpsertSkuMatrix(
-      id: number,
-      body: {
-        options: Array<{ optionName: string; optionValue: string; sortNo: number }>
-        skus: Array<{
-          skuCode: string
-          attrJson: string
-          salePrice: number
-          stockQty: number
-          weightKg?: number
-          isActive: boolean
-        }>
-      }
-    ): Promise<string> {
-      return putData(`/api/v1/admin/products/${id}/sku-matrix`, body)
+    adminUpsertSkuMatrix(id: string, body: S['ProductSkuMatrixUpsertRequest']): Promise<string> {
+      return putData<string>(`/api/v1/admin/products/${encodeURIComponent(id)}/sku-matrix`, body)
     },
-    adminBulkStatus(body: { ids: number[]; isActive: boolean }): Promise<{ updated: number }> {
-      return patchData('/api/v1/admin/products/bulk-status', body)
+    adminBulkStatus(body: S['ProductBulkStatusRequest']): Promise<{ updated: number }> {
+      return patchData<{ updated: number }>('/api/v1/admin/products/bulk-status', body)
     },
   },
 
@@ -199,7 +178,7 @@ export const voyage = {
       q?: string
       status?: string
       phase?: string
-    }): Promise<{ items: S['OrderView'][]; total: number; page: number; size: number }> {
+    }): Promise<S['PagedOrders']> {
       const sp = new URLSearchParams()
       if (params.page != null) sp.set('page', String(params.page))
       if (params.size != null) sp.set('size', String(params.size))
@@ -207,16 +186,22 @@ export const voyage = {
       if (params.status != null && params.status !== '') sp.set('status', params.status)
       if (params.phase != null && params.phase !== '') sp.set('phase', params.phase)
       const qs = sp.toString()
-      return getData(`/api/v1/admin/orders${qs ? `?${qs}` : ''}`)
+      return getData<S['PagedOrders']>(`/api/v1/admin/orders${qs ? `?${qs}` : ''}`)
     },
     adminUpdateTracking(orderNo: string, body: S['UpdateTrackingRequest']): Promise<string> {
-      return patchData<string>(`/api/v1/admin/orders/${orderNo}/tracking-no`, body)
+      return patchData<string>(
+        `/api/v1/admin/orders/${encodeURIComponent(orderNo)}/tracking-no`,
+        body,
+      )
     },
-    adminUpdateStatus(orderNo: string, body: { status: string; remark?: string }): Promise<string> {
-      return patchData<string>(`/api/v1/admin/orders/${orderNo}/status`, body)
+    adminAppendLogistics(orderNo: string, body: S['OrderLogisticsCreateRequest']): Promise<string> {
+      return postData<string>(`/api/v1/admin/orders/${encodeURIComponent(orderNo)}/logistics`, body)
     },
-    adminFlowNextStatus(orderNo: string, body?: { remark?: string }): Promise<string> {
-      return patchData<string>(`/api/v1/admin/orders/${orderNo}/status/flow-next`, body)
+    adminUpdateStatus(orderNo: string, body: S['UpdateOrderStatusRequest']): Promise<string> {
+      return patchData<string>(`/api/v1/admin/orders/${encodeURIComponent(orderNo)}/status`, body)
+    },
+    adminDelete(orderNo: string): Promise<string> {
+      return deleteData<string>(`/api/v1/admin/orders/${encodeURIComponent(orderNo)}`)
     },
   },
 
@@ -320,6 +305,12 @@ export const voyage = {
       if (params.q != null && params.q !== '') sp.set('q', params.q)
       const qs = sp.toString()
       return getData<S['PagedCustomers']>(`/api/v1/admin/customers${qs ? `?${qs}` : ''}`)
+    },
+    adminPatchCustomer(id: number, body: S['CustomerAdminUpdateRequest']): Promise<string> {
+      return patchData<string>(`/api/v1/admin/customers/${id}`, body)
+    },
+    adminResetPassword(id: number): Promise<S['AdminResetPasswordResponse']> {
+      return postData<S['AdminResetPasswordResponse']>(`/api/v1/admin/customers/${id}/reset-password`)
     },
   },
 
@@ -501,7 +492,7 @@ export const voyage = {
     setDefaultAddress(id: number): Promise<string> {
       return patchData<string>(`/api/v1/user/addresses/${id}/default`)
     },
-    listBrowseHistories(): Promise<Array<{ id: number; productId: number; viewedAt: string }>> {
+    listBrowseHistories(): Promise<Array<{ id: number; productId: string; viewedAt: string }>> {
       return getData('/api/v1/user/browse-histories')
     },
   },

@@ -9,7 +9,7 @@ import {
   useShippingTemplateRules,
   useShippingTemplates,
 } from '../../../hooks/apiHooks'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 
 type TemplateRow = { id: number; templateName: string; billingMode: string; isActive: boolean }
 type RuleRow = {

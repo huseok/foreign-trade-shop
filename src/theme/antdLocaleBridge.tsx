@@ -5,7 +5,7 @@ import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import enUS from 'antd/locale/en_US'
 import type { ReactNode } from 'react'
-import { useI18n } from '../i18n/I18nProvider'
+import { useI18n } from '../i18n/useI18n'
 import { adminAntdTheme } from './adminAntdTheme'
 
 export function AntdLocaleBridge({ children }: { children: ReactNode }) {

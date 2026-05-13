@@ -4,7 +4,7 @@
 import { Card, Col, Row, Spin, Statistic, Typography } from 'antd'
 import { PageContainer } from '@ant-design/pro-components'
 import { useAdminStatsSummary } from '../../../hooks/apiHooks'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 
 export function AdminStatsPage() {
   const { t } = useI18n()

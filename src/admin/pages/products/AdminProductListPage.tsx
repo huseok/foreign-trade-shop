@@ -12,7 +12,7 @@ import { PageContainer, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { Link, useNavigate } from 'react-router-dom'
 import { queryKeys, useAdminBulkProductStatus, useAdminProductsPage, useMe } from '../../../hooks/apiHooks'
-import { useI18n } from '../../../i18n/I18nProvider'
+import { useI18n } from '../../../i18n/useI18n'
 import { i18nTpl } from '../../../lib/i18nTpl'
 import { productThumbUrl, resolveMediaUrl } from '../../../lib/media/resolveMediaUrl'
 import type { ProductDto } from '../../../types/api'
@@ -57,6 +57,7 @@ function ProductExpandContent({
   const { t } = useI18n()
   const [showAllImages, setShowAllImages] = useState(false)
   const imgs = product.images ?? []
+  const coverFullUrl = imgs.length > 0 ? resolveMediaUrl(imgs[0].fullUrl || imgs[0].thumbUrl) : ''
   const visible = showAllImages ? imgs : imgs.slice(0, EXPAND_IMAGE_PREVIEW_COUNT)
   const restCount = Math.max(0, imgs.length - EXPAND_IMAGE_PREVIEW_COUNT)
 
@@ -129,6 +130,13 @@ function ProductExpandContent({
             '—'
           )}
         </Descriptions.Item>
+        {coverFullUrl ? (
+          <Descriptions.Item label={t('admin.productsList.previewCoverFullUrl')}>
+            <Typography.Text copyable={{ text: coverFullUrl }} style={{ wordBreak: 'break-all', fontSize: 12 }}>
+              {coverFullUrl}
+            </Typography.Text>
+          </Descriptions.Item>
+        ) : null}
         {optionSummary ? (
           <Descriptions.Item label={t('admin.productsList.previewOptions')}>{optionSummary}</Descriptions.Item>
         ) : null}
@@ -195,7 +203,7 @@ function ProductExpandContent({
 
   const storefrontFooter = showStorefrontLink ? (
     <div style={{ marginTop: 12 }}>
-      <Button type="primary" href={`/products/${product.id}`} target="_blank" rel="noreferrer">
+      <Button type="primary" href={`/products/${encodeURIComponent(product.id)}`} target="_blank" rel="noreferrer">
         {t('admin.productsList.viewStorefront')}
       </Button>
     </div>
@@ -235,11 +243,11 @@ export function AdminProductListPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [qInput, setQInput] = useState('')
   const [debouncedQ, setDebouncedQ] = useState('')
-  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [importErrors, setImportErrors] = useState<Array<{ line: number; reason: string }>>([])
   const [importSummary, setImportSummary] = useState<{ ok: number; total: number } | null>(null)
-  const [editProductId, setEditProductId] = useState<number | null>(null)
-  const [switchBusyId, setSwitchBusyId] = useState<number | null>(null)
+  const [editProductId, setEditProductId] = useState<string | null>(null)
+  const [switchBusyId, setSwitchBusyId] = useState<string | null>(null)
   /** 当前展开详情的行（商品 ID）；与 ProTable `expandable.expandedRowKeys` 同步。 */
   const [expandedRowKeys, setExpandedRowKeys] = useState<Key[]>([])
   const bulkStatusMut = useAdminBulkProductStatus()
@@ -289,13 +297,13 @@ export function AdminProductListPage() {
    * 展开/收起指定商品行。
    * 需在交互元素上 `stopPropagation`，避免与行级「点选切换勾选」逻辑冲突。
    */
-  const toggleRowExpanded = (productId: number, e?: MouseEvent) => {
+  const toggleRowExpanded = (productId: string, e?: MouseEvent) => {
     e?.stopPropagation()
     const key = productId as Key
     setExpandedRowKeys((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]))
   }
 
-  const setProductActive = async (id: number, isActive: boolean) => {
+  const setProductActive = async (id: string, isActive: boolean) => {
     setSwitchBusyId(id)
     try {
       await bulkStatusMut.mutateAsync({ ids: [id], isActive })
@@ -412,7 +420,7 @@ export function AdminProductListPage() {
           >
             {t('admin.productsList.edit')}
           </Button>
-          <Link to={`/admin/products/${r.id}/sku-matrix`} onClick={(e) => e.stopPropagation()}>
+          <Link to={`/admin/products/${encodeURIComponent(r.id)}/sku-matrix`} onClick={(e) => e.stopPropagation()}>
             {t('admin.productsList.skuMatrix')}
           </Link>
         </Space>
@@ -482,12 +490,11 @@ export function AdminProductListPage() {
       const lineNo = i + 2
       const record = rowCellsToRecord(headers, body[i])
       const idRaw = (record.id ?? '').trim()
-      const idNum = idRaw === '' ? NaN : Number(idRaw)
 
-      if (Number.isFinite(idNum) && idNum > 0) {
+      if (idRaw !== '') {
         let existing
         try {
-          existing = await voyage.products.adminGetById(idNum)
+          existing = await voyage.products.adminGetById(idRaw)
         } catch {
           errors.push({ line: lineNo, reason: t('admin.productsList.errImportIdNotFound') })
           continue
@@ -499,7 +506,7 @@ export function AdminProductListPage() {
           continue
         }
         try {
-          await voyage.products.adminUpdate(idNum, merged.payload)
+          await voyage.products.adminUpdate(idRaw, merged.payload)
           ok += 1
         } catch {
           errors.push({ line: lineNo, reason: t('admin.productsList.errApi') })
@@ -654,13 +661,13 @@ export function AdminProductListPage() {
         }}
         rowSelection={{
           selectedRowKeys: selectedIds,
-          onChange: (keys) => setSelectedIds(keys.map((x) => Number(x))),
+          onChange: (keys) => setSelectedIds(keys.map((x) => String(x))),
         }}
         onRow={(record) => ({
           onClick: (ev) => {
             const el = ev.target as HTMLElement
             if (el.closest('a, button, input, textarea, label, .ant-switch')) return
-            const id = record.id
+            const id = String(record.id)
             setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
           },
         })}
