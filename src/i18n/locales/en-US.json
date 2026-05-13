@@ -78,6 +78,9 @@
     "addCartOk": "Added to cart",
     "addCartFail": "Could not add to cart",
     "qtyLabel": "Qty",
+    "cartQtyLabel": "Qty in cart",
+    "addMoqToCartAria": "Add MOQ to cart",
+    "cartMoqHint": "MOQ: {{n}}",
     "buyNow": "Buy now",
     "buyNowInactive": "This product is unavailable for checkout"
   },
@@ -154,7 +157,7 @@
   "cart": {
     "title": "Cart",
     "descLoggedIn": "Review line items before checkout.",
-    "descGuest": "Guest cart is stored locally; sign in to sync to your account.",
+    "descGuest": "Guest cart is stored on this device. Select in-stock lines to see the selected subtotal; sign in to sync to your account.",
     "empty": "Your cart is empty.",
     "colSelect": "Select",
     "colProduct": "Product",
@@ -169,7 +172,8 @@
     "selectedSubtotal": "Selected subtotal",
     "checkoutNeedSelection": "Select at least one in-stock line to continue.",
     "checkoutInactiveTitle": "Cannot proceed to checkout",
-    "checkoutInactiveBody": "You have selected unavailable (off-shelf) items. Uncheck all unavailable lines, then try again.",
+    "checkoutInactiveBody": "Unavailable items are selected, so checkout is blocked. Uncheck those lines, or use the button below to remove all unavailable items at once.",
+    "removeAllInactive": "Remove all unavailable items",
     "summaryTitle": "Order summary",
     "checkout": "Proceed to checkout",
     "checkoutLogin": "Sign in to checkout",

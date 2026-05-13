@@ -78,6 +78,9 @@
     "addCartOk": "已加入购物车",
     "addCartFail": "加入购物车失败",
     "qtyLabel": "数量",
+    "cartQtyLabel": "购物车数量",
+    "addMoqToCartAria": "按起订量加入购物车",
+    "cartMoqHint": "起订量（MOQ）：{{n}}",
     "buyNow": "下单",
     "buyNowInactive": "该商品已下架，无法下单"
   },
@@ -154,7 +157,7 @@
   "cart": {
     "title": "购物车",
     "descLoggedIn": "结算前请核对行项目与数量。",
-    "descGuest": "当前为未登录本地购物车，登录后将同步到账户。",
+    "descGuest": "本地购物车：可勾选在售商品并查看已选小计；登录后与账户同步。",
     "empty": "购物车是空的。",
     "colSelect": "选择",
     "colProduct": "商品",
@@ -169,7 +172,8 @@
     "selectedSubtotal": "已选小计",
     "checkoutNeedSelection": "请至少勾选一件在售商品后再去结算。",
     "checkoutInactiveTitle": "无法去结算",
-    "checkoutInactiveBody": "您勾选了已下架商品。请先取消勾选所有下架行，再点击「去结算」。",
+    "checkoutInactiveBody": "您勾选了已下架商品，无法进入结算。请先取消勾选所有下架行，或点击下方按钮一键移除全部下架商品。",
+    "removeAllInactive": "一键移除全部下架商品",
     "summaryTitle": "订单摘要",
     "checkout": "去结算",
     "checkoutLogin": "登录后结算",

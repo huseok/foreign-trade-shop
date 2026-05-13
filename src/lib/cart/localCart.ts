@@ -11,6 +11,8 @@ const LOCAL_CART_UPDATED_EVENT = 'chzfobkey:local-cart-updated'
 export type LocalCartItem = {
   productId: string
   quantity: number
+  /** 是否参与结算与「已选小计」；缺省 true（兼容旧版 localStorage 无该字段）。 */
+  selected?: boolean
 }
 
 function normalizeStoredProductId(raw: unknown): string | null {
@@ -24,14 +26,15 @@ export function getLocalCartItems(): LocalCartItem[] {
   try {
     const raw = localStorage.getItem(LOCAL_CART_KEY)
     if (!raw) return []
-    const parsed = JSON.parse(raw) as Array<{ productId?: unknown; quantity?: unknown }>
+    const parsed = JSON.parse(raw) as Array<{ productId?: unknown; quantity?: unknown; selected?: unknown }>
     if (!Array.isArray(parsed)) return []
     return parsed
       .map((x) => {
         const productId = normalizeStoredProductId(x.productId)
         const quantity = typeof x.quantity === 'number' ? x.quantity : Number(x.quantity)
         if (productId == null || !Number.isFinite(quantity) || quantity <= 0) return null
-        return { productId, quantity: Math.trunc(quantity) }
+        const selected = x.selected === false ? false : true
+        return { productId, quantity: Math.trunc(quantity), selected }
       })
       .filter((x): x is LocalCartItem => x != null)
   } catch {
@@ -53,7 +56,7 @@ export function addLocalCartItem(productId: string, quantity: number) {
   if (existed) {
     existed.quantity += nextQty
   } else {
-    rows.push({ productId: key, quantity: nextQty })
+    rows.push({ productId: key, quantity: nextQty, selected: true })
   }
   saveLocalCartItems(rows)
 }
@@ -72,6 +75,37 @@ export function removeLocalCartItem(productId: string) {
   const key = productId.trim()
   if (!key) return
   const rows = getLocalCartItems().filter((x) => x.productId !== key)
+  saveLocalCartItems(rows)
+}
+
+/** 访客购物车：更新单行勾选状态（写入 localStorage 并派发更新事件）。 */
+export function setLocalCartItemSelected(productId: string, selected: boolean) {
+  const key = productId.trim()
+  if (!key) return
+  const rows = getLocalCartItems()
+  const x = rows.find((r) => r.productId === key)
+  if (!x) return
+  x.selected = selected
+  saveLocalCartItems(rows)
+}
+
+/** 将本地购物车中该商品数量设为绝对值 `quantity`（≤0 时移除该行）。用于目录卡片等与 InputNumber 同步。 */
+export function setLocalCartQuantity(productId: string, quantity: number) {
+  const key = productId.trim()
+  if (!key) return
+  const q = Math.trunc(quantity)
+  if (q <= 0) {
+    removeLocalCartItem(key)
+    return
+  }
+  const rows = getLocalCartItems()
+  const idx = rows.findIndex((x) => x.productId === key)
+  if (idx < 0) {
+    rows.push({ productId: key, quantity: q, selected: true })
+  } else {
+    const prevSel = rows[idx].selected !== false
+    rows[idx] = { productId: key, quantity: q, selected: prevSel }
+  }
   saveLocalCartItems(rows)
 }
 
