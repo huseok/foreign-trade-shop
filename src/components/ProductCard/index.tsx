@@ -2,7 +2,7 @@
  * 商品卡片：用于首页网格、目录列表等。
  *
  * - **默认模式**：主图/标题链到详情页；「查看」「加入购物车」分开展示。
- * - **目录紧凑模式**（`compactAddButton`）：整卡进详情；数量区展示**购物车中该商品件数**（未加购为 0），`InputNumber` 直接改购物车数量（低于起订量提交时抬到 MOQ，为 0 则移除行）；购物车图标按钮为「再按 MOQ 加一批」；「下单」写结账会话后进 `/checkout`。
+ * - **目录紧凑模式**（`compactAddButton`）：整卡进详情；**仅在购物车已有该商品时**展示数量与 `InputNumber`（改数量、为 0 则移除行；低于起订量提交时抬到 MOQ）；未在购物车时不显示数量区，用购物车图标按 MOQ 加购；「下单」写结账会话后进 `/checkout`。
  */
 import { ShoppingCartOutlined } from '@ant-design/icons'
 import { App, InputNumber } from 'antd'
@@ -73,9 +73,11 @@ export function ProductCard({ product, compactAddButton = false }: Props) {
   }, [loggedIn, cart?.items, product.id])
 
   const [optimisticQty, setOptimisticQty] = useState<number | null>(null)
-  /** 目录紧凑模式：展示购物车中该商品件数；未在购物车为 0（不再用 MOQ 冒充展示值）。 */
+  /** 目录紧凑模式：展示购物车中该商品件数；未在购物车不展示数量区（此处仍用于「下单」等逻辑）。 */
   const baseQty = inCartQty
   const displayQty = optimisticQty ?? baseQty
+  /** 有购物车行或正在编辑数量时才渲染数量输入（未加购不显示「购物车数量」）。 */
+  const showCartQtyEditor = inCartQty > 0 || optimisticQty !== null
 
   useEffect(() => {
     setOptimisticQty(null)
@@ -291,27 +293,29 @@ export function ProductCard({ product, compactAddButton = false }: Props) {
             {product.price == null ? '-' : `${product.currency ?? 'USD'} ${Number(product.price).toFixed(2)}`}
           </span>
           <div className="product-card__catalog-actions" onClick={(e) => e.stopPropagation()}>
-            <div className="product-card__qty-row">
-              <span className="product-card__qty-label">{t('catalog.cartQtyLabel')}</span>
-              <InputNumber
-                min={qtyInputMin}
-                max={999999}
-                size="small"
-                value={displayQty}
-                disabled={!product.isActive || updateMutation.isPending || removeMutation.isPending}
-                onChange={(v) => {
-                  if (v === null || v === undefined) {
-                    setOptimisticQty(null)
-                    return
-                  }
-                  const n = typeof v === 'number' && Number.isFinite(v) ? Math.trunc(v) : 0
-                  const clamped = Math.max(0, n)
-                  setOptimisticQty(clamped)
-                  scheduleQtyFlush(clamped)
-                }}
-                aria-label={t('catalog.cartQtyLabel')}
-              />
-            </div>
+            {showCartQtyEditor ? (
+              <div className="product-card__qty-row">
+                <span className="product-card__qty-label">{t('catalog.cartQtyLabel')}</span>
+                <InputNumber
+                  min={qtyInputMin}
+                  max={999999}
+                  size="small"
+                  value={displayQty}
+                  disabled={!product.isActive || updateMutation.isPending || removeMutation.isPending}
+                  onChange={(v) => {
+                    if (v === null || v === undefined) {
+                      setOptimisticQty(null)
+                      return
+                    }
+                    const n = typeof v === 'number' && Number.isFinite(v) ? Math.trunc(v) : 0
+                    const clamped = Math.max(0, n)
+                    setOptimisticQty(clamped)
+                    scheduleQtyFlush(clamped)
+                  }}
+                  aria-label={t('catalog.cartQtyLabel')}
+                />
+              </div>
+            ) : null}
             <p className="product-card__moq-hint" aria-live="polite">
               {i18nTpl(t('catalog.cartMoqHint'), { n: String(moq) })}
             </p>

@@ -192,8 +192,9 @@
     border-bottom: none;
   }
 
-  &__row--selected td {
-    background: color-mix(in srgb, #fdba74 24%, var(--surface, #fff));
+  /** 在售行选中：主题色浅底（与下架选中区分）。 */
+  &__row--selected:not(.cart-table__row--inactive) td {
+    background: color-mix(in oklch, var(--primary, #2563eb) 9%, var(--surface));
   }
 
   &__row--inactive td {
@@ -205,6 +206,7 @@
     filter: grayscale(0.2);
   }
 
+  /** 下架行选中：琥珀/杏色高亮，便于与在售选中区分。 */
   &__row--inactive.cart-table__row--selected td {
     background: color-mix(in srgb, #fed7aa 30%, var(--surface, #fff));
     box-shadow: inset 3px 0 0 0 rgba(234, 88, 12, 0.38);
