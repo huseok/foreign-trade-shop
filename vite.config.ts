@@ -55,6 +55,7 @@ export default defineConfig(({ command, mode }) => {
           ]
         : []),
     ],
+    // 生产构建仅走 Vite（esbuild/rollup），不跑 ESLint、不跑 tsc；校验请单独 npm run lint / npm run typecheck。
     build: {
       reportCompressedSize: false,
     },
