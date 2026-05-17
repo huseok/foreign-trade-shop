@@ -51,7 +51,7 @@ npm run dev
 
 - **生产 / CI**：在托管平台（Vercel、Netlify 等）配置同名环境变量 **`VITE_API_BASE_URL`**，再执行 `npm run build`。
 
-- **跨域**：后端需把前端 **Origin** 配进 **`APP_CORS_ALLOWED_ORIGINS`**（与 voyage 部署说明一致），详见 **[`INTEGRATION.md`](./INTEGRATION.md)** §4、§9。
+- **跨域**：后端需把前端 **Origin** 配进 **`APP_CORS_ALLOWED_ORIGINS`**（生产域名见 **[`../voyage/deploy/aliyun/DOMAIN_SETUP.md`](../voyage/deploy/aliyun/DOMAIN_SETUP.md)**），详见 **[`INTEGRATION.md`](./INTEGRATION.md)** §4、§9。
 
 ## 路由一览
 
