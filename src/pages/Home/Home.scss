@@ -430,17 +430,20 @@
     }
   }
 
+  /** 活动商品卡主图：contain + 四边等距留白，与精选/目录 ProductCard 展示一致 */
   &__media {
     flex: 0 0 auto;
     width: 100%;
     aspect-ratio: 4 / 3;
+    box-sizing: border-box;
+    padding: 0.75rem;
     overflow: hidden;
     background: color-mix(in srgb, var(--primary) 8%, var(--surface));
 
     img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       object-position: center;
       display: block;
     }

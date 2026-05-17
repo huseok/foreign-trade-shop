@@ -163,4 +163,14 @@
   @media (max-width: 520px) {
     grid-template-columns: 1fr;
   }
+
+  /** 目录列表：标题最多两行并固定两行占位，避免长短标题导致卡片高度不齐 */
+  .product-card__title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    word-break: break-word;
+    min-height: 2.6em;
+  }
 }
