@@ -414,6 +414,8 @@
     min-width: 0;
     width: 100%;
     max-width: min(22rem, 100%);
+    height: 21.5rem;
+    max-height: 21.5rem;
     text-decoration: none;
     color: inherit;
     border-radius: var(--radius-md);
@@ -430,13 +432,14 @@
     }
   }
 
-  /** 活动商品卡主图：contain + 四边等距留白，与精选/目录 ProductCard 展示一致 */
+  /** 活动商品：800×800 方图 contain + 固定卡片高度 */
   &__media {
-    flex: 0 0 auto;
+    flex: 0 0 10.5rem;
+    height: 10.5rem;
     width: 100%;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 1 / 1;
     box-sizing: border-box;
-    padding: 0.75rem;
+    padding: 0.5rem;
     overflow: hidden;
     background: color-mix(in srgb, var(--primary) 8%, var(--surface));
 
@@ -461,11 +464,13 @@
   }
 
   &__meta {
-    padding: 0.75rem 0.85rem 0.95rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0.65rem 0.85rem 0.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
-    min-height: 0;
+    gap: 0.35rem;
   }
 
   &__name {
@@ -478,6 +483,8 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
+    flex-shrink: 0;
+    min-height: 2.7em;
   }
 
   &__prices {
@@ -485,6 +492,8 @@
     flex-direction: column;
     gap: 0.2rem;
     font-size: 0.8125rem;
+    flex-shrink: 0;
+    margin-top: auto;
   }
 
   &__price-row {
@@ -658,6 +667,11 @@
   }
 
   .product-grid--boutique .product-card {
+    --product-tile-height: 26.5rem;
+    --product-tile-media: 11.25rem;
+
+    height: var(--product-tile-height);
+    max-height: var(--product-tile-height);
     transition:
       transform 0.22s ease,
       box-shadow 0.22s ease,
@@ -669,6 +683,43 @@
     box-shadow:
       0 1px 0 color-mix(in oklch, var(--fg) 6%, transparent),
       0 10px 26px color-mix(in oklch, var(--fg) 10%, transparent);
+
+    .product-card__media {
+      flex: 0 0 var(--product-tile-media);
+      height: var(--product-tile-media);
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      padding: 0.5rem;
+    }
+
+    .product-card__body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .product-card__title {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      flex-shrink: 0;
+      min-height: 2.6em;
+    }
+
+    .product-card__desc {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .product-card__footer {
+      flex-shrink: 0;
+      margin-top: auto;
+    }
 
     .product-card__img:not(.product-card__img--photo) {
       background: linear-gradient(

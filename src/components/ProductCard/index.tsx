@@ -256,7 +256,7 @@ export function ProductCard({ product, compactAddButton = false }: Props) {
 
   return (
     <article
-      className="product-card product-card--compact-add"
+      className="product-card product-card--compact-add product-card--catalog-tile"
       onClick={onCardClick}
       title={product.title}
     >

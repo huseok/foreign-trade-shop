@@ -149,6 +149,74 @@
     }
   }
 
+  /**
+   * 目录列表专用：主图按 800×800（1:1）方形容器 contain 展示，卡片总高度固定，正文区溢出裁剪。
+   */
+  &--catalog-tile {
+    --product-tile-height: 26.5rem;
+    --product-tile-media: 11.25rem;
+
+    height: var(--product-tile-height);
+    max-height: var(--product-tile-height);
+
+    .product-card__media {
+      flex: 0 0 var(--product-tile-media);
+      height: var(--product-tile-media);
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      padding: 0.5rem;
+    }
+
+    .product-card__body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 0.65rem 0.85rem 0.75rem;
+    }
+
+    .product-card__title {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      word-break: break-word;
+      flex-shrink: 0;
+      min-height: 2.6em;
+    }
+
+    .product-card__tags {
+      flex-shrink: 0;
+      max-height: 1.35rem;
+      overflow: hidden;
+    }
+
+    .product-card__desc {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      flex: 1 1 auto;
+      min-height: 0;
+      margin: 0;
+    }
+
+    .product-card__footer {
+      flex-shrink: 0;
+      margin-top: auto;
+    }
+
+    .product-card__catalog-actions {
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 520px) {
+      --product-tile-height: 25rem;
+      --product-tile-media: 10.5rem;
+    }
+  }
+
   &--compact-add {
     cursor: pointer;
 
